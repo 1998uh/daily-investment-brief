@@ -38,6 +38,7 @@ Copy-Item .env.example .env
 BRIEF_BASE_URL=https://api.deepseek.com/v1
 BRIEF_MODEL=deepseek-chat
 BRIEF_API_KEY=sk-...
+BRIEF_LLM_BATCH_CONCURRENCY=3
 
 # 雪球 Cookie（必需，从浏览器 DevTools 复制）
 XUEQIU_COOKIE=cookiesu=...; xq_a_token=...; u=...
@@ -113,6 +114,14 @@ reports/2026-06-09/daily-brief.html
 ```
 
 没有配置 API key 时，CLI 会使用本地 fallback 摘要，便于先验证输入、统计和输出结构。
+
+如果真实 LLM 生成偏慢，可以优先调小以下参数：
+
+- `BRIEF_LLM_BATCH_CONCURRENCY`：批次摘要并发数，默认 `3`
+- `BRIEF_BATCH_SIZE`：每批文章数，默认 `8`
+- `BRIEF_MAX_CHARS_PER_ARTICLE`：单篇送入模型的最大字符数，默认 `6000`
+
+生成日志现在会打印每个 batch summary、final brief 和总耗时，方便定位瓶颈是在请求本身还是输入规模。
 
 ## 账号配置
 

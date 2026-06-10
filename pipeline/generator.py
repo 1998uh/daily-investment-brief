@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime
 import json
 import textwrap
+import time
 
 from .config import ROOT, Settings
 from .datetime_utils import brief_window, format_window_cn
@@ -35,32 +37,16 @@ def generate_with_llm(
     brief_date: date,
     settings: Settings,
 ) -> str:
+    started_at = time.perf_counter()
     batch_prompt = read_template("batch_summary_prompt.md")
     final_prompt = read_template("final_brief_prompt.md")
 
-    summaries: list[dict | str] = []
     batches = chunked(articles, settings.batch_size)
-    for index, batch in enumerate(batches, start=1):
-        print(
-            f"[info] LLM batch summary {index}/{len(batches)}: {len(batch)} articles",
-            flush=True,
-        )
-        article_text = "\n\n".join(format_article(article, settings.max_chars_per_article) for article in batch)
-        content = (
-            batch_prompt
-            + "\n\n以下是本批文章：\n\n"
-            + article_text
-        )
-        response = chat_completion(
-            settings,
-            [
-                {"role": "system", "content": "你是严谨的中文投研资料整理助手。"},
-                {"role": "user", "content": content},
-            ],
-            temperature=0.1,
-            label=f"batch summary {index}/{len(batches)}",
-        )
-        summaries.append(parse_json_or_text(response))
+    summaries = _summarize_batches(batches, settings, batch_prompt)
+    print(
+        f"[info] LLM batch summaries completed in {time.perf_counter() - started_at:.1f}s",
+        flush=True,
+    )
 
     coverage_json = json.dumps(coverage_to_dicts(coverage), ensure_ascii=False, indent=2)
     summaries_json = json.dumps(summaries, ensure_ascii=False, indent=2)
@@ -81,6 +67,7 @@ def generate_with_llm(
     )
 
     print(f"[info] LLM final brief: {len(summaries)} batch summaries", flush=True)
+    final_started_at = time.perf_counter()
     markdown = chat_completion(
         settings,
         [
@@ -90,7 +77,66 @@ def generate_with_llm(
         temperature=settings.temperature,
         label="final brief",
     )
+    print(
+        f"[info] LLM final brief completed in {time.perf_counter() - final_started_at:.1f}s",
+        flush=True,
+    )
+    print(f"[info] LLM total generation time: {time.perf_counter() - started_at:.1f}s", flush=True)
     return enforce_report_header(markdown, brief_date, settings, coverage)
+
+
+def _summarize_batches(
+    batches: list[list[Article]],
+    settings: Settings,
+    batch_prompt: str,
+) -> list[dict | str]:
+    if not batches:
+        return []
+
+    total = len(batches)
+    worker_count = min(settings.llm_batch_concurrency, total)
+    if worker_count == 1:
+        return [
+            _summarize_single_batch(index, batch, total, settings, batch_prompt)
+            for index, batch in enumerate(batches, start=1)
+        ]
+
+    results: list[dict | str] = ["" for _ in batches]
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        future_to_index = {
+            executor.submit(_summarize_single_batch, index, batch, total, settings, batch_prompt): index - 1
+            for index, batch in enumerate(batches, start=1)
+        }
+        for future in as_completed(future_to_index):
+            results[future_to_index[future]] = future.result()
+    return results
+
+
+def _summarize_single_batch(
+    index: int,
+    batch: list[Article],
+    total: int,
+    settings: Settings,
+    batch_prompt: str,
+) -> dict | str:
+    print(f"[info] LLM batch summary {index}/{total}: {len(batch)} articles", flush=True)
+    article_text = "\n\n".join(format_article(article, settings.max_chars_per_article) for article in batch)
+    content = batch_prompt + "\n\n以下是本批文章：\n\n" + article_text
+    started_at = time.perf_counter()
+    response = chat_completion(
+        settings,
+        [
+            {"role": "system", "content": "你是严谨的中文投研资料整理助手。"},
+            {"role": "user", "content": content},
+        ],
+        temperature=0.1,
+        label=f"batch summary {index}/{total}",
+    )
+    print(
+        f"[info] LLM batch summary {index}/{total} completed in {time.perf_counter() - started_at:.1f}s",
+        flush=True,
+    )
+    return parse_json_or_text(response)
 
 
 def generate_fallback(
