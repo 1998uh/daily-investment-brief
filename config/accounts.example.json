@@ -1,0 +1,28 @@
+{
+  "xueqiu": [
+    {
+      "name": "示例雪球账号",
+      "url": "https://xueqiu.com/u/用户ID",
+      "uid": "用户ID",
+      "enabled": true
+    }
+  ],
+  "wechat": [
+    {
+      "name": "示例微信公众号",
+      "urls": [
+        "https://mp.weixin.qq.com/s/文章ID"
+      ],
+      "rss_url": "",
+      "enabled": true
+    }
+  ],
+  "weibo": [
+    {
+      "name": "示例微博账号",
+      "url": "https://weibo.com/u/用户ID",
+      "uid": "用户ID",
+      "enabled": true
+    }
+  ]
+}

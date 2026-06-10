@@ -6,5 +6,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+config/accounts*.json
+!config/accounts.example.json
 
 !reports/.gitkeep
