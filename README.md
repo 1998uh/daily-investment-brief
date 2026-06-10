@@ -6,13 +6,33 @@
 
 ## 快速开始
 
-1. 复制配置：
+1. 在项目目录创建本项目专属依赖环境 `.venv`：
+
+```powershell
+.\scripts\setup.ps1
+```
+
+如果需要采集雪球专栏/长文全文，安装采集扩展和 Playwright Chromium：
+
+```powershell
+.\scripts\setup.ps1 -InstallPlaywright
+```
+
+> `.venv/` 类似前端项目里的 `node_modules/`：依赖安装在当前项目目录，不提交到 Git，换电脑后重新运行 setup 脚本即可。
+
+2. 激活本项目环境：
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+3. 复制配置：
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-2. 在 `.env` 中填写 OpenAI-compatible API 和采集所需的 Cookie：
+4. 在 `.env` 中填写 OpenAI-compatible API 和采集所需的 Cookie：
 
 ```env
 BRIEF_BASE_URL=https://api.deepseek.com/v1
@@ -27,19 +47,10 @@ WEIBO_COOKIE=
 WECHAT_COOKIE=
 ```
 
-3. 雪球专栏/长文全文获取需要 Playwright（可选但推荐）：
+5. 验证账号配置：
 
 ```powershell
-pip install playwright
-playwright install chromium
-```
-
-> 未安装时专栏文章只能获取摘要（~150 字），安装后可获取完整全文。
-
-4. 验证账号配置：
-
-```powershell
-python -m pipeline.cli collect --date 2026-06-09 --dry-run
+daily-brief collect --date 2026-06-09 --dry-run
 ```
 
 ## 采集命令
@@ -47,7 +58,7 @@ python -m pipeline.cli collect --date 2026-06-09 --dry-run
 ### 全量采集（并行模式）
 
 ```powershell
-python -m pipeline.cli collect --date 2026-06-09
+daily-brief collect --date 2026-06-09
 ```
 
 默认按平台分组并行采集（雪球 3 并发、微博 2 并发、微信 4 并发），运行过程中实时打印每个账号的进度：
@@ -73,25 +84,25 @@ python -m pipeline.cli collect --date 2026-06-09
 ### 单博主采集
 
 ```powershell
-python -m pipeline.cli collect-one --name "诸葛孔暗" --date 2026-06-09
+daily-brief collect-one --name "诸葛孔暗" --date 2026-06-09
 ```
 
 适合调试单个账号的采集效果。加 `--verbose` 可看到详细日志（API 请求、全文获取过程、Playwright 状态）：
 
 ```powershell
-python -m pipeline.cli collect-one --name "诸葛孔暗" --date 2026-06-09 --verbose
+daily-brief collect-one --name "诸葛孔暗" --date 2026-06-09 --verbose
 ```
 
 ### 生成简报
 
 ```powershell
-python -m pipeline.cli generate --date 2026-06-09
+daily-brief generate --date 2026-06-09
 ```
 
 采集 + 生成一步完成：
 
 ```powershell
-python -m pipeline.cli collect --date 2026-06-10 --and-generate
+daily-brief collect --date 2026-06-10 --and-generate
 ```
 
 输出：
@@ -151,8 +162,7 @@ WECHAT_COOKIE=                                  # 可选
 前三种方式可能被 WAF 拦截，**Playwright 是目前最可靠的方式**：
 
 ```powershell
-pip install playwright
-playwright install chromium
+.\scripts\setup.ps1 -InstallPlaywright
 ```
 
 工作原理：启动无头 Chromium 访问雪球首页通过 WAF，然后在浏览器上下文内用 `fetch()` 请求 API，继承 WAF cookie。整个采集过程复用同一个浏览器实例。

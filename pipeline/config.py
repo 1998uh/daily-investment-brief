@@ -28,6 +28,9 @@ class Settings:
     base_url: str
     model: str
     api_key: str
+    llm_timeout_seconds: int
+    llm_retries: int
+    llm_retry_delay_seconds: float
     timezone: str
     window_start: str
     window_end: str
@@ -48,12 +51,41 @@ def get_settings() -> Settings:
         base_url=os.getenv("BRIEF_BASE_URL", "").rstrip("/"),
         model=os.getenv("BRIEF_MODEL", ""),
         api_key=os.getenv("BRIEF_API_KEY", ""),
+        llm_timeout_seconds=_env_int("BRIEF_LLM_TIMEOUT_SECONDS", 120, min_value=1),
+        llm_retries=_env_int("BRIEF_LLM_RETRIES", 2, min_value=0),
+        llm_retry_delay_seconds=_env_float("BRIEF_LLM_RETRY_DELAY_SECONDS", 2.0, min_value=0),
         timezone=os.getenv("BRIEF_TIMEZONE", "Asia/Shanghai"),
         window_start=os.getenv("BRIEF_WINDOW_START", "08:00"),
         window_end=os.getenv("BRIEF_WINDOW_END", "08:00"),
         markets=os.getenv("BRIEF_MARKETS", "A股,港股"),
         style=os.getenv("BRIEF_STYLE", "strong_narrative_emoji"),
-        max_chars_per_article=int(os.getenv("BRIEF_MAX_CHARS_PER_ARTICLE", "6000")),
-        batch_size=int(os.getenv("BRIEF_BATCH_SIZE", "8")),
-        temperature=float(os.getenv("BRIEF_TEMPERATURE", "0.2")),
+        max_chars_per_article=_env_int("BRIEF_MAX_CHARS_PER_ARTICLE", 6000, min_value=500),
+        batch_size=_env_int("BRIEF_BATCH_SIZE", 8, min_value=1),
+        temperature=_env_float("BRIEF_TEMPERATURE", 0.2, min_value=0),
     )
+
+
+def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        return default
+    if min_value is not None and value < min_value:
+        return default
+    return value
+
+
+def _env_float(name: str, default: float, *, min_value: float | None = None) -> float:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        return default
+    if min_value is not None and value < min_value:
+        return default
+    return value

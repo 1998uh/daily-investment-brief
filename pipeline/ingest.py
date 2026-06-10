@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 import json
 import re
 import hashlib
 
 from .models import Article, CoverageRow
+
+try:
+    import yaml
+except ImportError:  # pragma: no cover - pyproject declares the dependency.
+    yaml = None
 
 
 FRONT_MATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
@@ -17,14 +24,46 @@ def parse_front_matter(text: str) -> tuple[dict[str, str], str]:
     if not match:
         return {}, text.strip()
 
+    return parse_front_matter_block(match.group(1)), text[match.end() :].strip()
+
+
+def parse_front_matter_block(raw: str) -> dict[str, str]:
+    if yaml is not None:
+        try:
+            parsed = yaml.safe_load(raw)
+        except yaml.YAMLError:
+            parsed = None
+        if isinstance(parsed, dict):
+            return {
+                str(key).strip(): stringify_meta_value(value)
+                for key, value in parsed.items()
+                if str(key).strip()
+            }
+
+    return parse_simple_front_matter(raw)
+
+
+def parse_simple_front_matter(raw: str) -> dict[str, str]:
     meta: dict[str, str] = {}
-    for raw_line in match.group(1).splitlines():
+    for raw_line in raw.splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or ":" not in line:
             continue
         key, value = line.split(":", 1)
         meta[key.strip()] = value.strip().strip('"').strip("'")
-    return meta, text[match.end() :].strip()
+    return meta
+
+
+def stringify_meta_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.isoformat(sep=" ")
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value)
 
 
 def load_markdown(path: Path) -> Article:
@@ -42,7 +81,9 @@ def load_markdown(path: Path) -> Article:
 
 
 def load_json(path: Path) -> Article:
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(payload, dict):
+        payload = {}
     return Article(
         path=path,
         source=str(payload.get("source") or infer_source(path)),

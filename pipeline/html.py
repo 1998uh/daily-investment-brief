@@ -3,6 +3,17 @@ from __future__ import annotations
 import html
 import re
 
+try:
+    import markdown as markdown_lib
+except ImportError:  # pragma: no cover - pyproject declares the dependency.
+    markdown_lib = None
+
+
+MARKDOWN_EXTENSIONS = [
+    "extra",
+    "sane_lists",
+]
+
 
 def render_inline(text: str) -> str:
     escaped = html.escape(text)
@@ -12,8 +23,18 @@ def render_inline(text: str) -> str:
     return escaped
 
 
-def markdown_to_html(markdown: str) -> str:
-    lines = markdown.splitlines()
+def markdown_to_html(markdown_text: str) -> str:
+    if markdown_lib is not None:
+        return markdown_lib.markdown(
+            markdown_text,
+            extensions=MARKDOWN_EXTENSIONS,
+            output_format="html5",
+        )
+    return _fallback_markdown_to_html(markdown_text)
+
+
+def _fallback_markdown_to_html(markdown_text: str) -> str:
+    lines = markdown_text.splitlines()
     parts: list[str] = []
     paragraph: list[str] = []
     in_code = False
@@ -148,7 +169,10 @@ def wrap_html(markdown: str, title: str) -> str:
     table {{ width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }}
     th, td {{ border: 1px solid var(--line); padding: 8px 10px; vertical-align: top; }}
     th {{ background: #eef5f4; text-align: left; }}
+    a {{ color: var(--accent); }}
     blockquote {{ margin: 18px 0; padding: 10px 16px; border-left: 4px solid var(--accent); background: #f1f7f6; }}
+    ul, ol {{ padding-left: 1.35em; }}
+    li + li {{ margin-top: 4px; }}
     code, pre {{ background: #f0f2f5; }}
     code {{ padding: 1px 4px; }}
     pre {{ padding: 16px; overflow-x: auto; }}

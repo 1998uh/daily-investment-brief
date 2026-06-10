@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import date, datetime
 import json
-from pathlib import Path
 import textwrap
 
 from .config import ROOT, Settings
@@ -13,6 +12,7 @@ from .models import Article, CoverageRow, GenerationResult
 
 
 WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+REPORT_SOURCE_ORDER = ["雪球", "微博", "微信公众号"]
 
 
 def generate_brief(articles: list[Article], brief_date: date, settings: Settings) -> GenerationResult:
@@ -39,7 +39,12 @@ def generate_with_llm(
     final_prompt = read_template("final_brief_prompt.md")
 
     summaries: list[dict | str] = []
-    for batch in chunked(articles, settings.batch_size):
+    batches = chunked(articles, settings.batch_size)
+    for index, batch in enumerate(batches, start=1):
+        print(
+            f"[info] LLM batch summary {index}/{len(batches)}: {len(batch)} articles",
+            flush=True,
+        )
         article_text = "\n\n".join(format_article(article, settings.max_chars_per_article) for article in batch)
         content = (
             batch_prompt
@@ -53,6 +58,7 @@ def generate_with_llm(
                 {"role": "user", "content": content},
             ],
             temperature=0.1,
+            label=f"batch summary {index}/{len(batches)}",
         )
         summaries.append(parse_json_or_text(response))
 
@@ -74,6 +80,7 @@ def generate_with_llm(
         session=_session_label(window_end),
     )
 
+    print(f"[info] LLM final brief: {len(summaries)} batch summaries", flush=True)
     markdown = chat_completion(
         settings,
         [
@@ -81,8 +88,9 @@ def generate_with_llm(
             {"role": "user", "content": final_user_prompt},
         ],
         temperature=settings.temperature,
+        label="final brief",
     )
-    return markdown.strip() + "\n"
+    return enforce_report_header(markdown, brief_date, settings, coverage)
 
 
 def generate_fallback(
@@ -93,14 +101,6 @@ def generate_fallback(
     note: str | None = None,
 ) -> str:
     grouped = group_articles(articles)
-    window_start, window_end = brief_window(
-        brief_date,
-        timezone_name=settings.timezone,
-        start_time=settings.window_start,
-        end_time=settings.window_end,
-    )
-    window_label = format_window_cn(window_start, window_end)
-    total = len(articles)
     source_lines = [
         f"- 🟢 {row.source} {row.authors_total} 位作者 / {row.articles_total} 篇"
         for row in coverage
@@ -129,16 +129,11 @@ def generate_fallback(
     if note:
         model_line += f"\n- ⚠ LLM 调用失败，已切换 fallback：{note}"
 
-    markdown = f"""# 📊 每日投资简报
-
-**{format_date_cn(brief_date)} · {WEEKDAY_CN[brief_date.weekday()]} · 08:00 版**
+    header = build_report_header(brief_date, settings, coverage)
+    markdown = f"""{header}
 
 {chr(10).join(source_lines)}
-- 共 **{total}** 篇文章
-- 🕐 {window_label}（北京时间）
 - {model_line}
-
----
 
 > 当前为本地 fallback 版本：用于验证项目流程、输入规范和输出样式。配置 `.env` 后会调用模型生成更接近样例的强叙事简报。
 
@@ -243,6 +238,87 @@ def coverage_to_dicts(coverage: list[CoverageRow]) -> list[dict]:
         }
         for row in coverage
     ]
+
+
+def enforce_report_header(
+    markdown: str,
+    brief_date: date,
+    settings: Settings,
+    coverage: list[CoverageRow],
+) -> str:
+    header = build_report_header(brief_date, settings, coverage)
+    lines = markdown.strip().splitlines()
+    if not lines:
+        return header + "\n"
+
+    had_heading = bool(lines and lines[0].startswith("# "))
+    if had_heading:
+        lines.pop(0)
+        while lines and not lines[0].strip():
+            lines.pop(0)
+
+    if had_heading:
+        while lines:
+            stripped = lines[0].strip()
+            if stripped == "---":
+                lines.pop(0)
+                break
+            if not stripped or lines[0].startswith(">"):
+                lines.pop(0)
+                continue
+            break
+        while lines and not lines[0].strip():
+            lines.pop(0)
+
+    body = "\n".join(lines).strip()
+    if not body:
+        return header + "\n"
+    return header + "\n\n" + body + "\n"
+
+
+def build_report_header(
+    brief_date: date,
+    settings: Settings,
+    coverage: list[CoverageRow],
+) -> str:
+    window_start, window_end = brief_window(
+        brief_date,
+        timezone_name=settings.timezone,
+        start_time=settings.window_start,
+        end_time=settings.window_end,
+    )
+    total = sum(row.articles_total for row in coverage)
+    source_summary = "、".join(
+        f"{row.source}（{row.articles_total}篇）"
+        for row in ordered_coverage(coverage)
+        if row.articles_total
+    ) or "暂无有效来源"
+    author_summary = " | ".join(
+        f"{row.source} {row.authors_total} 位"
+        for row in ordered_coverage(coverage)
+        if row.articles_total
+    ) or "暂无有效作者"
+    date_cn = format_date_cn(brief_date)
+    weekday_cn = WEEKDAY_CN[brief_date.weekday()]
+    session = _session_label(window_end)
+    window_label = format_window_cn(window_start, window_end)
+    return textwrap.dedent(
+        f"""\
+        # 📊 每日投资简报 — {date_cn}（{weekday_cn}·{session}）
+
+        > **数据来源**：{source_summary} | 共 **{total} 篇**文章
+        > **覆盖时段**：{window_label}（北京时间）
+        > **覆盖作者**：{author_summary}
+        > **生成时间**：{date_cn} {session}
+
+        ---
+        """
+    ).strip()
+
+
+def ordered_coverage(coverage: list[CoverageRow]) -> list[CoverageRow]:
+    order = {source: index for index, source in enumerate(REPORT_SOURCE_ORDER)}
+    return sorted(coverage, key=lambda row: (order.get(row.source, len(order)), row.source))
 
 
 def chunked(items: list[Article], size: int) -> list[list[Article]]:

@@ -3,10 +3,26 @@ name = "daily-investment-brief"
 version = "0.1.0"
 description = "Generate a daily A/H-share investment brief from Markdown or JSON source notes."
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "markdown>=3.6",
+    "PyYAML>=6.0",
+    "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+collect = [
+    "playwright>=1.40",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
 
 [project.scripts]
 daily-brief = "pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pipeline*"]
 
 [tool.ruff]
 line-length = 100
