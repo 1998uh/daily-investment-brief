@@ -1,0 +1,59 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+import os
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_env(path: Path | None = None) -> None:
+    env_path = path or ROOT / ".env"
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
+
+
+@dataclass(frozen=True)
+class Settings:
+    base_url: str
+    model: str
+    api_key: str
+    timezone: str
+    window_start: str
+    window_end: str
+    markets: str
+    style: str
+    max_chars_per_article: int
+    batch_size: int
+    temperature: float
+
+    @property
+    def has_llm(self) -> bool:
+        return bool(self.base_url and self.model and self.api_key)
+
+
+def get_settings() -> Settings:
+    load_env()
+    return Settings(
+        base_url=os.getenv("BRIEF_BASE_URL", "").rstrip("/"),
+        model=os.getenv("BRIEF_MODEL", ""),
+        api_key=os.getenv("BRIEF_API_KEY", ""),
+        timezone=os.getenv("BRIEF_TIMEZONE", "Asia/Shanghai"),
+        window_start=os.getenv("BRIEF_WINDOW_START", "08:00"),
+        window_end=os.getenv("BRIEF_WINDOW_END", "08:00"),
+        markets=os.getenv("BRIEF_MARKETS", "A股,港股"),
+        style=os.getenv("BRIEF_STYLE", "strong_narrative_emoji"),
+        max_chars_per_article=int(os.getenv("BRIEF_MAX_CHARS_PER_ARTICLE", "6000")),
+        batch_size=int(os.getenv("BRIEF_BATCH_SIZE", "8")),
+        temperature=float(os.getenv("BRIEF_TEMPERATURE", "0.2")),
+    )
