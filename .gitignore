@@ -9,4 +9,6 @@ __pycache__/
 config/accounts*.json
 !config/accounts.example.json
 
+sources/
+
 !reports/.gitkeep
