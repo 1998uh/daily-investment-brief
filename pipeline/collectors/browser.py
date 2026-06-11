@@ -49,7 +49,13 @@ def _pw_worker() -> None:
 
     try:
         pw = sync_playwright().start()
-        browser = pw.chromium.launch(headless=True)
+        # 允许通过环境变量指定本地已有的 Chromium/Chrome 可执行文件，
+        # 避免 playwright 版本与已下载浏览器版本号不一致时报“浏览器未安装”。
+        launch_kwargs: dict[str, Any] = {"headless": True}
+        exe_path = os.getenv("XUEQIU_CHROME_PATH", "")
+        if exe_path:
+            launch_kwargs["executable_path"] = exe_path
+        browser = pw.chromium.launch(**launch_kwargs)
         log.debug("Playwright worker: Chromium 已启动")
 
         # 设置 cookie

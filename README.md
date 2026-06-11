@@ -59,7 +59,7 @@ daily-brief collect --date 2026-06-09 --dry-run
 ### 全量采集（并行模式）
 
 ```powershell
-daily-brief collect --date 2026-06-09
+daily-brief collect --date 2026-06-11
 ```
 
 默认按平台分组并行采集（雪球 3 并发、微博 2 并发、微信 4 并发），运行过程中实时打印每个账号的进度：
@@ -85,7 +85,7 @@ daily-brief collect --date 2026-06-09
 ### 单博主采集
 
 ```powershell
-daily-brief collect-one --name "诸葛孔暗" --date 2026-06-09
+daily-brief collect-one --name "谢佩德骨头" --date 2026-06-11
 ```
 
 适合调试单个账号的采集效果。加 `--verbose` 可看到详细日志（API 请求、全文获取过程、Playwright 状态）：
@@ -97,7 +97,7 @@ daily-brief collect-one --name "诸葛孔暗" --date 2026-06-09 --verbose
 ### 生成简报
 
 ```powershell
-daily-brief generate --date 2026-06-09
+daily-brief generate --date 2026-06-11
 ```
 
 采集 + 生成一步完成：
