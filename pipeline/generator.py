@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import replace
 from datetime import date, datetime
 import json
 import textwrap
@@ -69,7 +70,7 @@ def generate_with_llm(
     print(f"[info] LLM final brief: {len(summaries)} batch summaries", flush=True)
     final_started_at = time.perf_counter()
     markdown = chat_completion(
-        settings,
+        replace(settings, llm_max_tokens=None),
         [
             {"role": "system", "content": "你是中文每日投资简报主编。"},
             {"role": "user", "content": final_user_prompt},

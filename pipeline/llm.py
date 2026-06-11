@@ -12,6 +12,7 @@ class LLMError(RuntimeError):
 
 
 RETRYABLE_HTTP_STATUS = {408, 409, 429, 500, 502, 503, 504}
+COMPLETE_FINISH_REASONS = {None, "stop"}
 
 
 def chat_completion(
@@ -53,10 +54,19 @@ def chat_completion(
             with request.urlopen(req, timeout=settings.llm_timeout_seconds) as response:
                 body = response.read().decode("utf-8")
             parsed = json.loads(body)
-            content = parsed["choices"][0]["message"]["content"].strip()
+            choice = parsed["choices"][0]
+            finish_reason = choice.get("finish_reason")
+            if finish_reason not in COMPLETE_FINISH_REASONS:
+                last_error = LLMError(f"LLM returned incomplete response: finish_reason={finish_reason}")
+                retryable = True
+                raise last_error
+            content = choice["message"]["content"].strip()
             if label:
                 print(f"[info] {label}: LLM response received", flush=True)
             return content
+        except LLMError as exc:
+            last_error = exc
+            retryable = True
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             last_error = LLMError(f"LLM HTTP {exc.code}: {detail[:1000]}")

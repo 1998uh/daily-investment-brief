@@ -80,6 +80,62 @@ class ChatCompletionTests(unittest.TestCase):
         self.assertEqual(payload["thinking"], {"type": "disabled"})
         self.assertEqual(payload["max_tokens"], 3000)
 
+    def test_chat_completion_rejects_truncated_response(self) -> None:
+        def fake_urlopen(req, timeout):
+            return FakeResponse(
+                {
+                    "choices": [
+                        {
+                            "finish_reason": "length",
+                            "message": {
+                                "content": "partial report",
+                            },
+                        }
+                    ]
+                }
+            )
+
+        with patch("pipeline.llm.request.urlopen", side_effect=fake_urlopen):
+            with self.assertRaisesRegex(llm.LLMError, "finish_reason=length"):
+                llm.chat_completion(make_settings(), [{"role": "user", "content": "hello"}], label="")
+
+    def test_chat_completion_retries_truncated_response(self) -> None:
+        responses = [
+            {
+                "choices": [
+                    {
+                        "finish_reason": "length",
+                        "message": {
+                            "content": "partial report",
+                        },
+                    }
+                ]
+            },
+            {
+                "choices": [
+                    {
+                        "finish_reason": "stop",
+                        "message": {
+                            "content": "complete report",
+                        },
+                    }
+                ]
+            },
+        ]
+
+        def fake_urlopen(req, timeout):
+            return FakeResponse(responses.pop(0))
+
+        with patch("pipeline.llm.request.urlopen", side_effect=fake_urlopen):
+            result = llm.chat_completion(
+                make_settings(llm_retries=1),
+                [{"role": "user", "content": "hello"}],
+                label="",
+            )
+
+        self.assertEqual(result, "complete report")
+        self.assertEqual(responses, [])
+
 
 if __name__ == "__main__":
     unittest.main()
