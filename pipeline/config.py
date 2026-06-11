@@ -40,6 +40,8 @@ class Settings:
     batch_size: int
     llm_batch_concurrency: int
     temperature: float
+    llm_thinking_type: str | None = None
+    llm_max_tokens: int | None = None
 
     @property
     def has_llm(self) -> bool:
@@ -64,6 +66,8 @@ def get_settings() -> Settings:
         batch_size=_env_int("BRIEF_BATCH_SIZE", 8, min_value=1),
         llm_batch_concurrency=_env_int("BRIEF_LLM_BATCH_CONCURRENCY", 3, min_value=1),
         temperature=_env_float("BRIEF_TEMPERATURE", 0.2, min_value=0),
+        llm_thinking_type=_env_choice("BRIEF_LLM_THINKING", {"disabled", "enabled"}),
+        llm_max_tokens=_env_optional_int("BRIEF_LLM_MAX_TOKENS", min_value=1),
     )
 
 
@@ -91,3 +95,25 @@ def _env_float(name: str, default: float, *, min_value: float | None = None) -> 
     if min_value is not None and value < min_value:
         return default
     return value
+
+
+def _env_optional_int(name: str, *, min_value: int | None = None) -> int | None:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except ValueError:
+        return None
+    if min_value is not None and value < min_value:
+        return None
+    return value
+
+
+def _env_choice(name: str, choices: set[str]) -> str | None:
+    raw = os.getenv(name, "").strip().lower()
+    if not raw:
+        return None
+    if raw in choices:
+        return raw
+    return None

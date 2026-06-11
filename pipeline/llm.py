@@ -29,6 +29,10 @@ def chat_completion(
         "messages": messages,
         "temperature": settings.temperature if temperature is None else temperature,
     }
+    if settings.llm_thinking_type:
+        payload["thinking"] = {"type": settings.llm_thinking_type}
+    if settings.llm_max_tokens:
+        payload["max_tokens"] = settings.llm_max_tokens
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = request.Request(
         f"{settings.base_url}/chat/completions",
@@ -59,6 +63,9 @@ def chat_completion(
             retryable = exc.code in RETRYABLE_HTTP_STATUS
         except error.URLError as exc:
             last_error = LLMError(f"LLM request failed: {exc}")
+            retryable = True
+        except TimeoutError as exc:
+            last_error = LLMError(f"LLM request timed out: {exc}")
             retryable = True
         except json.JSONDecodeError as exc:
             last_error = LLMError(f"LLM returned invalid JSON: {exc}")
