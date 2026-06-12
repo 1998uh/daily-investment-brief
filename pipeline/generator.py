@@ -37,43 +37,44 @@ def extract_prev_watch_list(brief_date: date) -> str:
     return match.group(1).strip()
 
 
-def generate_brief(
-    articles: list[Article],
-    brief_date: date,
-    settings: Settings,
-    accounts_path: Path | None = None,
-) -> GenerationResult:
-    expected = expected_authors_from_accounts(accounts_path) if accounts_path else None
-    coverage = build_coverage(articles, expected)
-    if settings.has_llm:
-        try:
-            markdown = generate_with_llm(articles, coverage, brief_date, settings)
-            return GenerationResult(markdown=markdown, used_llm=True, model=settings.model)
-        except LLMError as exc:
-            markdown = generate_fallback(articles, coverage, brief_date, settings, note=str(exc))
-            return GenerationResult(markdown=markdown, used_llm=False, model="fallback")
-
-    markdown = generate_fallback(articles, coverage, brief_date, settings)
-    return GenerationResult(markdown=markdown, used_llm=False, model="fallback")
-
-
-def generate_with_llm(
+def build_direct_prompt(
     articles: list[Article],
     coverage: list[CoverageRow],
     brief_date: date,
     settings: Settings,
 ) -> str:
-    started_at = time.perf_counter()
-    batch_prompt = read_template("batch_summary_prompt.md")
-    final_prompt = read_template("final_brief_prompt.md")
-
-    batches = chunked_by_author(articles, settings.batch_max_chars)
-    summaries = _summarize_batches(batches, settings, batch_prompt)
-    print(
-        f"[info] LLM batch summaries completed in {time.perf_counter() - started_at:.1f}s",
-        flush=True,
+    """生成可直接喂给任意外部模型的完整 prompt（无需分批提炼）。"""
+    direct_prompt = read_template("direct_brief_prompt.md")
+    coverage_json = json.dumps(coverage_to_dicts(coverage), ensure_ascii=False, indent=2)
+    articles_text = "\n\n".join(
+        format_article(a, settings.max_chars_per_article) for a in articles
+    )
+    window_start, window_end = brief_window(
+        brief_date,
+        timezone_name=settings.timezone,
+        start_time=settings.window_start,
+        end_time=settings.window_end,
+    )
+    return direct_prompt.format(
+        markets=settings.markets,
+        window_label=format_window_cn(window_start, window_end),
+        date_cn=format_date_cn(brief_date),
+        weekday_cn=WEEKDAY_CN[brief_date.weekday()],
+        session=_session_label(window_end),
+        coverage_json=coverage_json,
+        articles_text=articles_text,
+        prev_watch_list=extract_prev_watch_list(brief_date),
     )
 
+
+def synthesize_from_batches(
+    summaries: list[dict | str],
+    coverage: list[CoverageRow],
+    brief_date: date,
+    settings: Settings,
+) -> str:
+    """用已有批次 JSON 合成最终简报。可单独调用，不依赖文章输入。"""
+    final_prompt = read_template("final_brief_prompt.md")
     coverage_json = json.dumps(coverage_to_dicts(coverage), ensure_ascii=False, indent=2)
     summaries_json = json.dumps(summaries, ensure_ascii=False, indent=2)
     window_start, window_end = brief_window(
@@ -108,8 +109,56 @@ def generate_with_llm(
         f"[info] LLM final brief completed in {time.perf_counter() - final_started_at:.1f}s",
         flush=True,
     )
-    print(f"[info] LLM total generation time: {time.perf_counter() - started_at:.1f}s", flush=True)
     return enforce_report_header(markdown, brief_date, settings, coverage)
+
+
+def generate_brief(
+    articles: list[Article],
+    brief_date: date,
+    settings: Settings,
+    accounts_path: Path | None = None,
+    out_dir: Path | None = None,
+) -> GenerationResult:
+    expected = expected_authors_from_accounts(accounts_path) if accounts_path else None
+    coverage = build_coverage(articles, expected)
+    if settings.has_llm:
+        try:
+            markdown = generate_with_llm(articles, coverage, brief_date, settings, out_dir=out_dir)
+            return GenerationResult(markdown=markdown, used_llm=True, model=settings.model)
+        except LLMError as exc:
+            markdown = generate_fallback(articles, coverage, brief_date, settings, note=str(exc))
+            return GenerationResult(markdown=markdown, used_llm=False, model="fallback")
+
+    markdown = generate_fallback(articles, coverage, brief_date, settings)
+    return GenerationResult(markdown=markdown, used_llm=False, model="fallback")
+
+
+def generate_with_llm(
+    articles: list[Article],
+    coverage: list[CoverageRow],
+    brief_date: date,
+    settings: Settings,
+    out_dir: Path | None = None,
+) -> str:
+    started_at = time.perf_counter()
+    batch_prompt = read_template("batch_summary_prompt.md")
+
+    batches = chunked_by_author(articles, settings.batch_max_chars)
+    summaries = _summarize_batches(batches, settings, batch_prompt)
+    print(
+        f"[info] LLM batch summaries completed in {time.perf_counter() - started_at:.1f}s",
+        flush=True,
+    )
+
+    if out_dir is not None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        batches_path = out_dir / "batch-summaries.json"
+        batches_path.write_text(
+            json.dumps(summaries, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"[info] Batch summaries saved: {batches_path}", flush=True)
+
+    return synthesize_from_batches(summaries, coverage, brief_date, settings)
 
 
 def _summarize_batches(

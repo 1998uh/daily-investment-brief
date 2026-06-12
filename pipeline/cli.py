@@ -7,7 +7,7 @@ import sys
 
 from .config import ROOT, get_settings
 from .collectors.runner import collect_to_sources, collect_single_account
-from .generator import generate_brief
+from .generator import generate_brief, synthesize_from_batches, build_direct_prompt
 from .html import wrap_html
 from .ingest import load_articles
 
@@ -112,6 +112,21 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip HTML output.",
     )
+    generate.add_argument(
+        "--batches-only",
+        action="store_true",
+        help="Only run batch summarization and save batch-summaries.json. Skip final synthesis.",
+    )
+    generate.add_argument(
+        "--from-batches",
+        action="store_true",
+        help="Skip batch summarization. Read batch-summaries.json from out-dir and synthesize directly.",
+    )
+    generate.add_argument(
+        "--no-batches",
+        action="store_true",
+        help="Skip all LLM calls. Pack raw articles into a single prompt file for external models.",
+    )
     return parser
 
 
@@ -191,6 +206,8 @@ def collect_one_command(args: argparse.Namespace) -> int:
 
 
 def generate_command(args: argparse.Namespace) -> int:
+    import json as _json
+
     brief_date = date.fromisoformat(args.date)
     source_dir = Path(args.source_dir) if args.source_dir else ROOT / "sources" / args.date
     out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
@@ -201,27 +218,109 @@ def generate_command(args: argparse.Namespace) -> int:
         accounts_path = None
 
     settings = get_settings()
-    articles = load_articles(source_dir)
-    if not articles:
-        print(f"No Markdown or JSON articles found in {source_dir}", file=sys.stderr)
-        return 2
+    batches_only = getattr(args, "batches_only", False)
+    from_batches = getattr(args, "from_batches", False)
+    no_batches = getattr(args, "no_batches", False)
 
-    result = generate_brief(articles, brief_date, settings, accounts_path=accounts_path)
+    # ── 路径 D：--no-batches，打包原文 prompt，不调任何 LLM ─────────────────
+    if no_batches:
+        articles = load_articles(source_dir)
+        if not articles:
+            print(f"No articles found in {source_dir}", file=sys.stderr)
+            return 2
+
+        from .ingest import expected_authors_from_accounts, build_coverage
+        expected = expected_authors_from_accounts(accounts_path) if accounts_path else None
+        coverage = build_coverage(articles, expected)
+
+        prompt = build_direct_prompt(articles, coverage, brief_date, settings)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        prompt_path = out_dir / "prompt-for-external.md"
+        prompt_path.write_text(prompt, encoding="utf-8")
+
+        char_count = len(prompt)
+        print(f"Prompt saved: {prompt_path}")
+        print(f"Size: {char_count:,} chars (~{char_count // 4:,} tokens estimated)")
+        print(f"Articles: {len(articles)} | System prompt: 你是中文每日投资简报主编。")
+        print(f"Next: paste prompt-for-external.md into Claude / GPT / Gemini to generate the brief.")
+        return 0
+
+    # ── 路径 A：--from-batches，跳过提炼，直接从落盘 JSON 合成 ──────────────
+    if from_batches:
+        batches_path = out_dir / "batch-summaries.json"
+        if not batches_path.exists():
+            print(f"batch-summaries.json not found: {batches_path}", file=sys.stderr)
+            print("Run without --from-batches first to generate it.", file=sys.stderr)
+            return 2
+
+        summaries = _json.loads(batches_path.read_text(encoding="utf-8"))
+        articles = load_articles(source_dir)
+        from .ingest import expected_authors_from_accounts, build_coverage
+        expected = expected_authors_from_accounts(accounts_path) if accounts_path else None
+        coverage = build_coverage(articles, expected)
+
+        print(f"[info] Synthesizing from {batches_path} ({len(summaries)} batches)", flush=True)
+        markdown = synthesize_from_batches(summaries, coverage, brief_date, settings)
+        result_model = settings.model
+        used_llm = True
+
+    # ── 路径 B：--batches-only，只提炼落盘，不合成 ──────────────────────────
+    elif batches_only:
+        articles = load_articles(source_dir)
+        if not articles:
+            print(f"No articles found in {source_dir}", file=sys.stderr)
+            return 2
+
+        from .generator import chunked_by_author, _summarize_batches, read_template
+        import json as _json2
+
+        batch_prompt = read_template("batch_summary_prompt.md")
+        batches = chunked_by_author(articles, settings.batch_max_chars)
+        summaries = _summarize_batches(batches, settings, batch_prompt)
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+        batches_path = out_dir / "batch-summaries.json"
+        batches_path.write_text(
+            _json2.dumps(summaries, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"Batch summaries saved: {batches_path}")
+        print(f"Batches: {len(summaries)}")
+        print(f"Next step: synthesize with any model using final_brief_prompt.md + batch-summaries.json")
+        print(f"  or run: python -m pipeline.cli generate --date {args.date} --from-batches")
+        return 0
+
+    # ── 路径 C：默认全流程 ──────────────────────────────────────────────────
+    else:
+        articles = load_articles(source_dir)
+        if not articles:
+            print(f"No articles found in {source_dir}", file=sys.stderr)
+            return 2
+
+        result = generate_brief(
+            articles, brief_date, settings,
+            accounts_path=accounts_path,
+            out_dir=out_dir,
+        )
+        markdown = result.markdown
+        result_model = result.model
+        used_llm = result.used_llm
+
+    # ── 写出文件（路径 A / C 共用）────────────────────────────────────────
     out_dir.mkdir(parents=True, exist_ok=True)
-
     md_path = out_dir / "daily-brief.md"
-    md_path.write_text(result.markdown, encoding="utf-8")
+    md_path.write_text(markdown, encoding="utf-8")
 
-    if not args.markdown_only:
+    markdown_only = getattr(args, "markdown_only", False)
+    if not markdown_only:
         html_path = out_dir / "daily-brief.html"
-        html_path.write_text(wrap_html(result.markdown, "每日投资简报"), encoding="utf-8")
+        html_path.write_text(wrap_html(markdown, "每日投资简报"), encoding="utf-8")
     else:
         html_path = None
 
     print(f"Generated Markdown: {md_path}")
     if html_path:
         print(f"Generated HTML: {html_path}")
-    print(f"Mode: {'LLM' if result.used_llm else 'fallback'} ({result.model})")
+    print(f"Mode: {'LLM' if used_llm else 'fallback'} ({result_model})")
     return 0
 
 
