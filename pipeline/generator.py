@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 import json
+import re
 import textwrap
 import time
 
@@ -17,6 +18,23 @@ from .models import Article, CoverageRow, GenerationResult
 
 WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 REPORT_SOURCE_ORDER = ["雪球", "微博", "微信公众号"]
+
+
+def extract_prev_watch_list(brief_date: date) -> str:
+    """从上一期 daily-brief.md 中提取「下期关注」章节内容。"""
+    prev_date = brief_date - timedelta(days=1)
+    prev_path = ROOT / "reports" / prev_date.strftime("%Y-%m-%d") / "daily-brief.md"
+    if not prev_path.exists():
+        return ""
+    text = prev_path.read_text(encoding="utf-8")
+    match = re.search(
+        r"(?:##[^#\n]*下期关注[^\n]*\n)(.*?)(?=\n##|\Z)",
+        text,
+        re.DOTALL,
+    )
+    if not match:
+        return ""
+    return match.group(1).strip()
 
 
 def generate_brief(
@@ -49,7 +67,7 @@ def generate_with_llm(
     batch_prompt = read_template("batch_summary_prompt.md")
     final_prompt = read_template("final_brief_prompt.md")
 
-    batches = chunked(articles, settings.batch_size)
+    batches = chunked_by_author(articles, settings.batch_max_chars)
     summaries = _summarize_batches(batches, settings, batch_prompt)
     print(
         f"[info] LLM batch summaries completed in {time.perf_counter() - started_at:.1f}s",
@@ -72,6 +90,7 @@ def generate_with_llm(
         coverage_json=coverage_json,
         batch_summaries_json=summaries_json,
         session=_session_label(window_end),
+        prev_watch_list=extract_prev_watch_list(brief_date),
     )
 
     print(f"[info] LLM final brief: {len(summaries)} batch summaries", flush=True)
@@ -371,6 +390,53 @@ def ordered_coverage(coverage: list[CoverageRow]) -> list[CoverageRow]:
 def chunked(items: list[Article], size: int) -> list[list[Article]]:
     size = max(1, size)
     return [items[index : index + size] for index in range(0, len(items), size)]
+
+
+def chunked_by_author(articles: list[Article], max_chars: int) -> list[list[Article]]:
+    """按博主分组后，将小博主合并成不超过 max_chars 的批次。
+
+    同一博主的所有文章保证在同一批次，让 LLM 能看到完整的逻辑链。
+    发帖量大的博主若单人就超过 max_chars，单独成一批（不做截断，由
+    format_article 内部处理单篇截断）。
+    """
+    from collections import defaultdict
+
+    # 按博主聚合，保留原始顺序中首次出现的顺序
+    author_order: list[str] = []
+    by_author: dict[str, list[Article]] = defaultdict(list)
+    for article in articles:
+        key = (article.source, article.author)
+        if key not in by_author:
+            author_order.append(key)
+        by_author[key].append(article)
+
+    def author_chars(key: tuple[str, str]) -> int:
+        return sum(len(a.content) for a in by_author[key])
+
+    batches: list[list[Article]] = []
+    current: list[Article] = []
+    current_chars = 0
+
+    for key in author_order:
+        group = by_author[key]
+        group_chars = author_chars(key)
+        # 若当前批次已有内容且加入此博主会超限，先提交当前批次
+        if current and current_chars + group_chars > max_chars:
+            batches.append(current)
+            current = []
+            current_chars = 0
+        current.extend(group)
+        current_chars += group_chars
+        # 单博主本身超限，立即提交（单独成批）
+        if current_chars >= max_chars:
+            batches.append(current)
+            current = []
+            current_chars = 0
+
+    if current:
+        batches.append(current)
+
+    return batches
 
 
 def group_articles(articles: list[Article]) -> dict[str, list[Article]]:

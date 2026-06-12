@@ -38,6 +38,7 @@ class Settings:
     style: str
     max_chars_per_article: int
     batch_size: int
+    batch_max_chars: int
     llm_batch_concurrency: int
     temperature: float
     llm_thinking_type: str | None = None
@@ -64,6 +65,7 @@ def get_settings() -> Settings:
         style=os.getenv("BRIEF_STYLE", "strong_narrative_emoji"),
         max_chars_per_article=_env_int("BRIEF_MAX_CHARS_PER_ARTICLE", 6000, min_value=500),
         batch_size=_env_int("BRIEF_BATCH_SIZE", 8, min_value=1),
+        batch_max_chars=_env_int("BRIEF_BATCH_MAX_CHARS", 15000, min_value=1000),
         llm_batch_concurrency=_env_int("BRIEF_LLM_BATCH_CONCURRENCY", 3, min_value=1),
         temperature=_env_float("BRIEF_TEMPERATURE", 0.2, min_value=0),
         llm_thinking_type=_env_choice("BRIEF_LLM_THINKING", {"disabled", "enabled"}),

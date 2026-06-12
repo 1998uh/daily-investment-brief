@@ -97,7 +97,7 @@ daily-brief collect-one --name "诸葛孔暗" --date 2026-06-09 --verbose
 ### 生成简报
 
 ```powershell
-daily-brief generate --date 2026-06-11
+daily-brief generate --date 2026-06-12
 ```
 
 采集 + 生成一步完成：
