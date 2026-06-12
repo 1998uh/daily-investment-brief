@@ -100,6 +100,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Source directory. Defaults to sources/<date>.",
     )
     generate.add_argument(
+        "--accounts",
+        help="Account config JSON for coverage stats. Defaults to config/accounts.json.",
+    )
+    generate.add_argument(
         "--out-dir",
         help="Output directory. Defaults to reports/<date>.",
     )
@@ -145,6 +149,7 @@ def collect_command(args: argparse.Namespace) -> int:
             date=args.date,
             source_dir=str(out_dir),
             out_dir=None,
+            accounts=str(accounts_path),
             markdown_only=args.markdown_only,
         )
         return generate_command(generate_args)
@@ -190,13 +195,18 @@ def generate_command(args: argparse.Namespace) -> int:
     source_dir = Path(args.source_dir) if args.source_dir else ROOT / "sources" / args.date
     out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
 
+    accounts_arg = getattr(args, "accounts", None)
+    accounts_path = Path(accounts_arg) if accounts_arg else default_accounts_path()
+    if not accounts_path.exists():
+        accounts_path = None
+
     settings = get_settings()
     articles = load_articles(source_dir)
     if not articles:
         print(f"No Markdown or JSON articles found in {source_dir}", file=sys.stderr)
         return 2
 
-    result = generate_brief(articles, brief_date, settings)
+    result = generate_brief(articles, brief_date, settings, accounts_path=accounts_path)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     md_path = out_dir / "daily-brief.md"

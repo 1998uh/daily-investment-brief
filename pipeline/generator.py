@@ -3,13 +3,14 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from datetime import date, datetime
+from pathlib import Path
 import json
 import textwrap
 import time
 
 from .config import ROOT, Settings
 from .datetime_utils import brief_window, format_window_cn
-from .ingest import build_coverage
+from .ingest import build_coverage, expected_authors_from_accounts
 from .llm import LLMError, chat_completion
 from .models import Article, CoverageRow, GenerationResult
 
@@ -18,8 +19,14 @@ WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周�
 REPORT_SOURCE_ORDER = ["雪球", "微博", "微信公众号"]
 
 
-def generate_brief(articles: list[Article], brief_date: date, settings: Settings) -> GenerationResult:
-    coverage = build_coverage(articles)
+def generate_brief(
+    articles: list[Article],
+    brief_date: date,
+    settings: Settings,
+    accounts_path: Path | None = None,
+) -> GenerationResult:
+    expected = expected_authors_from_accounts(accounts_path) if accounts_path else None
+    coverage = build_coverage(articles, expected)
     if settings.has_llm:
         try:
             markdown = generate_with_llm(articles, coverage, brief_date, settings)
@@ -169,6 +176,7 @@ def generate_fallback(
         sections.append(f"## {section_name}\n\n" + "\n".join(bullets))
 
     coverage_table = render_coverage_table(coverage)
+    next_focus = render_next_focus(articles, coverage)
     authors = "、".join(
         article.display_author for article in articles if article.display_author != "未知作者"
     )
@@ -205,7 +213,7 @@ def generate_fallback(
 
 **已覆盖作者**：{authors or "暂无"}
 
-## 🎯 本期核心矛盾与下期关注
+## 🎯 本期核心矛盾
 
 ```text
                          本期文章观点池
@@ -217,19 +225,9 @@ def generate_fallback(
                └───────────────┼───────────────┘
                                │
                         多空观点碰撞
-                               │
-                 ┌─────────────┴─────────────┐
-                 │                           │
-             下期验证变量                组合风险提示
 ```
 
-### 📌 下期五大关注
-
-1. A 股与港股核心指数能否延续当前方向。
-2. 科技成长与红利资源之间的风格切换。
-3. 港股流动性、南向资金和互联网权重表现。
-4. 资源品价格、库存和产业链利润传导。
-5. 样本作者中缺失声音是否改变主线判断。
+{next_focus}
 
 ---
 
@@ -282,6 +280,8 @@ def coverage_to_dicts(coverage: list[CoverageRow]) -> list[dict]:
             "authors_total": row.authors_total,
             "articles_total": row.articles_total,
             "authors": row.authors,
+            "expected_authors": row.expected_authors,
+            "missing_authors": row.missing_authors,
         }
         for row in coverage
     ]
@@ -419,11 +419,46 @@ def shorten(text: str, max_len: int) -> str:
 
 
 def render_coverage_table(coverage: list[CoverageRow]) -> str:
-    lines = ["| 来源 | 作者/账号 | 文章数 | 已覆盖作者 |", "|---|---:|---:|---|"]
+    lines = ["| 来源 | 已覆盖/配置 | 文章数 | 静默账号 |", "|---|---:|---:|---|"]
     for row in coverage:
-        authors = "、".join(row.authors) if row.authors else "-"
-        lines.append(f"| {row.source} | {row.authors_total} | {row.articles_total} | {authors} |")
+        if row.expected_authors:
+            cover = f"{row.authors_total}/{row.expected_authors}"
+        else:
+            cover = str(row.authors_total)
+        missing = "、".join(row.missing_authors) if row.missing_authors else "-"
+        lines.append(f"| {row.source} | {cover} | {row.articles_total} | {missing} |")
     return "\n".join(lines)
+
+
+def render_next_focus(articles: list[Article], coverage: list[CoverageRow]) -> str:
+    """fallback 版「下期关注」：从覆盖与高频板块机械生成，无 LLM 依赖。"""
+    points: list[str] = []
+
+    # 1. 静默账号：缺失声音可能改变主线
+    silent = [name for row in coverage for name in row.missing_authors]
+    if silent:
+        sample = "、".join(silent[:5])
+        suffix = " 等" if len(silent) > 5 else ""
+        points.append(
+            f"静默账号是否回归并改变主线判断：本期 {sample}{suffix} 未产出内容。"
+        )
+
+    # 2. 高频板块：复用 group_articles 的关键词命中分布
+    grouped = group_articles(articles)
+    ranked = sorted(
+        ((name, items) for name, items in grouped.items() if items),
+        key=lambda kv: len(kv[1]),
+        reverse=True,
+    )
+    for name, items in ranked[:3]:
+        clean_name = name.split(" ", 1)[-1] if " " in name else name
+        points.append(f"{clean_name}方向能否延续（本期 {len(items)} 篇相关讨论）的后续验证。")
+
+    if not points:
+        points.append("样本作者整体方向是否在下一交易日得到验证。")
+
+    numbered = "\n".join(f"{i}. {p}" for i, p in enumerate(points[:5], start=1))
+    return "## 🎯 下期关注\n\n" + numbered
 
 
 def format_date_cn(value: date) -> str:

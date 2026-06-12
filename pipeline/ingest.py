@@ -142,7 +142,17 @@ def dedupe_articles(articles: list[Article]) -> list[Article]:
     return unique
 
 
-def build_coverage(articles: list[Article]) -> list[CoverageRow]:
+def build_coverage(
+    articles: list[Article],
+    expected: dict[str, list[str]] | None = None,
+) -> list[CoverageRow]:
+    """统计各来源的覆盖情况。
+
+    expected: 各来源配置的（enabled）作者/账号名清单。提供时会额外计算
+    expected_authors（配置数）与 missing_authors（配置了但当天 0 产出的账号）。
+    不提供时退化为仅统计实际采集到的文章，行为与旧版一致。
+    """
+    expected = expected or {}
     authors_by_source: dict[str, set[str]] = defaultdict(set)
     count_by_source: dict[str, int] = defaultdict(int)
 
@@ -150,27 +160,41 @@ def build_coverage(articles: list[Article]) -> list[CoverageRow]:
         count_by_source[article.source] += 1
         authors_by_source[article.source].add(article.display_author)
 
-    rows: list[CoverageRow] = []
-    for source in ["雪球", "微信公众号", "微博"]:
+    def _make_row(source: str) -> CoverageRow:
         authors = sorted(authors_by_source.get(source, set()))
-        rows.append(
-            CoverageRow(
-                source=source,
-                authors_total=len(authors),
-                articles_total=count_by_source.get(source, 0),
-                authors=authors,
-            )
+        expected_names = expected.get(source, [])
+        covered = set(authors)
+        missing = [name for name in expected_names if name not in covered]
+        return CoverageRow(
+            source=source,
+            authors_total=len(authors),
+            articles_total=count_by_source.get(source, 0),
+            authors=authors,
+            expected_authors=len(expected_names),
+            missing_authors=missing,
         )
 
-    for source in sorted(set(count_by_source) - {"雪球", "微信公众号", "微博"}):
-        authors = sorted(authors_by_source[source])
-        rows.append(
-            CoverageRow(
-                source=source,
-                authors_total=len(authors),
-                articles_total=count_by_source[source],
-                authors=authors,
-            )
-        )
+    known = ["雪球", "微信公众号", "微博"]
+    rows: list[CoverageRow] = [_make_row(source) for source in known]
+
+    extra_sources = (set(count_by_source) | set(expected)) - set(known)
+    for source in sorted(extra_sources):
+        rows.append(_make_row(source))
 
     return rows
+
+
+def expected_authors_from_accounts(accounts_path: Path) -> dict[str, list[str]]:
+    """从 accounts.json 读取各来源配置且 enabled 的账号名清单。"""
+    from .collectors.accounts import load_accounts
+
+    if not accounts_path or not accounts_path.exists():
+        return {}
+
+    expected: dict[str, list[str]] = defaultdict(list)
+    for account in load_accounts(accounts_path):
+        if not account.enabled:
+            continue
+        if account.name not in expected[account.source]:
+            expected[account.source].append(account.name)
+    return dict(expected)

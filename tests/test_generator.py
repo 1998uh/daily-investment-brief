@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import date
 from pathlib import Path
+import tempfile
 import threading
 import time
 import unittest
@@ -10,6 +11,7 @@ from unittest.mock import patch
 
 from pipeline.config import Settings
 import pipeline.generator as generator
+from pipeline.ingest import build_coverage, expected_authors_from_accounts
 from pipeline.models import Article
 
 
@@ -35,16 +37,76 @@ def make_settings(*, concurrency: int) -> Settings:
     )
 
 
-def make_article(index: int) -> Article:
+def make_article(index: int, *, source: str = "雪球", author: str | None = None) -> Article:
     return Article(
         path=Path(f"article-{index}.md"),
-        source="雪球",
-        author=f"author-{index}",
+        source=source,
+        author=author if author is not None else f"author-{index}",
         title=f"title-{index}",
         url=f"https://example.com/{index}",
         published_at="2026-06-10 08:00",
         content=f"content for article {index}",
     )
+
+
+class CoverageTests(unittest.TestCase):
+    def test_build_coverage_without_expected_is_backward_compatible(self) -> None:
+        rows = build_coverage([make_article(1, source="雪球", author="甲")])
+        xq = next(r for r in rows if r.source == "雪球")
+        self.assertEqual(xq.articles_total, 1)
+        self.assertEqual(xq.authors_total, 1)
+        self.assertEqual(xq.expected_authors, 0)
+        self.assertEqual(xq.missing_authors, [])
+
+    def test_build_coverage_with_expected_marks_missing(self) -> None:
+        expected = {"雪球": ["甲", "乙", "丙"], "微博": ["丁"]}
+        rows = build_coverage(
+            [make_article(1, source="雪球", author="甲")],
+            expected,
+        )
+        xq = next(r for r in rows if r.source == "雪球")
+        self.assertEqual(xq.expected_authors, 3)
+        self.assertEqual(xq.authors_total, 1)
+        self.assertEqual(sorted(xq.missing_authors), ["丙", "乙"])
+
+        wb = next(r for r in rows if r.source == "微博")
+        self.assertEqual(wb.articles_total, 0)
+        self.assertEqual(wb.expected_authors, 1)
+        self.assertEqual(wb.missing_authors, ["丁"])
+
+    def test_expected_authors_from_accounts_skips_disabled(self) -> None:
+        config = {
+            "xueqiu": [
+                {"name": "甲", "enabled": True},
+                {"name": "乙", "enabled": False},
+            ],
+            "weibo": [{"name": "丙", "enabled": True}],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "accounts.json"
+            path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
+            expected = expected_authors_from_accounts(path)
+        self.assertEqual(expected.get("雪球"), ["甲"])
+        self.assertEqual(expected.get("微博"), ["丙"])
+
+
+class FallbackRenderTests(unittest.TestCase):
+    def _settings_no_llm(self) -> Settings:
+        s = make_settings(concurrency=1)
+        return Settings(**{**s.__dict__, "base_url": "", "model": "", "api_key": ""})
+
+    def test_fallback_contains_next_focus_and_coverage_columns(self) -> None:
+        import datetime as _dt
+
+        articles = [make_article(i, source="雪球", author=f"作者{i}") for i in range(3)]
+        coverage = build_coverage(articles, {"雪球": ["作者0", "作者1", "作者X"]})
+        markdown = generator.generate_fallback(
+            articles, coverage, _dt.date(2026, 6, 11), self._settings_no_llm()
+        )
+        self.assertIn("🎯 下期关注", markdown)
+        self.assertIn("已覆盖/配置", markdown)
+        # 静默账号 作者X 应出现在覆盖表的静默账号列
+        self.assertIn("作者X", markdown)
 
 
 class SummarizeBatchesTests(unittest.TestCase):
