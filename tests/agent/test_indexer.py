@@ -55,3 +55,24 @@ def test_incremental_update(indexer, tmp_path):
     indexer.update(sources_root=tmp_path / "sources", date_str="2026-06-13")
     after = indexer.stats()["total_docs"]
     assert after > before
+
+
+def test_search_empty_collection(indexer):
+    # Don't call build() — collection is empty
+    results = indexer.search("美光", top_k=5)
+    assert results == []
+
+
+def test_search_top_k_larger_than_collection(indexer):
+    indexer.build(sources_root=FIXTURES, reports_root=FIXTURES / "reports")
+    count = indexer.stats()["total_docs"]
+    # Request more results than exist
+    results = indexer.search("美光", top_k=count + 100)
+    assert len(results) <= count
+
+
+def test_search_result_score_is_float(indexer):
+    indexer.build(sources_root=FIXTURES, reports_root=FIXTURES / "reports")
+    results = indexer.search("美光", top_k=1)
+    assert len(results) >= 1
+    assert isinstance(results[0].score, float)

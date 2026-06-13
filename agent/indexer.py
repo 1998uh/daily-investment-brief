@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+_log = logging.getLogger(__name__)
 
 import chromadb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -52,7 +55,7 @@ class ArticleIndexer:
         chroma_path.mkdir(parents=True, exist_ok=True)
         self._client = chromadb.PersistentClient(path=str(chroma_path))
         if use_local_embeddings:
-            local_model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+            local_model = embedding_model if embedding_model != "text-embedding-3-small" else "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
             ef = _get_embedder(local_model, use_local=True)
         else:
             ef = _get_embedder(embedding_model, use_local=False, api_key=llm_api_key, base_url=llm_base_url)
@@ -70,7 +73,8 @@ class ArticleIndexer:
     def _index_file(self, path: Path, doc_type: str) -> None:
         try:
             article = load_markdown(path)
-        except Exception:
+        except Exception as exc:
+            _log.warning("Skipping %s: %s", path, exc)
             return
         if not article.content.strip():
             return
@@ -136,7 +140,11 @@ class ArticleIndexer:
         elif len(conditions) > 1:
             where = {"$and": conditions}
 
-        kwargs: dict = {"query_texts": [query], "n_results": top_k}
+        actual_top_k = min(top_k, self._col.count())
+        if actual_top_k == 0:
+            return []
+
+        kwargs: dict = {"query_texts": [query], "n_results": actual_top_k}
         if where:
             kwargs["where"] = where
 
