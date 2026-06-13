@@ -105,14 +105,13 @@ export const user = {
 - 输入框 focus 边框改蓝色
 - 提交按钮改 `#58a6ff` 背景 + 白色文字
 
-### `app/chat/layout.tsx` — 侧边栏
+### `app/chat/layout.tsx` — 侧边栏 + 右侧面板
 - 侧边栏宽度固定 `260px`，背景 `#161b22`，右边框 `#30363d`
 - 顶部：logo 图标 + "Investment Agent" 文字 + "新对话" 按钮（蓝色，右对齐）
 - 会话列表：当前会话左边蓝色 2px 竖线 + `bg.tertiary` 背景高亮；其余灰色文字，hover 淡显
 - **底部用户区块**：头像（灰色圆形）+ 用户名，点击跳转 `/profile`
-- 移除现有 `WatchlistPanel`（右侧面板），简化为标准双栏布局（自选股功能保留在 memory 页）
-
-> 注：`WatchlistPanel` 组件本身保留，仅从 layout 移除——自选股/交易记录通过 `/memory/*` 页面访问。
+- **保留右侧 `WatchlistPanel`**，同步 B 主题色（背景 `#161b22`，边框 `#30363d`，强调色改蓝色）
+- 整体三栏布局：左侧会话列表（260px）+ 中间聊天区（flex-1）+ 右侧自选股面板（固定宽度）
 
 ### `app/chat/[sessionId]/page.tsx`
 - 修复 Bug（见上）
@@ -149,13 +148,14 @@ export const user = {
 | `frontend/tailwind.config.js` | 修改 color tokens |
 | `frontend/app/globals.css` | 同步背景色、滚动条色 |
 | `frontend/app/login/page.tsx` | 修改主题色 |
-| `frontend/app/chat/layout.tsx` | 重写侧边栏，移除 WatchlistPanel，加用户入口 |
+| `frontend/app/chat/layout.tsx` | 重写侧边栏，保留 WatchlistPanel（同步主题），加用户入口 |
 | `frontend/app/chat/[sessionId]/page.tsx` | 修复 Bug + 消息样式更新 |
 | `frontend/app/chat/new/page.tsx` | 同步主题色 |
 | `frontend/app/memory/trades/page.tsx` | 同步主题色 |
 | `frontend/app/memory/events/page.tsx` | 同步主题色 |
 | `frontend/app/profile/page.tsx` | **新建** |
 | `frontend/lib/api.ts` | 新增 `user.me()` 和 `user.logout()` |
+| `frontend/components/WatchlistPanel.tsx` | 同步 B 主题色 |
 | `agent/routers/auth.py` | 新增 `GET /api/auth/me` + `POST /api/auth/logout` |
 
 ---
