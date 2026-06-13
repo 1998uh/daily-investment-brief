@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,14 @@ import aiosqlite
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+@asynccontextmanager
+async def _connect(db_path: Path):
+    async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        await db.execute("PRAGMA foreign_keys=ON")
+        yield db
 
 
 async def init_db(db_path: Path) -> None:
@@ -86,8 +95,7 @@ def _row_to_dict(row: aiosqlite.Row) -> dict[str, Any]:
 async def create_user(db_path: Path, username: str, email: str | None, password_hash: str) -> dict:
     uid = str(uuid.uuid4())
     now = _now()
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         await db.execute(
             "INSERT INTO users (id, username, email, password_hash, created_at) VALUES (?,?,?,?,?)",
             (uid, username, email, password_hash, now),
@@ -98,16 +106,14 @@ async def create_user(db_path: Path, username: str, email: str | None, password_
 
 
 async def get_user_by_username(db_path: Path, username: str) -> dict | None:
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         async with db.execute("SELECT * FROM users WHERE username=?", (username,)) as cur:
             row = await cur.fetchone()
             return _row_to_dict(row) if row else None
 
 
 async def get_user_by_id(db_path: Path, user_id: str) -> dict | None:
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         async with db.execute("SELECT * FROM users WHERE id=?", (user_id,)) as cur:
             row = await cur.fetchone()
             return _row_to_dict(row) if row else None
@@ -116,8 +122,7 @@ async def get_user_by_id(db_path: Path, user_id: str) -> dict | None:
 async def create_session(db_path: Path, user_id: str, title: str | None = None) -> dict:
     sid = str(uuid.uuid4())
     now = _now()
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         await db.execute(
             "INSERT INTO sessions (id, user_id, title, created_at, updated_at) VALUES (?,?,?,?,?)",
             (sid, user_id, title, now, now),
@@ -128,8 +133,7 @@ async def create_session(db_path: Path, user_id: str, title: str | None = None) 
 
 
 async def list_sessions(db_path: Path, user_id: str) -> list[dict]:
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         async with db.execute(
             "SELECT * FROM sessions WHERE user_id=? ORDER BY updated_at DESC",
             (user_id,),
@@ -138,17 +142,18 @@ async def list_sessions(db_path: Path, user_id: str) -> list[dict]:
 
 
 async def rename_session(db_path: Path, session_id: str, user_id: str, title: str) -> None:
-    async with aiosqlite.connect(db_path) as db:
-        await db.execute(
+    async with _connect(db_path) as db:
+        cur = await db.execute(
             "UPDATE sessions SET title=?, updated_at=? WHERE id=? AND user_id=?",
             (title, _now(), session_id, user_id),
         )
         await db.commit()
+        if cur.rowcount == 0:
+            raise LookupError(f"session {session_id!r} not found for user {user_id!r}")
 
 
 async def delete_session(db_path: Path, session_id: str, user_id: str) -> None:
-    async with aiosqlite.connect(db_path) as db:
-        await db.execute("PRAGMA foreign_keys=ON")
+    async with _connect(db_path) as db:
         await db.execute(
             "DELETE FROM sessions WHERE id=? AND user_id=?",
             (session_id, user_id),
@@ -159,6 +164,7 @@ async def delete_session(db_path: Path, session_id: str, user_id: str) -> None:
 async def append_message(
     db_path: Path,
     session_id: str,
+    user_id: str,
     role: str,
     content: str,
     agent: str | None,
@@ -166,15 +172,17 @@ async def append_message(
 ) -> dict:
     now = _now()
     sources_json = json.dumps(sources, ensure_ascii=False) if sources is not None else None
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
+        async with db.execute(
+            "SELECT id FROM sessions WHERE id=? AND user_id=?", (session_id, user_id)
+        ) as cur:
+            if await cur.fetchone() is None:
+                raise LookupError(f"session {session_id!r} not found for user {user_id!r}")
         cur = await db.execute(
             "INSERT INTO messages (session_id, role, agent, content, sources, created_at) VALUES (?,?,?,?,?,?)",
             (session_id, role, agent, content, sources_json, now),
         )
-        await db.execute(
-            "UPDATE sessions SET updated_at=? WHERE id=?", (now, session_id)
-        )
+        await db.execute("UPDATE sessions SET updated_at=? WHERE id=?", (now, session_id))
         await db.commit()
         async with db.execute("SELECT * FROM messages WHERE id=?", (cur.lastrowid,)) as c:
             row = _row_to_dict(await c.fetchone())
@@ -182,11 +190,14 @@ async def append_message(
     return row
 
 
-async def get_messages(db_path: Path, session_id: str) -> list[dict]:
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+async def get_messages(db_path: Path, session_id: str, user_id: str) -> list[dict]:
+    async with _connect(db_path) as db:
         async with db.execute(
-            "SELECT * FROM messages WHERE session_id=? ORDER BY id ASC", (session_id,)
+            """SELECT m.* FROM messages m
+               JOIN sessions s ON s.id = m.session_id
+               WHERE m.session_id=? AND s.user_id=?
+               ORDER BY m.id ASC""",
+            (session_id, user_id),
         ) as cur:
             rows = [_row_to_dict(r) for r in await cur.fetchall()]
     for r in rows:
@@ -195,7 +206,7 @@ async def get_messages(db_path: Path, session_id: str) -> list[dict]:
 
 
 async def add_watch(db_path: Path, user_id: str, symbol: str, note: str | None) -> None:
-    async with aiosqlite.connect(db_path) as db:
+    async with _connect(db_path) as db:
         await db.execute(
             "INSERT OR REPLACE INTO watchlist (user_id, symbol, note, added_at) VALUES (?,?,?,?)",
             (user_id, symbol.upper(), note, _now()),
@@ -204,7 +215,7 @@ async def add_watch(db_path: Path, user_id: str, symbol: str, note: str | None) 
 
 
 async def remove_watch(db_path: Path, user_id: str, symbol: str) -> None:
-    async with aiosqlite.connect(db_path) as db:
+    async with _connect(db_path) as db:
         await db.execute(
             "DELETE FROM watchlist WHERE user_id=? AND symbol=?",
             (user_id, symbol.upper()),
@@ -213,8 +224,7 @@ async def remove_watch(db_path: Path, user_id: str, symbol: str) -> None:
 
 
 async def get_watchlist(db_path: Path, user_id: str) -> list[dict]:
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         async with db.execute(
             "SELECT * FROM watchlist WHERE user_id=? ORDER BY added_at DESC", (user_id,)
         ) as cur:
@@ -231,8 +241,7 @@ async def log_trade(
     trade_date: str | None,
     note: str | None,
 ) -> dict:
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         cur = await db.execute(
             "INSERT INTO trades (user_id, symbol, action, price, quantity, trade_date, note, created_at) VALUES (?,?,?,?,?,?,?,?)",
             (user_id, symbol.upper(), action, price, quantity, trade_date, note, _now()),
@@ -261,14 +270,13 @@ async def get_trades(
         query += " AND trade_date<=?"
         params.append(to_date)
     query += " ORDER BY trade_date DESC, id DESC"
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         async with db.execute(query, params) as cur:
             return [_row_to_dict(r) for r in await cur.fetchall()]
 
 
 async def delete_trade(db_path: Path, trade_id: int, user_id: str) -> None:
-    async with aiosqlite.connect(db_path) as db:
+    async with _connect(db_path) as db:
         await db.execute("DELETE FROM trades WHERE id=? AND user_id=?", (trade_id, user_id))
         await db.commit()
 
@@ -281,9 +289,8 @@ async def log_event(
     event_date: str | None,
     tags: list[str] | None,
 ) -> dict:
-    tags_json = json.dumps(tags, ensure_ascii=False) if tags else None
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    tags_json = json.dumps(tags, ensure_ascii=False) if tags is not None else None
+    async with _connect(db_path) as db:
         cur = await db.execute(
             "INSERT INTO events (user_id, title, content, event_date, tags, created_at) VALUES (?,?,?,?,?,?)",
             (user_id, title, content, event_date, tags_json, _now()),
@@ -310,8 +317,7 @@ async def get_events(
         query += " AND event_date<=?"
         params.append(to_date)
     query += " ORDER BY event_date DESC, id DESC"
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+    async with _connect(db_path) as db:
         async with db.execute(query, params) as cur:
             rows = [_row_to_dict(r) for r in await cur.fetchall()]
     for r in rows:
@@ -320,6 +326,6 @@ async def get_events(
 
 
 async def delete_event(db_path: Path, event_id: int, user_id: str) -> None:
-    async with aiosqlite.connect(db_path) as db:
+    async with _connect(db_path) as db:
         await db.execute("DELETE FROM events WHERE id=? AND user_id=?", (event_id, user_id))
         await db.commit()

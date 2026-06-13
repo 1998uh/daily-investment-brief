@@ -41,9 +41,9 @@ async def test_create_and_list_sessions(db_path):
 async def test_append_and_get_messages(db_path):
     user = await create_user(db_path, "carol", None, "pw")
     session = await create_session(db_path, user["id"])
-    await append_message(db_path, session["id"], "user", "hello", agent=None, sources=None)
-    await append_message(db_path, session["id"], "assistant", "world", agent="orchestrator", sources=[{"title": "t"}])
-    msgs = await get_messages(db_path, session["id"])
+    await append_message(db_path, session["id"], user["id"], "user", "hello", agent=None, sources=None)
+    await append_message(db_path, session["id"], user["id"], "assistant", "world", agent="orchestrator", sources=[{"title": "t"}])
+    msgs = await get_messages(db_path, session["id"], user["id"])
     assert len(msgs) == 2
     assert msgs[1]["sources"] == [{"title": "t"}]
 
@@ -52,9 +52,9 @@ async def test_append_and_get_messages(db_path):
 async def test_delete_session_cascades_messages(db_path):
     user = await create_user(db_path, "dave", None, "pw")
     session = await create_session(db_path, user["id"])
-    await append_message(db_path, session["id"], "user", "hi", None, None)
+    await append_message(db_path, session["id"], user["id"], "user", "hi", None, None)
     await delete_session(db_path, session["id"], user["id"])
-    msgs = await get_messages(db_path, session["id"])
+    msgs = await get_messages(db_path, session["id"], user["id"])
     assert msgs == []
 
 
