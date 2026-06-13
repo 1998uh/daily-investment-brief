@@ -9,6 +9,7 @@ from agent.config import get_agent_settings
 from agent.db import init_db
 from agent.dependencies import get_current_user  # re-export for other modules
 from agent.routers import auth as auth_router
+from agent.routers import sessions as sessions_router
 
 
 @asynccontextmanager
@@ -30,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router.router)
+app.include_router(sessions_router.router)
 
 
 @app.get("/api/health")
