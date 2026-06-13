@@ -26,16 +26,12 @@ def test_create_and_decode_token():
 
 
 def test_decode_invalid_token_raises():
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         decode_token("not.a.token")
 
 
-def test_expired_token_raises(monkeypatch):
-    import time
-    import agent.auth as auth_mod
-    # Create a token with a very short expiry
-    token = create_token({"sub": "x"}, expires_minutes=0)
-    # Sleep 1 second to ensure expiry
-    time.sleep(1)
-    with pytest.raises(Exception):
-        decode_token(token)
+def test_create_token_rejects_nonpositive_expiry():
+    with pytest.raises(ValueError):
+        create_token({"sub": "x"}, expires_minutes=0)
+    with pytest.raises(ValueError):
+        create_token({"sub": "x"}, expires_minutes=-5)

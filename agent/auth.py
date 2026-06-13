@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets as _secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -10,6 +11,8 @@ from agent.config import get_agent_settings
 
 _DEFAULT_ALGORITHM = "HS256"
 _DEFAULT_EXPIRE_MINUTES = 10080  # 7 days
+
+_TEST_SECRET = _secrets.token_hex(32)  # ephemeral, different every process start
 
 
 def hash_password(plain: str) -> str:
@@ -26,8 +29,13 @@ def _get_secret_and_algo() -> tuple[str, str]:
         secret = settings.jwt_secret
         algorithm = settings.jwt_algorithm or _DEFAULT_ALGORITHM
     except Exception:
-        secret = "test-secret-key-not-for-production"
+        secret = ""
         algorithm = _DEFAULT_ALGORITHM
+    if not secret:
+        # No secret configured — use an ephemeral random secret.
+        # Tokens created with this will be invalid after restart.
+        # Set AGENT_JWT_SECRET in .env for production.
+        secret = _TEST_SECRET
     return secret, algorithm
 
 
@@ -39,6 +47,8 @@ def create_token(data: dict[str, Any], expires_minutes: int | None = None) -> st
             expires_minutes = settings.jwt_expire_minutes
         except Exception:
             expires_minutes = _DEFAULT_EXPIRE_MINUTES
+    if expires_minutes <= 0:
+        raise ValueError(f"expires_minutes must be positive, got {expires_minutes}")
     payload = dict(data)
     payload["exp"] = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     return jwt.encode(payload, secret, algorithm=algorithm)
