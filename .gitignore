@@ -12,3 +12,6 @@ config/accounts*.json
 sources/
 
 !reports/.gitkeep
+
+# Agent runtime data
+memory/
