@@ -16,3 +16,6 @@ sources/
 # Agent runtime data
 memory/
 !frontend/app/memory/
+
+# Docker test artifacts
+.env.docker.test

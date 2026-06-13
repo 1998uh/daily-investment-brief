@@ -1,0 +1,39 @@
+# Development
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Runtime data (mounted as volumes)
+memory/
+
+# Frontend (built separately)
+frontend/
+
+# Git
+.git/
+.gitignore
+
+# Docs
+docs/
+
+# Node
+node_modules/
+
+# Test
+tests/
+*.log
+
+# Unused in container build
+reports/
+scripts/
+config/
+skill/

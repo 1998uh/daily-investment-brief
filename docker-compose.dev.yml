@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: base
+    volumes:
+      # Override: mount source code for live reload
+      - ./agent:/app/agent:ro
+      - ./pipeline:/app/pipeline:ro
+      - ./memory:/data/memory
+      - ./sources:/data/sources:ro
+      - ./reports:/data/reports:ro
+    command: ["python", "-m", "uvicorn", "agent.main:app",
+              "--host", "0.0.0.0", "--port", "8080",
+              "--reload", "--reload-dir", "/app/agent"]
+
+  frontend:
+    # Skip standalone build in dev — use npm run dev instead (not Dockerized in dev)
+    profiles:
+      - skip_in_dev

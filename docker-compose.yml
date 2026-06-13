@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: investment-agent-backend:latest
+    container_name: investment-backend
+    restart: unless-stopped
+    environment:
+      # LLM settings — override with actual values in production
+      BRIEF_BASE_URL: ${BRIEF_BASE_URL:-}
+      BRIEF_MODEL: ${BRIEF_MODEL:-}
+      BRIEF_API_KEY: ${BRIEF_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      # Agent settings
+      AGENT_MEMORY_DIR: /data/memory
+      AGENT_DB_NAME: ${AGENT_DB_NAME:-agent.db}
+      AGENT_JWT_SECRET: ${AGENT_JWT_SECRET}
+      AGENT_JWT_ALGORITHM: ${AGENT_JWT_ALGORITHM:-HS256}
+      AGENT_JWT_EXPIRE_MINUTES: ${AGENT_JWT_EXPIRE_MINUTES:-1440}
+      AGENT_CHROMA_DIR: /data/memory/chroma
+      # Pipeline data — bind-mounted from host
+      AGENT_SOURCES_DIR: /data/sources
+      AGENT_REPORTS_DIR: /data/reports
+    volumes:
+      - memory_data:/data/memory
+      - ${SOURCES_DIR:-./sources}:/data/sources:ro
+      - ${REPORTS_DIR:-./reports}:/data/reports:ro
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - agent_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: investment-agent-frontend:latest
+    container_name: investment-frontend
+    restart: unless-stopped
+    environment:
+      API_BASE: http://backend:8080
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - agent_net
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+volumes:
+  memory_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MEMORY_DIR:-./memory}
+
+networks:
+  agent_net:
+    driver: bridge
