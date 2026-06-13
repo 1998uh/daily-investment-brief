@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #0a0a0a;
+  color: #e8e8e8;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #111111; }
+::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444444; }
+
+/* markdown 代码块 */
+.prose pre { background: #1a1a1a !important; border: 1px solid #2a2a2a; }
+.prose code { color: #f0a500; font-size: 0.875em; }
+.prose a { color: #3b82f6; }
+.prose table { border-collapse: collapse; }
+.prose th, .prose td { border: 1px solid #2a2a2a; padding: 0.5rem 0.75rem; }
+.prose th { background: #1a1a1a; }
