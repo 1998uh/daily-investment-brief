@@ -73,29 +73,28 @@ class ArticleIndexer:
     def _index_file(self, path: Path, doc_type: str) -> None:
         try:
             article = load_markdown(path)
+            if not article.content.strip():
+                return
+
+            chunks = self._splitter.split_text(article.content)
+            ids, docs, metas = [], [], []
+            base_id = _doc_id(path)
+            for i, chunk in enumerate(chunks):
+                ids.append(f"{base_id}_{i}")
+                docs.append(chunk)
+                metas.append({
+                    "doc_type": doc_type,
+                    "source": article.source or "",
+                    "author": article.author or "",
+                    "title": article.title or "",
+                    "url": article.url or "",
+                    "date": article.published_at[:10] if article.published_at else "",
+                    "file_path": str(path),
+                })
+            if ids:
+                self._col.upsert(ids=ids, documents=docs, metadatas=metas)
         except Exception as exc:
             _log.warning("Skipping %s: %s", path, exc)
-            return
-        if not article.content.strip():
-            return
-
-        chunks = self._splitter.split_text(article.content)
-        ids, docs, metas = [], [], []
-        base_id = _doc_id(path)
-        for i, chunk in enumerate(chunks):
-            ids.append(f"{base_id}_{i}")
-            docs.append(chunk)
-            metas.append({
-                "doc_type": doc_type,
-                "source": article.source or "",
-                "author": article.author or "",
-                "title": article.title or "",
-                "url": article.url or "",
-                "date": article.published_at[:10] if article.published_at else "",
-                "file_path": str(path),
-            })
-        if ids:
-            self._col.upsert(ids=ids, documents=docs, metadatas=metas)
 
     def build(self, sources_root: Path, reports_root: Path) -> None:
         sources_root = Path(sources_root)
