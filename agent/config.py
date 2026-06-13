@@ -11,6 +11,14 @@ def _env(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
 
 
+def _env_int(name: str, default: int) -> int:
+    raw = _env(name, str(default))
+    try:
+        return int(raw)
+    except ValueError:
+        raise ValueError(f"Environment variable {name}={raw!r} must be an integer")
+
+
 @dataclass(frozen=True)
 class AgentSettings:
     db_path: Path
@@ -37,9 +45,9 @@ def get_agent_settings() -> AgentSettings:
         reports_root=ROOT / _env("AGENT_REPORTS_DIR", "reports"),
         jwt_secret=_env("AGENT_JWT_SECRET", "change-me-in-production"),
         jwt_algorithm=_env("AGENT_JWT_ALGORITHM", "HS256"),
-        jwt_expire_minutes=int(_env("AGENT_JWT_EXPIRE_MINUTES", "10080")),  # 7 days
-        llm_base_url=_env("BRIEF_BASE_URL"),
-        llm_model=_env("BRIEF_MODEL"),
-        llm_api_key=_env("BRIEF_API_KEY"),
-        tavily_api_key=_env("TAVILY_API_KEY"),
+        jwt_expire_minutes=_env_int("AGENT_JWT_EXPIRE_MINUTES", 10080),  # 7 days
+        llm_base_url=_env("BRIEF_BASE_URL"),      # optional, may be empty during tests
+        llm_model=_env("BRIEF_MODEL"),            # optional, may be empty during tests
+        llm_api_key=_env("BRIEF_API_KEY"),        # optional, may be empty during tests
+        tavily_api_key=_env("TAVILY_API_KEY"),    # optional, may be empty during tests
     )
