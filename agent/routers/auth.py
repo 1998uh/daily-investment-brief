@@ -46,7 +46,8 @@ async def login(body: LoginRequest, request: Request, response: Response):
     cfg = _settings(request)
     user = await get_user_by_username(cfg.db_path, body.username)
     hash_to_check = user["password_hash"] if user else _DUMMY_HASH
-    if not user or not verify_password(body.password, hash_to_check):
+    password_ok = verify_password(body.password, hash_to_check)
+    if not user or not password_ok:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_token({"sub": user["id"]})
     response.set_cookie(
