@@ -64,3 +64,25 @@ async def test_health(app):
         r = await client.get("/api/health")
         assert r.status_code == 200
         assert r.json()["status"] == "ok"
+
+
+@pytest.mark.asyncio
+async def test_refresh_token(app):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        await client.post("/api/auth/register", json={"username": "dave", "password": "pw123456"})
+        login_r = await client.post("/api/auth/login", json={"username": "dave", "password": "pw123456"})
+        token = login_r.json()["access_token"]
+        # Call refresh using Bearer header
+        r = await client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 200
+        assert "access_token" in r.json()
+
+
+@pytest.mark.asyncio
+async def test_bearer_auth_works(app):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        await client.post("/api/auth/register", json={"username": "eve", "password": "pw123456"})
+        login_r = await client.post("/api/auth/login", json={"username": "eve", "password": "pw123456"})
+        token = login_r.json()["access_token"]
+        r = await client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 200
