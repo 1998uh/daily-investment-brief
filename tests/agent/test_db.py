@@ -6,10 +6,11 @@ import pytest_asyncio
 from pathlib import Path
 import aiosqlite
 
-from agent.db import init_db, create_user, get_user_by_username, create_session, \
-    list_sessions, append_message, get_messages, delete_session, \
+from agent.db import init_db, create_user, get_user_by_username, get_user_by_id, \
+    create_session, list_sessions, rename_session, append_message, get_messages, delete_session, \
     add_watch, remove_watch, get_watchlist, \
-    log_trade, get_trades, log_event, get_events
+    log_trade, get_trades, delete_trade, \
+    log_event, get_events, delete_event
 
 
 @pytest_asyncio.fixture
@@ -89,3 +90,40 @@ async def test_log_and_get_events(db_path):
     events = await get_events(db_path, user["id"])
     assert len(events) == 1
     assert events[0]["tags"] == ["macro", "fed"]
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_id(db_path):
+    user = await create_user(db_path, "henry", None, "pw")
+    fetched = await get_user_by_id(db_path, user["id"])
+    assert fetched is not None
+    assert fetched["username"] == "henry"
+    missing = await get_user_by_id(db_path, "nonexistent-id")
+    assert missing is None
+
+
+@pytest.mark.asyncio
+async def test_rename_session(db_path):
+    user = await create_user(db_path, "iris", None, "pw")
+    session = await create_session(db_path, user["id"], "Original Title")
+    await rename_session(db_path, session["id"], user["id"], "Renamed Title")
+    sessions = await list_sessions(db_path, user["id"])
+    assert sessions[0]["title"] == "Renamed Title"
+
+
+@pytest.mark.asyncio
+async def test_delete_trade(db_path):
+    user = await create_user(db_path, "jack", None, "pw")
+    trade = await log_trade(db_path, user["id"], "NVDA", "buy", 200.0, 50, "2026-06-12", None)
+    await delete_trade(db_path, trade["id"], user["id"])
+    trades = await get_trades(db_path, user["id"])
+    assert trades == []
+
+
+@pytest.mark.asyncio
+async def test_delete_event(db_path):
+    user = await create_user(db_path, "kate", None, "pw")
+    event = await log_event(db_path, user["id"], "Fed meeting", None, "2026-06-12", ["macro"])
+    await delete_event(db_path, event["id"], user["id"])
+    events = await get_events(db_path, user["id"])
+    assert events == []
