@@ -20,14 +20,8 @@ def main() -> None:
 
     if args.rebuild_index:
         print("[info] Building ChromaDB index from scratch...")
-        from agent.indexer import ArticleIndexer
-        use_local = not cfg.llm_api_key
-        indexer = ArticleIndexer(
-            chroma_path=cfg.chroma_path,
-            use_local_embeddings=use_local,
-            llm_api_key=cfg.llm_api_key,
-            llm_base_url=cfg.llm_base_url,
-        )
+        from agent.indexer import make_indexer
+        indexer = make_indexer(cfg)
         indexer.build(sources_root=cfg.sources_root, reports_root=cfg.reports_root)
         stats = indexer.stats()
         print(f"[info] Index built: {stats['total_docs']} chunks")
@@ -35,14 +29,8 @@ def main() -> None:
 
     if args.update_index:
         print(f"[info] Updating ChromaDB index for {args.update_index}...")
-        from agent.indexer import ArticleIndexer
-        use_local = not cfg.llm_api_key
-        indexer = ArticleIndexer(
-            chroma_path=cfg.chroma_path,
-            use_local_embeddings=use_local,
-            llm_api_key=cfg.llm_api_key,
-            llm_base_url=cfg.llm_base_url,
-        )
+        from agent.indexer import make_indexer
+        indexer = make_indexer(cfg)
         indexer.update(sources_root=cfg.sources_root, date_str=args.update_index)
         print(f"[info] Index updated for {args.update_index}")
         sys.exit(0)

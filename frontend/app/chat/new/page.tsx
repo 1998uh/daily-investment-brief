@@ -28,7 +28,7 @@ function NewChatContent() {
                 key={q}
                 onClick={() => sendMessage(q)}
                 className="text-xs border border-border-primary rounded px-3 py-1.5
-                           text-text-secondary hover:text-text-primary hover:border-accent-orange
+                           text-text-secondary hover:text-text-primary hover:border-text-accent
                            transition-colors"
               >
                 {q}

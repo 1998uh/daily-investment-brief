@@ -31,7 +31,7 @@ export default function TradesPage() {
           <h1 className="text-lg font-bold text-text-primary">交易记录</h1>
           <button
             onClick={() => setShowForm(s => !s)}
-            className="ml-auto px-3 py-1.5 bg-accent-orange text-black text-sm rounded hover:bg-yellow-400"
+            className="ml-auto px-3 py-1.5 bg-accent-blue text-white text-sm rounded hover:opacity-90"
           >
             + 新增
           </button>
@@ -66,14 +66,14 @@ export default function TradesPage() {
                     required={f.required}
                     value={form[f.key as keyof typeof form]}
                     onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                    className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-orange"
+                    className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-text-accent"
                   />
                 )}
               </div>
             ))}
             <div className="col-span-3 flex gap-2 justify-end">
               <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary">取消</button>
-              <button type="submit" className="px-4 py-1.5 bg-accent-orange text-black text-sm rounded hover:bg-yellow-400">保存</button>
+              <button type="submit" className="px-4 py-1.5 bg-accent-blue text-white text-sm rounded hover:opacity-90">保存</button>
             </div>
           </form>
         )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Session } from '@/lib/types';
@@ -30,6 +30,14 @@ export function Sidebar({ sessions, currentId, onRename, onDelete, onNewChat }: 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [search, setSearch] = useState('');
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => data && setUsername(data.username))
+      .catch(() => {});
+  }, []);
 
   const filtered = sessions.filter(s =>
     !search || (s.title ?? '').toLowerCase().includes(search.toLowerCase())
@@ -50,18 +58,18 @@ export function Sidebar({ sessions, currentId, onRename, onDelete, onNewChat }: 
   };
 
   return (
-    <aside className="w-64 bg-bg-secondary border-r border-border-primary flex flex-col h-full">
+    <aside className="w-[260px] bg-bg-secondary border-r border-border-primary flex flex-col h-full shrink-0">
       {/* Header */}
-      <div className="p-4 border-b border-border-primary">
-        <div className="text-xs text-text-accent font-mono tracking-widest mb-3">
+      <div className="p-4 border-b border-border-primary flex items-center justify-between gap-2">
+        <div className="text-xs text-text-accent font-mono tracking-widest">
           INVESTMENT AGENT
         </div>
         <button
           onClick={onNewChat}
-          className="w-full py-2 text-sm bg-accent-orange text-black rounded font-medium
-                     hover:bg-yellow-400 transition-colors"
+          className="px-3 py-1.5 text-xs bg-accent-blue text-white rounded font-medium
+                     hover:opacity-90 transition-opacity shrink-0"
         >
-          + 新建对话
+          + 新对话
         </button>
       </div>
 
@@ -74,7 +82,7 @@ export function Sidebar({ sessions, currentId, onRename, onDelete, onNewChat }: 
           onChange={e => setSearch(e.target.value)}
           className="w-full bg-bg-tertiary border border-border-primary rounded px-3 py-1.5
                      text-xs text-text-primary placeholder-text-muted focus:outline-none
-                     focus:border-accent-orange"
+                     focus:border-text-accent"
         />
       </div>
 
@@ -97,7 +105,7 @@ export function Sidebar({ sessions, currentId, onRename, onDelete, onNewChat }: 
                       if (e.key === 'Enter') handleRenameSubmit(s.id);
                       if (e.key === 'Escape') setEditingId(null);
                     }}
-                    className="w-full bg-bg-elevated border border-accent-orange rounded px-2 py-1
+                    className="w-full bg-bg-elevated border border-text-accent rounded px-2 py-1
                                text-xs text-text-primary focus:outline-none"
                   />
                 ) : (
@@ -105,7 +113,7 @@ export function Sidebar({ sessions, currentId, onRename, onDelete, onNewChat }: 
                     href={`/chat/${s.id}`}
                     className={`block px-2 py-1.5 rounded text-xs truncate transition-colors ${
                       s.id === currentId
-                        ? 'bg-bg-elevated text-text-primary'
+                        ? 'bg-bg-tertiary border-l-2 border-text-accent text-text-primary pl-[6px]'
                         : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                     }`}
                   >
@@ -150,6 +158,23 @@ export function Sidebar({ sessions, currentId, onRename, onDelete, onNewChat }: 
           📝 事件记录
         </Link>
       </div>
+
+      {/* User avatar */}
+      <Link
+        href="/profile"
+        className="flex items-center gap-2 px-3 py-3 border-t border-border-primary
+                   hover:bg-bg-hover transition-colors"
+      >
+        <div className="w-7 h-7 rounded-full bg-bg-elevated border border-border-secondary
+                        flex items-center justify-center shrink-0">
+          <span className="text-text-muted text-xs">
+            {username ? username[0].toUpperCase() : '?'}
+          </span>
+        </div>
+        <span className="text-xs text-text-secondary truncate">
+          {username ?? '加载中...'}
+        </span>
+      </Link>
     </aside>
   );
 }

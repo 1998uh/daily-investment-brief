@@ -52,11 +52,11 @@ export function WatchlistPanel({ watchlist, trades, onAddWatch, onRemoveWatch, o
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
               placeholder="添加标的..."
               className="flex-1 bg-bg-tertiary border border-border-primary rounded px-2 py-1
-                         text-xs text-text-primary focus:outline-none focus:border-accent-orange"
+                         text-xs text-text-primary focus:outline-none focus:border-text-accent"
             />
             <button
               onClick={handleAdd}
-              className="px-2 py-1 bg-accent-orange text-black text-xs rounded hover:bg-yellow-400"
+              className="px-2 py-1 bg-accent-blue text-white text-xs rounded hover:opacity-90"
             >
               +
             </button>
@@ -66,7 +66,7 @@ export function WatchlistPanel({ watchlist, trades, onAddWatch, onRemoveWatch, o
               <div key={w.symbol} className="group flex items-center gap-1 bg-bg-elevated border border-border-primary rounded px-2 py-1">
                 <button
                   onClick={() => onSymbolClick?.(w.symbol)}
-                  className="text-xs text-text-primary font-mono hover:text-accent-orange"
+                  className="text-xs text-text-primary font-mono hover:text-text-accent"
                 >
                   {w.symbol}
                 </button>

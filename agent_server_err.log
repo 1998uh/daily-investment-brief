@@ -1,0 +1,14 @@
+INFO:     Will watch for changes in these directories: ['D:\\project\\daily-investment-brief']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [62156] using WatchFiles
+INFO:     Started server process [75520]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scripts\test_search.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [75520]
+INFO:     Started server process [70188]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.

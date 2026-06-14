@@ -50,7 +50,7 @@ export default function LoginPage() {
                 onClick={() => setMode(m)}
                 className={`flex-1 py-2 text-sm font-medium transition-colors ${
                   mode === m
-                    ? 'bg-accent-orange text-black'
+                    ? 'bg-bg-tertiary text-text-accent'
                     : 'text-text-secondary hover:text-text-primary'
                 }`}
               >
@@ -69,7 +69,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 className="w-full bg-bg-tertiary border border-border-primary rounded px-3 py-2
-                           text-text-primary focus:outline-none focus:border-accent-orange
+                           text-text-primary focus:outline-none focus:border-text-accent
                            text-sm"
                 required
                 autoFocus
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="w-full bg-bg-tertiary border border-border-primary rounded px-3 py-2
-                           text-text-primary focus:outline-none focus:border-accent-orange
+                           text-text-primary focus:outline-none focus:border-text-accent
                            text-sm"
                 required
               />
@@ -99,9 +99,9 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 bg-accent-orange text-black font-medium rounded
-                         hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors text-sm"
+              className="w-full py-2 bg-accent-blue text-white font-medium rounded
+                         hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed
+                         transition-opacity text-sm"
             >
               {loading ? '处理中...' : mode === 'login' ? '登录' : '注册并登录'}
             </button>

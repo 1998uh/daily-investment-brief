@@ -32,6 +32,9 @@ class AgentSettings:
     llm_model: str
     llm_api_key: str
     tavily_api_key: str
+    embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    use_local_embeddings: bool = True
+    cookie_secure: bool = False
 
 
 def get_agent_settings() -> AgentSettings:
@@ -50,4 +53,9 @@ def get_agent_settings() -> AgentSettings:
         llm_model=_env("BRIEF_MODEL"),            # optional, may be empty during tests
         llm_api_key=_env("BRIEF_API_KEY"),        # optional, may be empty during tests
         tavily_api_key=_env("TAVILY_API_KEY"),    # optional, may be empty during tests
+        embedding_model=_env(
+            "AGENT_EMBEDDING_MODEL",
+            "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+        ),
+        use_local_embeddings=_env("AGENT_USE_LOCAL_EMBEDDINGS", "true").lower() != "false",
     )

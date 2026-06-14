@@ -16,6 +16,12 @@ async function request<T>(
   return res.json();
 }
 
+// User
+export const user = {
+  me: () => request<{ id: string; username: string; email: string | null; created_at: string }>('/api/auth/me'),
+  logout: () => request('/api/auth/logout', { method: 'POST' }),
+};
+
 // Auth
 export const auth = {
   register: (username: string, password: string, email?: string) =>

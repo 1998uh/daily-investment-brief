@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import agent.auth as _auth_mod
 from agent.auth import create_token, hash_password, verify_password
 from agent.config import AgentSettings
-from agent.db import create_user, get_user_by_username
+from agent.db import create_user, get_user_by_id, get_user_by_username
 from agent.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -69,3 +69,24 @@ async def refresh(request: Request, response: Response):
     response.set_cookie("access_token", token, httponly=True, secure=True, samesite="lax",
                         max_age=cfg.jwt_expire_minutes * 60)
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.get("/me")
+async def me(request: Request):
+    user = await get_current_user(request)
+    cfg = _settings(request)
+    full_user = await get_user_by_id(cfg.db_path, user["id"])
+    if not full_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "id": full_user["id"],
+        "username": full_user["username"],
+        "email": full_user["email"],
+        "created_at": full_user["created_at"],
+    }
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="lax")
+    return {"ok": True}

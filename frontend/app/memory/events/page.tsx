@@ -29,7 +29,7 @@ export default function EventsPage() {
           <h1 className="text-lg font-bold text-text-primary">事件记录</h1>
           <button
             onClick={() => setShowForm(s => !s)}
-            className="ml-auto px-3 py-1.5 bg-accent-orange text-black text-sm rounded hover:bg-yellow-400"
+            className="ml-auto px-3 py-1.5 bg-accent-blue text-white text-sm rounded hover:opacity-90"
           >
             + 新增
           </button>
@@ -44,7 +44,7 @@ export default function EventsPage() {
                 required
                 value={form.title}
                 onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-                className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-orange"
+                className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-text-accent"
               />
             </div>
             <div>
@@ -53,7 +53,7 @@ export default function EventsPage() {
                 type="date"
                 value={form.date}
                 onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-                className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-orange"
+                className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-text-accent"
               />
             </div>
             <div className="col-span-2">
@@ -62,7 +62,7 @@ export default function EventsPage() {
                 rows={3}
                 value={form.content}
                 onChange={e => setForm(p => ({ ...p, content: e.target.value }))}
-                className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-orange resize-none"
+                className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-text-accent resize-none"
               />
             </div>
             <div className="col-span-2">
@@ -72,12 +72,12 @@ export default function EventsPage() {
                 value={form.tags}
                 onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
                 placeholder="macro, earnings, policy"
-                className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-orange"
+                className="w-full bg-bg-tertiary border border-border-primary rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-text-accent"
               />
             </div>
             <div className="col-span-2 flex gap-2 justify-end">
               <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary">取消</button>
-              <button type="submit" className="px-4 py-1.5 bg-accent-orange text-black text-sm rounded hover:bg-yellow-400">保存</button>
+              <button type="submit" className="px-4 py-1.5 bg-accent-blue text-white text-sm rounded hover:opacity-90">保存</button>
             </div>
           </form>
         )}

@@ -27,17 +27,23 @@ async def generate(body: PipelineRequest, request: Request):
     return {"result": result}
 
 
+@router.post("/index/rebuild")
+async def index_rebuild(request: Request):
+    await get_current_user(request)
+    cfg = request.app.state.settings
+    from agent.indexer import make_indexer
+    indexer = make_indexer(cfg)
+    indexer.build(sources_root=cfg.sources_root, reports_root=cfg.reports_root)
+    return {"ok": True, "total_docs": indexer.stats()["total_docs"]}
+
+
 @router.post("/index/update")
 async def index_update(body: PipelineRequest, request: Request):
     await get_current_user(request)
     cfg = request.app.state.settings
-    from agent.indexer import ArticleIndexer
-    indexer = ArticleIndexer(
-        chroma_path=cfg.chroma_path,
-        llm_api_key=cfg.llm_api_key,
-        llm_base_url=cfg.llm_base_url,
-    )
+    from agent.indexer import make_indexer
     import datetime
+    indexer = make_indexer(cfg)
     date_str = body.date or datetime.date.today().isoformat()
     indexer.update(sources_root=cfg.sources_root, date_str=date_str)
-    return {"ok": True, "date": date_str}
+    return {"ok": True, "date": date_str, "total_docs": indexer.stats()["total_docs"]}

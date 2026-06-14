@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import datetime
 from typing import Any, AsyncGenerator
 
 from agent.config import AgentSettings
@@ -42,16 +43,18 @@ class Orchestrator:
         yield _sse("thinking", agent="orchestrator", text="正在加载用户上下文...")
         user_ctx = await tool_get_user_context(settings, user_id)
 
+        today = datetime.date.today().isoformat()
+
         # 构建 system prompt
-        system_prompt = f"""你是一个专业的投资助手。你可以：
-1. 检索本地文章和每日简报（RAG）
-2. 管理用户的关注标的、交易记录、事件笔记
-3. 触发 pipeline 采集或生成简报
+        system_prompt = f"""你是一个专业的投资助手。今天的日期是：{today}
 
-用户个人数据：
-{user_ctx}
+## 重要规则
+- 直接用中文 markdown 回答，**不要**输出任何 XML 标签、工具调用语法或占位符（如 <search>、<tool> 等）
+- 所有需要的资料已由系统在消息中提前注入，你只需基于这些内容回答
+- 如果上下文中没有相关资料，直接说明即可，不要尝试自己发起检索
 
-回复使用中文 markdown 格式，简洁专业。"""
+## 用户个人数据
+{user_ctx}"""
 
         # 构建对话历史
         messages = [{"role": "system", "content": system_prompt}]
@@ -62,13 +65,28 @@ class Orchestrator:
         # 意图识别：判断是否需要检索
         yield _sse("thinking", agent="orchestrator", text="分析意图...")
 
-        needs_search = any(kw in message for kw in ["怎么看", "分析", "观点", "简报", "文章", "历史", "检索", "搜索"])
+        needs_brief = any(kw in message for kw in ["简报", "今天", "每日"])
+        needs_search = any(kw in message for kw in ["怎么看", "分析", "观点", "文章", "历史", "检索", "搜索", "涨", "跌", "行情", "市场"])
         needs_memory_write = any(kw in message for kw in ["买了", "卖了", "买入", "卖出", "关注", "记录", "记一下"])
         needs_pipeline = any(kw in message for kw in ["生成简报", "采集", "更新索引"])
 
         sources = []
 
-        # 检索分支
+        # 简报直读分支（优先于语义检索）
+        if needs_brief:
+            yield _sse("thinking", agent="research", text=f"读取 {today} 每日简报...")
+            brief_content = await get_daily_brief(settings, today)
+            if "未找到" not in brief_content:
+                messages.append({
+                    "role": "system",
+                    "content": f"以下是今天（{today}）的每日简报，请基于此回答：\n\n{brief_content}"
+                })
+                sources.append({"title": f"{today} 每日简报", "date": today})
+                yield _sse("thinking", agent="research", text="已加载今日简报")
+            else:
+                yield _sse("thinking", agent="research", text=brief_content)
+
+        # 语义检索分支
         if needs_search:
             yield _sse("thinking", agent="research", text=f"检索本地文章：{message[:30]}...")
             results = await tool_search_local(settings, message, top_k=5)

@@ -8,9 +8,8 @@ from typing import Any
 
 _log = logging.getLogger(__name__)
 
-import chromadb
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
+# chromadb / langchain are lazy-imported inside the class so that
+# huggingface_hub.constants is initialised AFTER load_env() sets HF_ENDPOINT.
 from pipeline.ingest import load_markdown
 
 
@@ -163,3 +162,14 @@ class ArticleIndexer:
 
     def stats(self) -> dict:
         return {"total_docs": self._col.count()}
+
+
+def make_indexer(settings) -> "ArticleIndexer":
+    """Construct ArticleIndexer from AgentSettings, respecting embedding config."""
+    return ArticleIndexer(
+        chroma_path=settings.chroma_path,
+        embedding_model=settings.embedding_model,
+        use_local_embeddings=settings.use_local_embeddings,
+        llm_api_key=settings.llm_api_key,
+        llm_base_url=settings.llm_base_url,
+    )

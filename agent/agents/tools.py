@@ -32,12 +32,8 @@ async def tool_search_local(
     date_to: str | None = None,
 ) -> list[dict[str, Any]]:
     """ChromaDB 语义检索本地文章。"""
-    from agent.indexer import ArticleIndexer
-    indexer = ArticleIndexer(
-        chroma_path=settings.chroma_path,
-        llm_api_key=settings.llm_api_key,
-        llm_base_url=settings.llm_base_url,
-    )
+    from agent.indexer import make_indexer
+    indexer = make_indexer(settings)
     results = indexer.search(
         query=query, top_k=top_k,
         author=author, source=source,

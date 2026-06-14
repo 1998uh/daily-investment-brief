@@ -1,12 +1,12 @@
 'use client';
 
-import { use, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { MessageBubble } from '@/components/MessageBubble';
 import { ChatInput } from '@/components/ChatInput';
 import { useChat } from '@/hooks/useChat';
 
-export default function SessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
-  const { sessionId } = use(params);
+export default function SessionPage({ params }: { params: { sessionId: string } }) {
+  const { sessionId } = params;
   const bottomRef = useRef<HTMLDivElement>(null);
   const { state, loadSession, sendMessage, stopStreaming } = useChat();
 
@@ -30,7 +30,14 @@ export default function SessionPage({ params }: { params: Promise<{ sessionId: s
         ))}
 
         {/* Streaming assistant message */}
-        {state.isStreaming && (
+        {state.isStreaming && !state.currentTokens && !state.thinkingSteps && (
+          <div className="flex items-center gap-1 px-2 py-3 text-text-muted">
+            <span className="typing-dot">●</span>
+            <span className="typing-dot">●</span>
+            <span className="typing-dot">●</span>
+          </div>
+        )}
+        {state.isStreaming && (state.currentTokens || state.thinkingSteps) && (
           <MessageBubble
             message={{
               id: -1,
