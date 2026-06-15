@@ -107,7 +107,7 @@ bash scripts/health_check.sh
 
 ```powershell
 # 全量采集（并行）
-daily-brief collect --date 2026-06-12
+daily-brief collect --date 2026-06-15
 
 # 单博主调试
 daily-brief collect-one --name "诸葛孔暗" --date 2026-06-12 --verbose
@@ -125,13 +125,25 @@ daily-brief collect --date 2026-06-12 --dry-run
 ### 生成简报
 
 ```powershell
-daily-brief generate --date 2026-06-12
+daily-brief generate --date 2026-06-15
 ```
 
 输出：`reports/2026-06-12/daily-brief.md` 和 `.html`
 
 ---
 
+采集 + 生成一步完成：
+
+```powershell
+daily-brief collect --date 2026-06-15 --and-generate
+```
+
+输出：
+
+```text
+reports/2026-06-09/daily-brief.md
+reports/2026-06-09/daily-brief.html
+```
 ## 账号配置
 
 ```powershell
