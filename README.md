@@ -125,7 +125,7 @@ daily-brief collect --date 2026-06-12 --dry-run
 ### 生成简报
 
 ```powershell
-daily-brief generate --date 2026-06-15
+daily-brief generate --date 2026-06-17
 ```
 
 输出：`reports/2026-06-12/daily-brief.md` 和 `.html`
