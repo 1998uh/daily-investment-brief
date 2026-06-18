@@ -1,20 +1,29 @@
 'use client';
 
-import { useCallback, Suspense } from 'react';
+import { useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChatInput } from '@/components/ChatInput';
 import { useChat } from '@/hooks/useChat';
+import { uploads } from '@/lib/api';
+import type { Attachment } from '@/lib/types';
 
 function NewChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQ = searchParams.get('q') ?? '';
 
+  // 新对话还没有 sessionId，生成临时 ID 用于上传
+  const tempSessionId = useRef(`tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+
   const handleNewSession = useCallback((sessionId: string) => {
     router.replace(`/chat/${sessionId}`);
   }, [router]);
 
   const { state, sendMessage, stopStreaming } = useChat(handleNewSession);
+
+  const handleUpload = useCallback(async (files: File[]): Promise<Attachment[]> => {
+    return uploads.create(tempSessionId.current, files);
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -26,7 +35,7 @@ function NewChatContent() {
             {['今天的简报是什么？', '帮我查一下陈达对美光的观点', '我最近的交易记录'].map(q => (
               <button
                 key={q}
-                onClick={() => sendMessage(q)}
+                onClick={() => sendMessage(q, undefined)}
                 className="text-xs border border-border-primary rounded px-3 py-1.5
                            text-text-secondary hover:text-text-primary hover:border-text-accent
                            transition-colors"
@@ -41,6 +50,7 @@ function NewChatContent() {
         onSend={sendMessage}
         disabled={state.isStreaming}
         onStop={stopStreaming}
+        onUpload={handleUpload}
         placeholder={initialQ || undefined}
       />
     </div>

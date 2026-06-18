@@ -1,15 +1,16 @@
-import type { SSEEvent } from './types';
+import type { SSEEvent, Attachment } from './types';
 
 export async function* streamChat(
   message: string,
   sessionId?: string | null,
   signal?: AbortSignal,
+  attachments?: Attachment[],
 ): AsyncGenerator<SSEEvent> {
   const res = await fetch('/api/chat', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, session_id: sessionId }),
+    body: JSON.stringify({ message, session_id: sessionId, attachments: attachments || undefined }),
     signal,
   });
 

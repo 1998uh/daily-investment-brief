@@ -4,6 +4,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import { MessageBubble } from '@/components/MessageBubble';
 import { ChatInput } from '@/components/ChatInput';
 import { useChat } from '@/hooks/useChat';
+import { uploads } from '@/lib/api';
+import type { Attachment } from '@/lib/types';
 
 export default function SessionPage({ params }: { params: { sessionId: string } }) {
   const { sessionId } = params;
@@ -18,9 +20,13 @@ export default function SessionPage({ params }: { params: { sessionId: string } 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [state.messages.length, state.currentTokens]);
 
-  const handleSend = useCallback((msg: string) => {
-    sendMessage(msg);
+  const handleSend = useCallback((msg: string, attachments?: Attachment[]) => {
+    sendMessage(msg, attachments);
   }, [sendMessage]);
+
+  const handleUpload = useCallback(async (files: File[]): Promise<Attachment[]> => {
+    return uploads.create(sessionId, files);
+  }, [sessionId]);
 
   return (
     <div className="flex flex-col h-full">
@@ -65,6 +71,7 @@ export default function SessionPage({ params }: { params: { sessionId: string } 
         onSend={handleSend}
         disabled={state.isStreaming}
         onStop={stopStreaming}
+        onUpload={handleUpload}
       />
     </div>
   );

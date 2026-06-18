@@ -11,6 +11,16 @@ export interface Session {
   updated_at: string;
 }
 
+export interface Attachment {
+  id: string;
+  filename: string;
+  mime: string;
+  size: number;
+  kind: 'text' | 'image';
+  extracted_text?: string;
+  data_uri?: string;
+}
+
 export interface Message {
   id: number;
   session_id: string;
@@ -19,6 +29,7 @@ export interface Message {
   agent?: string;
   sources?: Source[];
   thinking_steps?: ThinkingStep[];
+  attachments?: Attachment[];
   created_at: string;
 }
 
@@ -28,6 +39,7 @@ export interface Source {
   date: string;
   url?: string;
   source?: string;
+  kind?: 'local' | 'web';
 }
 
 export interface ThinkingStep {

@@ -103,46 +103,133 @@ bash scripts/health_check.sh
 
 ## Pipeline CLI
 
-### 采集文章
+系统提供三个子命令：`collect`（全量采集）、`collect-one`（单博主采集）、`generate`（生成简报）。
+
+### collect — 全量采集
+
+从所有启用的账号采集文章，存入 `sources/<date>/`。
 
 ```powershell
-# 全量采集（并行）
-daily-brief collect --date 2026-06-15
+# 单日采集（并行）
+daily-brief collect --date 2026-06-17
 
-# 单博主调试
-daily-brief collect-one --name "诸葛孔暗" --date 2026-06-12 --verbose
+# 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
+daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
 
 # 验证配置（不实际采集）
-daily-brief collect --date 2026-06-12 --dry-run
+daily-brief collect --date 2026-06-17 --dry-run
+
+# 采集后直接生成简报
+daily-brief collect --date 2026-06-17 --and-generate
 ```
 
 | 参数 | 说明 |
 |------|------|
-| `--sequential` | 串行模式（调试用）|
+| `--date` | 单日采集，与 `--start-date` 互斥 |
+| `--start-date` + `--end-date` | 日期范围采集（含首尾），与 `--date` 互斥 |
+| `--sequential` | 串行模式（调试用，默认并行） |
 | `--limit N` | 每账号最多 N 条，默认 20 |
-| `--and-generate` | 采集后直接生成简报 |
+| `--include-undated` | 保留无法解析发布时间的条目 |
+| `--dry-run` | 仅验证账号配置，不实际采集 |
+| `--and-generate` | 采集完成后自动生成简报（仅单日模式） |
+| `--markdown-only` | 配合 `--and-generate` 使用，跳过 HTML 输出 |
+| `--out-dir` | 自定义输出目录，默认 `sources/<date>` |
+| `--accounts` | 指定账号配置文件，默认 `config/accounts.json` |
 
-### 生成简报
+### collect-one — 单博主采集
+
+只采集指定博主的文章，用于调试或针对特定数据源采集。
 
 ```powershell
+# 单日采集
+daily-brief collect-one --name "睿知睿见" --date 2026-06-17 --verbose
+
+# 日期范围采集
+daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17
+
+# 采集到独立目录（用于后续单独生成报告）
+daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17 --out-dir sources/买股票的老木匠
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--name` | **必填**，账号名称，需与 `accounts.json` 中一致 |
+| `--date` | 单日采集，与 `--start-date` 互斥 |
+| `--start-date` + `--end-date` | 日期范围采集（含首尾），与 `--date` 互斥 |
+| `--limit N` | 最多 N 条，默认 20 |
+| `--include-undated` | 保留无法解析发布时间的条目 |
+| `--verbose` | 开启 DEBUG 日志，显示详细请求信息 |
+| `--out-dir` | 自定义输出目录，默认 `sources/<date>` |
+| `--accounts` | 指定账号配置文件 |
+
+### generate — 生成简报
+
+从 `sources/` 目录读取文章，调用 LLM 生成简报。
+
+```powershell
+# 默认全流程（批次提炼 → 合成简报）
 daily-brief generate --date 2026-06-17
+
+# 只生成 Markdown，不生成 HTML
+daily-brief generate --date 2026-06-17 --markdown-only
+
+# 从自定义目录读取文章（如单博主数据）
+daily-brief generate --date 2026-06-17 --source-dir sources/买股票的老木匠
 ```
 
-输出：`reports/2026-06-12/daily-brief.md` 和 `.html`
+| 参数 | 说明 |
+|------|------|
+| `--date` | **必填**，简报日期（用于标题和窗口计算） |
+| `--source-dir` | 指定文章来源目录，默认 `sources/<date>` |
+| `--out-dir` | 指定输出目录，默认 `reports/<date>` |
+| `--markdown-only` | 跳过 HTML 输出 |
+| `--accounts` | 指定账号配置文件（用于覆盖统计） |
 
----
+**生成模式**（四选一）：
 
-采集 + 生成一步完成：
+| 模式 | 参数 | 说明 |
+|------|------|------|
+| 默认 | 无 | 批次提炼 + 最终合成，完整 LLM 流程 |
+| 仅批次 | `--batches-only` | 只做批次提炼，保存 `batch-summaries.json`，不合成 |
+| 从批次合成 | `--from-batches` | 跳过提炼，直接从已有 `batch-summaries.json` 合成 |
+| 导出 prompt | `--no-batches` | 不调 LLM，打包所有文章为一个 prompt 文件，可粘贴到外部模型 |
+
+`--batches-only` + `--from-batches` 组合可以将提炼和合成分步执行，中间手动检查或更换模型：
 
 ```powershell
-daily-brief collect --date 2026-06-15 --and-generate
+# 第一步：提炼批次
+daily-brief generate --date 2026-06-17 --batches-only
+
+# （检查 reports/2026-06-17/batch-summaries.json）
+
+# 第二步：合成简报
+daily-brief generate --date 2026-06-17 --from-batches
 ```
 
-输出：
+### 典型工作流
+
+```powershell
+# 工作流 1：一步完成采集 + 生成
+daily-brief collect --date 2026-06-17 --and-generate
+
+# 工作流 2：补采某个博主
+daily-brief collect-one --name "谢佩德骨头" --date 2026-06-17
+
+# 工作流 3：针对特定博主生成专属报告
+daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17 --out-dir sources/买股票的老木匠
+daily-brief generate --date 2026-06-17 --source-dir sources/买股票的老木匠
+
+# 工作流 4：导出 prompt 给外部模型（Claude/GPT/Gemini）
+daily-brief generate --date 2026-06-17 --no-batches
+```
+
+输出文件：
 
 ```text
-reports/2026-06-09/daily-brief.md
-reports/2026-06-09/daily-brief.html
+reports/<date>/daily-brief.md        # Markdown 简报
+reports/<date>/daily-brief.html      # HTML 简报
+reports/<date>/batch-summaries.json  # 批次提炼结果（--batches-only 或默认模式）
+reports/<date>/prompt-for-external.md # 外部模型 prompt（--no-batches）
 ```
 ## 账号配置
 

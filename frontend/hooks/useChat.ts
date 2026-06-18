@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { sessions as sessionsApi } from '@/lib/api';
 import { streamChat } from '@/lib/sse';
-import type { Message, ThinkingStep, Source, ChatState } from '@/lib/types';
+import type { Message, ThinkingStep, Source, ChatState, Attachment } from '@/lib/types';
 
 const INITIAL_STATE: ChatState = {
   sessionId: null,
@@ -30,7 +30,7 @@ export function useChat(onNewSession?: (sessionId: string) => void) {
     }));
   }, []);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, attachments?: Attachment[]) => {
     if (state.isStreaming) return;
 
     abortRef.current = new AbortController();
@@ -40,6 +40,7 @@ export function useChat(onNewSession?: (sessionId: string) => void) {
       session_id: state.sessionId ?? '',
       role: 'user',
       content,
+      attachments,
       created_at: new Date().toISOString(),
     };
 
@@ -58,7 +59,7 @@ export function useChat(onNewSession?: (sessionId: string) => void) {
       const thinking: ThinkingStep[] = [];
       let sources: Source[] = [];
 
-      for await (const event of streamChat(content, sessionId, abortRef.current.signal)) {
+      for await (const event of streamChat(content, sessionId, abortRef.current.signal, attachments)) {
         if (event.type === 'thinking') {
           thinking.push({ agent: event.agent ?? 'orchestrator', text: event.text ?? '' });
           setState(prev => ({ ...prev, thinkingSteps: [...thinking] }));

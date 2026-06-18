@@ -52,6 +52,7 @@ async def init_db(db_path: Path) -> None:
             agent TEXT,
             content TEXT NOT NULL,
             sources TEXT,
+            attachments TEXT,
             created_at TEXT NOT NULL
         );
 
@@ -169,9 +170,11 @@ async def append_message(
     content: str,
     agent: str | None,
     sources: list | None,
+    attachments: list | None = None,
 ) -> dict:
     now = _now()
     sources_json = json.dumps(sources, ensure_ascii=False) if sources is not None else None
+    attachments_json = json.dumps(attachments, ensure_ascii=False) if attachments else None
     async with _connect(db_path) as db:
         async with db.execute(
             "SELECT id FROM sessions WHERE id=? AND user_id=?", (session_id, user_id)
@@ -179,14 +182,15 @@ async def append_message(
             if await cur.fetchone() is None:
                 raise LookupError(f"session {session_id!r} not found for user {user_id!r}")
         cur = await db.execute(
-            "INSERT INTO messages (session_id, role, agent, content, sources, created_at) VALUES (?,?,?,?,?,?)",
-            (session_id, role, agent, content, sources_json, now),
+            "INSERT INTO messages (session_id, role, agent, content, sources, attachments, created_at) VALUES (?,?,?,?,?,?,?)",
+            (session_id, role, agent, content, sources_json, attachments_json, now),
         )
         await db.execute("UPDATE sessions SET updated_at=? WHERE id=?", (now, session_id))
         await db.commit()
         async with db.execute("SELECT * FROM messages WHERE id=?", (cur.lastrowid,)) as c:
             row = _row_to_dict(await c.fetchone())
     row["sources"] = json.loads(row["sources"]) if row["sources"] else None
+    row["attachments"] = json.loads(row["attachments"]) if row.get("attachments") else None
     return row
 
 
@@ -202,6 +206,7 @@ async def get_messages(db_path: Path, session_id: str, user_id: str) -> list[dic
             rows = [_row_to_dict(r) for r in await cur.fetchall()]
     for r in rows:
         r["sources"] = json.loads(r["sources"]) if r["sources"] else None
+        r["attachments"] = json.loads(r["attachments"]) if r.get("attachments") else None
     return rows
 
 

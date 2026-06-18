@@ -1,4 +1,4 @@
-import type { Session, Message, WatchItem, Trade, Event } from './types';
+import type { Session, Message, WatchItem, Trade, Event, Attachment } from './types';
 
 async function request<T>(
   path: string,
@@ -90,4 +90,23 @@ export const memory = {
     }),
   deleteEvent: (id: number) =>
     request(`/api/memory/events/${id}`, { method: 'DELETE' }),
+};
+
+// Uploads
+export const uploads = {
+  create: async (sessionId: string, files: File[]): Promise<Attachment[]> => {
+    const formData = new FormData();
+    formData.append('session_id', sessionId);
+    files.forEach(f => formData.append('files', f));
+    const res = await fetch('/api/uploads', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
 };

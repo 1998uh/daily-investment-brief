@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +44,41 @@ async def tool_search_local(
         {"content": r.content, "metadata": r.metadata, "score": r.score}
         for r in results
     ]
+
+
+async def tool_search_web(
+    settings: AgentSettings,
+    query: str,
+    max_results: int = 5,
+) -> list[dict[str, Any]]:
+    """联网实时搜索（Tavily API），返回结构与 tool_search_local 对齐。"""
+    if not settings.tavily_api_key:
+        raise RuntimeError("TAVILY_API_KEY 未配置，无法执行联网搜索")
+
+    from tavily import TavilyClient
+    client = TavilyClient(api_key=settings.tavily_api_key)
+    response = await asyncio.to_thread(
+        client.search,
+        query=query,
+        search_depth="basic",
+        max_results=max_results,
+        include_answer=False,
+    )
+    results = []
+    for r in response.get("results", []):
+        results.append({
+            "content": r.get("content", ""),
+            "metadata": {
+                "title": r.get("title", ""),
+                "url": r.get("url", ""),
+                "source": "tavily",
+                "kind": "web",
+                "date": r.get("published_date", ""),
+                "author": "",
+            },
+            "score": r.get("score", 0),
+        })
+    return results
 
 
 async def tool_add_watch(settings: AgentSettings, user_id: str, symbol: str, note: str | None) -> str:

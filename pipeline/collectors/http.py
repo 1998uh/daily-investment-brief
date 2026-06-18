@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from html import unescape
-from html.parser import HTMLParser
 from http.cookiejar import CookieJar
+import html2text
 import json
 import os
 import re
@@ -50,41 +49,33 @@ class HttpClient:
         return request.Request(url, headers=merged)
 
 
-class TextExtractor(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.parts: list[str] = []
-        self.skip_depth = 0
+# ---------------------------------------------------------------------------
+# HTML → Markdown / 纯文本转换器
+# ---------------------------------------------------------------------------
 
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag in {"script", "style", "noscript"}:
-            self.skip_depth += 1
-        if tag in {"p", "br", "div", "li", "tr", "h1", "h2", "h3"}:
-            self.parts.append("\n")
+# 主转换器：保留链接和加粗等格式，对 LLM 摘要最友好
+_h2t = html2text.HTML2Text()
+_h2t.ignore_links = False
+_h2t.ignore_images = True
+_h2t.body_width = 0
+_h2t.ignore_emphasis = False
 
-    def handle_endtag(self, tag: str) -> None:
-        if tag in {"script", "style", "noscript"} and self.skip_depth:
-            self.skip_depth -= 1
-        if tag in {"p", "div", "li", "tr", "h1", "h2", "h3"}:
-            self.parts.append("\n")
-
-    def handle_data(self, data: str) -> None:
-        if not self.skip_depth:
-            self.parts.append(data)
-
-    def text(self) -> str:
-        lines = []
-        for line in "".join(self.parts).splitlines():
-            cleaned = " ".join(unescape(line).split())
-            if cleaned:
-                lines.append(cleaned)
-        return "\n".join(lines)
+# 纯文本转换器：用于标题提取等不需要 Markdown 格式的场景
+_h2t_plain = html2text.HTML2Text()
+_h2t_plain.ignore_links = True
+_h2t_plain.ignore_images = True
+_h2t_plain.body_width = 0
+_h2t_plain.ignore_emphasis = True
 
 
 def strip_html(html: str) -> str:
-    parser = TextExtractor()
-    parser.feed(html)
-    return parser.text()
+    """将 HTML 转为 Markdown 格式（保留链接和加粗等格式信息）。"""
+    return _h2t.handle(html).strip()
+
+
+def _strip_html_plain(html: str) -> str:
+    """将 HTML 转为纯文本（不保留 Markdown 格式，用于标题提取等场景）。"""
+    return _h2t_plain.handle(html).strip()
 
 
 def extract_title(html: str) -> str:
@@ -97,7 +88,7 @@ def extract_title(html: str) -> str:
     for pattern in patterns:
         match = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
         if match:
-            return " ".join(strip_html(match.group(1)).split())
+            return " ".join(_strip_html_plain(match.group(1)).split())
     return ""
 
 
@@ -106,7 +97,8 @@ def absolute_url(base_url: str, maybe_url: str) -> str:
 
 
 def clean_text(value: str) -> str:
-    return strip_html(value).strip()
+    """将 HTML 内容转为 Markdown 并去除首尾空白。"""
+    return strip_html(value)
 
 
 def compact_text(value: str, max_len: int = 120) -> str:

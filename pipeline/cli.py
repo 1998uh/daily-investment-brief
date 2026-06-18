@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 import sys
 
@@ -32,7 +32,16 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
 
     collect = subparsers.add_parser("collect", help="Collect source articles into Markdown files.")
-    collect.add_argument("--date", required=True, help="Brief date, e.g. 2026-06-07.")
+    date_group = collect.add_mutually_exclusive_group(required=True)
+    date_group.add_argument("--date", help="Brief date, e.g. 2026-06-07.")
+    date_group.add_argument(
+        "--start-date",
+        help="Start date for range collection, e.g. 2026-06-10. Must be used with --end-date.",
+    )
+    collect.add_argument(
+        "--end-date",
+        help="End date for range collection (inclusive), e.g. 2026-06-17. Must be used with --start-date.",
+    )
     collect.add_argument(
         "--accounts",
         help="Account config JSON. Defaults to config/accounts.json, then config/accounts.example.json.",
@@ -72,7 +81,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     collect_one = subparsers.add_parser("collect-one", help="Collect articles from a single account.")
     collect_one.add_argument("--name", required=True, help="Account name as in accounts.json.")
-    collect_one.add_argument("--date", required=True, help="Brief date, e.g. 2026-06-09.")
+    one_date_group = collect_one.add_mutually_exclusive_group(required=True)
+    one_date_group.add_argument("--date", help="Brief date, e.g. 2026-06-09.")
+    one_date_group.add_argument(
+        "--start-date",
+        help="Start date for range collection, e.g. 2026-06-10. Must be used with --end-date.",
+    )
+    collect_one.add_argument(
+        "--end-date",
+        help="End date for range collection (inclusive), e.g. 2026-06-17. Must be used with --start-date.",
+    )
     collect_one.add_argument(
         "--accounts",
         help="Account config JSON. Defaults to config/accounts.json.",
@@ -131,6 +149,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def collect_command(args: argparse.Namespace) -> int:
+    # --start-date / --end-date 范围采集
+    if args.start_date:
+        if not args.end_date:
+            print("--start-date requires --end-date", file=sys.stderr)
+            return 2
+        return _collect_date_range(args)
+
+    # 单日采集
     brief_date = date.fromisoformat(args.date)
     accounts_path = Path(args.accounts) if args.accounts else default_accounts_path()
     out_dir = Path(args.out_dir) if args.out_dir else ROOT / "sources" / args.date
@@ -172,16 +198,92 @@ def collect_command(args: argparse.Namespace) -> int:
     return 0 if not log.errors else 1
 
 
+def _collect_date_range(args: argparse.Namespace) -> int:
+    """按日期范围逐日采集。"""
+    start = date.fromisoformat(args.start_date)
+    end = date.fromisoformat(args.end_date)
+    if start > end:
+        print(f"--start-date ({start}) must be <= --end-date ({end})", file=sys.stderr)
+        return 2
+
+    accounts_path = Path(args.accounts) if args.accounts else default_accounts_path()
+    settings = get_settings()
+
+    if not accounts_path.exists():
+        print(f"Account config not found: {accounts_path}", file=sys.stderr)
+        return 2
+
+    total_days = (end - start).days + 1
+    total_written = 0
+    has_errors = False
+
+    print(f"\n{'='*60}")
+    print(f"范围采集: {start} ~ {end} ({total_days} 天)")
+    print(f"{'='*60}")
+
+    current = start
+    while current <= end:
+        date_str = current.isoformat()
+        day_out_dir = Path(args.out_dir) if args.out_dir else ROOT / "sources" / date_str
+
+        print(f"\n{'─'*40}")
+        print(f"📅 {date_str} ({(current - start).days + 1}/{total_days})")
+        print(f"{'─'*40}")
+
+        try:
+            written, log = collect_to_sources(
+                accounts_path=accounts_path,
+                out_dir=day_out_dir,
+                brief_date=current,
+                settings=settings,
+                limit=args.limit,
+                include_undated=args.include_undated,
+                dry_run=args.dry_run,
+                parallel=not args.sequential,
+            )
+            print_collection_log(log)
+
+            if not args.dry_run:
+                print(f"Written files: {len(written)}")
+                total_written += len(written)
+
+            if log.errors:
+                has_errors = True
+        except Exception as exc:
+            print(f"[error] {date_str}: {exc}", file=sys.stderr)
+            has_errors = True
+
+        current += timedelta(days=1)
+
+    if not args.dry_run:
+        print(f"\n{'='*60}")
+        print(f"范围采集完成: {total_days} 天, 共写入 {total_written} 个文件")
+        print(f"{'='*60}")
+
+    if args.and_generate:
+        print("\n[info] --and-generate 在范围采集模式下不生效，请逐日手动 generate。")
+
+    return 1 if has_errors else 0
+
+
 def collect_one_command(args: argparse.Namespace) -> int:
     import logging as _logging
 
+    if args.verbose:
+        _logging.basicConfig(level=_logging.DEBUG, format="%(name)s %(message)s")
+
+    # --start-date / --end-date 范围采集
+    if args.start_date:
+        if not args.end_date:
+            print("--start-date requires --end-date", file=sys.stderr)
+            return 2
+        return _collect_one_date_range(args)
+
+    # 单日采集
     brief_date = date.fromisoformat(args.date)
     accounts_path = Path(args.accounts) if args.accounts else default_accounts_path()
     out_dir = Path(args.out_dir) if args.out_dir else ROOT / "sources" / args.date
     settings = get_settings()
-
-    if args.verbose:
-        _logging.basicConfig(level=_logging.DEBUG, format="%(name)s %(message)s")
 
     if not accounts_path.exists():
         print(f"Account config not found: {accounts_path}", file=sys.stderr)
@@ -203,6 +305,67 @@ def collect_one_command(args: argparse.Namespace) -> int:
         print(f"  - {path}")
 
     return 0 if not log.errors else 1
+
+
+def _collect_one_date_range(args: argparse.Namespace) -> int:
+    """按日期范围逐日采集单个账号。"""
+    start = date.fromisoformat(args.start_date)
+    end = date.fromisoformat(args.end_date)
+    if start > end:
+        print(f"--start-date ({start}) must be <= --end-date ({end})", file=sys.stderr)
+        return 2
+
+    accounts_path = Path(args.accounts) if args.accounts else default_accounts_path()
+    settings = get_settings()
+
+    if not accounts_path.exists():
+        print(f"Account config not found: {accounts_path}", file=sys.stderr)
+        return 2
+
+    total_days = (end - start).days + 1
+    total_written = 0
+    has_errors = False
+
+    print(f"\n{'='*60}")
+    print(f"单账号范围采集: {args.name} | {start} ~ {end} ({total_days} 天)")
+    print(f"{'='*60}")
+
+    current = start
+    while current <= end:
+        date_str = current.isoformat()
+        day_out_dir = Path(args.out_dir) if args.out_dir else ROOT / "sources" / date_str
+
+        print(f"\n{'─'*40}")
+        print(f"📅 {date_str} ({(current - start).days + 1}/{total_days})")
+        print(f"{'─'*40}")
+
+        try:
+            written, log = collect_single_account(
+                name=args.name,
+                accounts_path=accounts_path,
+                out_dir=day_out_dir,
+                brief_date=current,
+                settings=settings,
+                limit=args.limit,
+                include_undated=args.include_undated,
+            )
+            print_collection_log(log)
+            print(f"Written files: {len(written)}")
+            total_written += len(written)
+
+            if log.errors:
+                has_errors = True
+        except Exception as exc:
+            print(f"[error] {date_str}: {exc}", file=sys.stderr)
+            has_errors = True
+
+        current += timedelta(days=1)
+
+    print(f"\n{'='*60}")
+    print(f"范围采集完成: {args.name} | {total_days} 天, 共写入 {total_written} 个文件")
+    print(f"{'='*60}")
+
+    return 1 if has_errors else 0
 
 
 def generate_command(args: argparse.Namespace) -> int:

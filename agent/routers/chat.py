@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api", tags=["chat"])
 class ChatRequest(BaseModel):
     session_id: str | None = None
     message: str
+    attachments: list[dict] | None = None  # [{id, filename, mime, kind, extracted_text, data_uri}]
 
 
 @router.post("/chat")
@@ -35,15 +36,18 @@ async def chat(body: ChatRequest, request: Request):
     # 加载历史消息
     history = await get_messages(cfg.db_path, session_id, uid)
 
-    # 保存用户消息
-    await append_message(cfg.db_path, session_id, uid, "user", body.message, None, None)
+    # 保存用户消息（带附件元数据）
+    attach_meta = None
+    if body.attachments:
+        attach_meta = [{"id": a.get("id"), "filename": a.get("filename"), "mime": a.get("mime"), "kind": a.get("kind")} for a in body.attachments]
+    await append_message(cfg.db_path, session_id, uid, "user", body.message, None, None, attach_meta)
 
     async def event_stream():
         orch = Orchestrator(settings=cfg, user_id=uid)
         collected_tokens = []
         sources = []
 
-        async for event in orch.run(body.message, history=history):
+        async for event in orch.run(body.message, history=history, attachments=body.attachments):
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
             if event["type"] == "token":
                 collected_tokens.append(event["text"])

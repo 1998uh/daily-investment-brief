@@ -13,6 +13,7 @@ from agent.routers import sessions as sessions_router
 from agent.routers import memory as memory_router
 from agent.routers import pipeline as pipeline_router
 from agent.routers import chat as chat_router
+from agent.routers import uploads as uploads_router
 
 
 @asynccontextmanager
@@ -38,6 +39,7 @@ app.include_router(sessions_router.router)
 app.include_router(memory_router.router)
 app.include_router(pipeline_router.router)
 app.include_router(chat_router.router)
+app.include_router(uploads_router.router)
 
 
 @app.get("/api/health")
