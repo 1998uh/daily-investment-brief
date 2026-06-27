@@ -8,6 +8,8 @@ import re
 import socket
 from urllib import parse, request
 
+from ..cancel import raise_if_cancelled
+
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -27,11 +29,13 @@ class HttpClient:
         self.opener = request.build_opener(request.HTTPCookieProcessor(self.cookie_jar))
 
     def get_text(self, url: str, *, headers: dict[str, str] | None = None) -> str:
+        raise_if_cancelled()
         # 设置 socket 级默认超时，防止 SSL 握手无限卡死
         old_timeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(self.timeout)
         try:
             req = self._request(url, headers=headers)
+            raise_if_cancelled()
             with self.opener.open(req, timeout=self.timeout) as response:
                 charset = response.headers.get_content_charset() or "utf-8"
                 return response.read().decode(charset, errors="replace")

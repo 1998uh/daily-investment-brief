@@ -8,6 +8,7 @@ from urllib import parse
 from .accounts import Account
 from .base import CollectedItem, CollectionLog
 from .http import HttpClient, clean_text, compact_text
+from ..cancel import raise_if_cancelled
 from ..config import Settings
 from ..datetime_utils import parse_datetime
 
@@ -22,6 +23,7 @@ def collect_weibo(
     include_undated: bool,
     log: CollectionLog,
 ) -> list[CollectedItem]:
+    raise_if_cancelled()
     uid = account.uid or extract_uid(account.url)
     if not uid:
         log.add_warning(f"微博 / {account.name}: 缺少 url 或 uid，已跳过")
@@ -73,6 +75,7 @@ def collect_weibo_web(
     page = 1
 
     while len(items) < limit and page <= 3:
+        raise_if_cancelled()
         api_url = "https://weibo.com/ajax/statuses/mymblog?" + parse.urlencode(
             {"uid": uid, "page": page, "feature": "0"}
         )
@@ -82,6 +85,7 @@ def collect_weibo_web(
             break
 
         for status in statuses:
+            raise_if_cancelled()
             item = parse_mblog(status, account, uid, window_end, settings, client, web=True)
             if not item:
                 continue
@@ -113,6 +117,7 @@ def collect_weibo_mobile(
     page = 1
 
     while len(items) < limit and page <= 3:
+        raise_if_cancelled()
         api_url = (
             "https://m.weibo.cn/api/container/getIndex"
             f"?type=uid&value={uid}&containerid=107603{uid}&page={page}"
@@ -129,6 +134,7 @@ def collect_weibo_mobile(
             break
 
         for card in cards:
+            raise_if_cancelled()
             mblog = card.get("mblog")
             if not mblog:
                 continue
@@ -157,6 +163,7 @@ def parse_mblog(
     client: HttpClient,
     web: bool,
 ) -> CollectedItem | None:
+    raise_if_cancelled()
     text = str(mblog.get("text_raw") or "").strip()
     if not text:
         text = clean_text(str(mblog.get("text") or ""))
@@ -252,6 +259,7 @@ def _has_investment_keywords(text: str) -> bool:
 
 
 def fetch_long_text(client: HttpClient, mblog_id: str, *, web: bool) -> str:
+    raise_if_cancelled()
     if web:
         try:
             payload = client.get_json(

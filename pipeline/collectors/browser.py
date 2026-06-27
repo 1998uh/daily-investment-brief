@@ -18,6 +18,8 @@ import queue
 import threading
 from typing import Any
 
+from ..cancel import raise_if_cancelled, wait_event
+
 log = logging.getLogger(__name__)
 
 try:
@@ -186,6 +188,7 @@ def fetch_json(api_url: str) -> dict | None:
     利用浏览器已通过 WAF 质询的身份，继承所有 cookie 和会话状态。
     通过专用线程 + 队列实现线程安全。
     """
+    raise_if_cancelled()
     if not HAS_PLAYWRIGHT:
         return None
 
@@ -194,7 +197,7 @@ def fetch_json(api_url: str) -> dict | None:
     event = threading.Event()
     result_box: list[Any] = []
     _request_q.put((api_url, event, result_box))
-    event.wait(timeout=30)  # 最多等 30 秒
+    wait_event(event, timeout=30)  # 最多等 30 秒
 
     return result_box[0] if result_box else None
 

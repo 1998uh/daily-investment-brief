@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
-import time
 from urllib import error, request
 
+from .cancel import interruptible_sleep, raise_if_cancelled
 from .config import Settings
 
 
@@ -22,6 +22,7 @@ def chat_completion(
     temperature: float | None = None,
     label: str = "LLM",
 ) -> str:
+    raise_if_cancelled()
     if not settings.has_llm:
         raise LLMError("BRIEF_BASE_URL, BRIEF_MODEL, and BRIEF_API_KEY are required")
 
@@ -48,6 +49,7 @@ def chat_completion(
     attempts = settings.llm_retries + 1
     last_error: LLMError | None = None
     for attempt in range(1, attempts + 1):
+        raise_if_cancelled()
         if label:
             print(f"[info] {label}: LLM request {attempt}/{attempts}", flush=True)
         try:
@@ -91,6 +93,6 @@ def chat_completion(
         if label:
             print(f"[warn] {label}: {last_error}; retrying in {delay:.1f}s", flush=True)
         if delay:
-            time.sleep(delay)
+            interruptible_sleep(delay)
 
     raise last_error or LLMError("LLM request failed")

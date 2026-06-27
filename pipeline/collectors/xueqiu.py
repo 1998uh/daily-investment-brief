@@ -5,12 +5,12 @@ import logging
 import os
 import random
 import re
-import time
 
 from .accounts import Account
 from .base import CollectedItem, CollectionLog
 from .browser import fetch_status_detail, HAS_PLAYWRIGHT
 from .http import HttpClient, absolute_url, clean_text, compact_text
+from ..cancel import interruptible_sleep, raise_if_cancelled
 from ..config import Settings
 from ..datetime_utils import parse_datetime
 
@@ -46,12 +46,12 @@ def _xueqiu_headers(uid: str = "") -> dict[str, str]:
 
 def _polite_sleep(min_s: float = 0.8, max_s: float = 2.0) -> None:
     """随机延迟，模拟人类浏览节奏，降低反爬风险。"""
-    time.sleep(random.uniform(min_s, max_s))
+    interruptible_sleep(random.uniform(min_s, max_s))
 
 
 def _long_sleep() -> None:
     """翻页 / 账号切换时稍长延迟。"""
-    time.sleep(random.uniform(2.0, 4.0))
+    interruptible_sleep(random.uniform(2.0, 4.0))
 
 
 # ---------------------------------------------------------------------------
@@ -68,6 +68,7 @@ def collect_xueqiu(
     include_undated: bool,
     clog: CollectionLog,
 ) -> list[CollectedItem]:
+    raise_if_cancelled()
     uid = account.uid or extract_uid(account.url)
     if not uid:
         clog.add_warning(f"雪球 / {account.name}: 缺少 url 或 uid，已跳过")
@@ -112,6 +113,7 @@ def _fetch_timeline(
     page = 1
 
     while len(items) < limit and page <= max_pages:
+        raise_if_cancelled()
         api_url = f"{api_base}?user_id={uid}&page={page}&count={min(limit, 20)}"
         try:
             payload = client.get_json(api_url, headers=headers)
@@ -132,6 +134,7 @@ def _fetch_timeline(
 
         page_timestamps: list[datetime | None] = []
         for status in statuses:
+            raise_if_cancelled()
             sid = str(status.get("id") or "")
             if sid and sid in seen_ids:
                 continue
@@ -293,6 +296,7 @@ def _fetch_full_text(
 
     优先使用 Playwright（绕过 WAF 最可靠），失败时回退到 HTTP 方式。
     """
+    raise_if_cancelled()
     if not status_id:
         return ""
 

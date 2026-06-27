@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 from .accounts import Account
 from .base import CollectedItem, CollectionLog
 from .http import HttpClient, clean_text, extract_title, strip_html
+from ..cancel import raise_if_cancelled
 from ..config import Settings
 from ..datetime_utils import parse_datetime
 
@@ -22,6 +23,7 @@ def collect_wechat(
     include_undated: bool,
     log: CollectionLog,
 ) -> list[CollectedItem]:
+    raise_if_cancelled()
     client = HttpClient(cookie_env="WECHAT_COOKIE")
     items: list[CollectedItem] = []
 
@@ -39,6 +41,7 @@ def collect_wechat(
         )
 
     for url in account.urls:
+        raise_if_cancelled()
         if len(items) >= limit:
             break
         try:
@@ -71,11 +74,13 @@ def collect_wechat_rss(
     include_undated: bool,
     limit: int,
 ) -> list[CollectedItem]:
+    raise_if_cancelled()
     text = client.get_text(account.rss_url)
     root = ET.fromstring(text)
     items: list[CollectedItem] = []
 
     for node in root.findall(".//item"):
+        raise_if_cancelled()
         if len(items) >= limit:
             break
         title = find_xml_text(node, "title") or account.name
@@ -113,6 +118,7 @@ def fetch_wechat_article(
     settings: Settings,
     reference: datetime,
 ) -> CollectedItem:
+    raise_if_cancelled()
     html = client.get_text(url)
     title = extract_title(html) or account.name
     content_html = extract_wechat_content_html(html) or html

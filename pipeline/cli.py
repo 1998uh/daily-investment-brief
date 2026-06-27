@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 
 from .config import ROOT, get_settings
+from .cancel import PipelineCancelled, cancellation_context, raise_if_cancelled
 from .collectors.runner import collect_to_sources, collect_single_account
 from .generator import generate_brief, synthesize_from_batches, build_direct_prompt
 from .html import wrap_html
@@ -16,15 +17,31 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if args.command == "generate":
-        return generate_command(args)
-    if args.command == "collect":
-        return collect_command(args)
-    if args.command == "collect-one":
-        return collect_one_command(args)
+    try:
+        with cancellation_context():
+            raise_if_cancelled()
+            if args.command == "generate":
+                return generate_command(args)
+            if args.command == "collect":
+                return collect_command(args)
+            if args.command == "collect-one":
+                return collect_one_command(args)
 
-    parser.print_help()
-    return 1
+            parser.print_help()
+            return 1
+    except (KeyboardInterrupt, PipelineCancelled):
+        print("\n[info] Interrupted, exiting...", flush=True)
+        if argv is None:
+            try:
+                from .collectors.browser import close_browser
+                close_browser()
+            except Exception:
+                pass
+            sys.stdout.flush()
+            sys.stderr.flush()
+            import os
+            os._exit(130)
+        return 130
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -249,6 +266,9 @@ def _collect_date_range(args: argparse.Namespace) -> int:
 
             if log.errors:
                 has_errors = True
+        except KeyboardInterrupt:
+            print(f"\n[info] {date_str} 采集中被中断，正在退出…", flush=True)
+            raise
         except Exception as exc:
             print(f"[error] {date_str}: {exc}", file=sys.stderr)
             has_errors = True
@@ -355,6 +375,9 @@ def _collect_one_date_range(args: argparse.Namespace) -> int:
 
             if log.errors:
                 has_errors = True
+        except KeyboardInterrupt:
+            print(f"\n[info] {date_str} 采集中被中断，正在退出…", flush=True)
+            raise
         except Exception as exc:
             print(f"[error] {date_str}: {exc}", file=sys.stderr)
             has_errors = True

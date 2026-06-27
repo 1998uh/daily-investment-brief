@@ -4,7 +4,7 @@ import random
 import threading
 import time
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import date
 from pathlib import Path
 
@@ -14,6 +14,7 @@ from .weibo import collect_weibo
 from .wechat import collect_wechat
 from .writer import write_items
 from .xueqiu import collect_xueqiu
+from ..cancel import PipelineCancelled, interruptible_sleep, is_cancelled, raise_if_cancelled
 from ..config import Settings
 from ..datetime_utils import brief_window, format_window_cn
 
@@ -106,11 +107,14 @@ def collect_to_sources(
         include_undated=include_undated,
     )
 
+    raise_if_cancelled()
+
     if parallel and len(enabled_accounts) > 1:
         items = _collect_parallel(enabled_accounts, log=log, **collect_kwargs)
     else:
         items = _collect_sequential(enabled_accounts, log=log, **collect_kwargs)
 
+    raise_if_cancelled()
     written = write_items(items, out_dir)
     log.add_info(f"新增 Markdown: {len(written)} / 采集条目: {len(items)}")
     return written, log
@@ -129,16 +133,19 @@ def _collect_sequential(
     )
     items: list[CollectedItem] = []
     for i, account in enumerate(accounts):
+        raise_if_cancelled()
         progress.mark_started(account.source, account.name)
         try:
             batch = collect_account(account, log=log, **kwargs)
             items.extend(batch)
             progress.mark_done(account.source, account.name, len(batch), ok=True)
+        except PipelineCancelled:
+            raise
         except Exception as exc:
             log.add_error(f"{account.source} / {account.name}: {exc}")
             progress.mark_done(account.source, account.name, 0, ok=False, error=str(exc))
         if i < len(accounts) - 1:
-            time.sleep(random.uniform(2.0, 5.0))
+            interruptible_sleep(random.uniform(2.0, 5.0))
     return items
 
 
@@ -168,40 +175,51 @@ def _collect_parallel(
     future_map: dict = {}
     executors: list[ThreadPoolExecutor] = []
 
-    for platform, platform_accounts in by_platform.items():
-        max_workers = PLATFORM_CONCURRENCY.get(platform, DEFAULT_CONCURRENCY)
-        delay = PLATFORM_DELAY.get(platform, DEFAULT_DELAY)
-        executor = ThreadPoolExecutor(
-            max_workers=max_workers,
-            thread_name_prefix=f"collect-{platform}",
-        )
-        executors.append(executor)
-
-        for account in platform_accounts:
-            future = executor.submit(
-                _collect_one,
-                account,
-                log=log,
-                progress=progress,
-                delay=delay,
-                **kwargs,
+    try:
+        for platform, platform_accounts in by_platform.items():
+            max_workers = PLATFORM_CONCURRENCY.get(platform, DEFAULT_CONCURRENCY)
+            delay = PLATFORM_DELAY.get(platform, DEFAULT_DELAY)
+            executor = ThreadPoolExecutor(
+                max_workers=max_workers,
+                thread_name_prefix=f"collect-{platform}",
             )
-            future_map[future] = (platform, account.name)
+            executors.append(executor)
 
-    # 收集结果，完成即打印进度
-    for future in as_completed(future_map):
-        platform, name = future_map[future]
-        try:
-            batch = future.result()
-            with items_lock:
-                items.extend(batch)
-            progress.mark_done(platform, name, len(batch), ok=True)
-        except Exception as exc:
-            log.add_error(f"{platform} / {name}: {exc}")
-            progress.mark_done(platform, name, 0, ok=False, error=str(exc))
+            for account in platform_accounts:
+                future = executor.submit(
+                    _collect_one,
+                    account,
+                    log=log,
+                    progress=progress,
+                    delay=delay,
+                    **kwargs,
+                )
+                future_map[future] = (platform, account.name)
 
-    for executor in executors:
-        executor.shutdown(wait=False)
+        # Poll futures briefly so Esc cancellation is observed.
+        pending = set(future_map)
+        while pending:
+            raise_if_cancelled()
+            done, pending = wait(pending, timeout=0.2, return_when=FIRST_COMPLETED)
+            for future in done:
+                platform, name = future_map[future]
+                try:
+                    batch = future.result()
+                    with items_lock:
+                        items.extend(batch)
+                    progress.mark_done(platform, name, len(batch), ok=True)
+                except PipelineCancelled:
+                    raise
+                except Exception as exc:
+                    log.add_error(f"{platform} / {name}: {exc}")
+                    progress.mark_done(platform, name, 0, ok=False, error=str(exc))
+    except (KeyboardInterrupt, PipelineCancelled):
+        for future in future_map:
+            future.cancel()
+        raise
+    finally:
+        for executor in executors:
+            executor.shutdown(wait=False, cancel_futures=True)
 
     return items
 
@@ -217,10 +235,12 @@ def _collect_one(
     """采集单个账号，完成后 sleep 实现同平台限速。"""
     progress.mark_started(account.source, account.name)
     try:
+        raise_if_cancelled()
         result = collect_account(account, log=log, **kwargs)
     finally:
         # 同平台内限速：worker 完成后 sleep，下一个任务自然延后
-        time.sleep(random.uniform(*delay))
+        if not is_cancelled():
+            interruptible_sleep(random.uniform(*delay))
     return result
 
 
@@ -234,6 +254,7 @@ def collect_account(
     include_undated: bool,
     log: CollectionLog,
 ) -> list[CollectedItem]:
+    raise_if_cancelled()
     if account.source == "雪球":
         return collect_xueqiu(
             account,
@@ -308,6 +329,7 @@ def collect_single_account(
     log.add_info(f"采集窗口: {format_window_cn(window_start, window_end)}（{settings.timezone}）")
 
     try:
+        raise_if_cancelled()
         items = collect_account(
             account,
             window_start=window_start,
@@ -317,10 +339,13 @@ def collect_single_account(
             include_undated=include_undated,
             log=log,
         )
+    except PipelineCancelled:
+        raise
     except Exception as exc:
         log.add_error(f"{account.source} / {account.name}: {exc}")
         items = []
 
+    raise_if_cancelled()
     written = write_items(items, out_dir)
     log.add_info(f"新增 Markdown: {len(written)} / 采集条目: {len(items)}")
     return written, log

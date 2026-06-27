@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import replace
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -9,6 +9,7 @@ import re
 import textwrap
 import time
 
+from .cancel import PipelineCancelled, raise_if_cancelled
 from .config import ROOT, Settings
 from .datetime_utils import brief_window, format_window_cn
 from .ingest import build_coverage, expected_authors_from_accounts
@@ -74,6 +75,7 @@ def synthesize_from_batches(
     settings: Settings,
 ) -> str:
     """用已有批次 JSON 合成最终简报。可单独调用，不依赖文章输入。"""
+    raise_if_cancelled()
     final_prompt = read_template("final_brief_prompt.md")
     coverage_json = json.dumps(coverage_to_dicts(coverage), ensure_ascii=False, indent=2)
     summaries_json = json.dumps(summaries, ensure_ascii=False, indent=2)
@@ -119,6 +121,7 @@ def generate_brief(
     accounts_path: Path | None = None,
     out_dir: Path | None = None,
 ) -> GenerationResult:
+    raise_if_cancelled()
     expected = expected_authors_from_accounts(accounts_path) if accounts_path else None
     coverage = build_coverage(articles, expected)
     if settings.has_llm:
@@ -141,6 +144,7 @@ def generate_with_llm(
     out_dir: Path | None = None,
 ) -> str:
     started_at = time.perf_counter()
+    raise_if_cancelled()
     batch_prompt = read_template("batch_summary_prompt.md")
 
     batches = chunked_by_author(articles, settings.batch_max_chars)
@@ -172,19 +176,31 @@ def _summarize_batches(
     total = len(batches)
     worker_count = min(settings.llm_batch_concurrency, total)
     if worker_count == 1:
-        return [
-            _summarize_single_batch(index, batch, total, settings, batch_prompt)
-            for index, batch in enumerate(batches, start=1)
-        ]
+        results: list[dict | str] = []
+        for index, batch in enumerate(batches, start=1):
+            raise_if_cancelled()
+            results.append(_summarize_single_batch(index, batch, total, settings, batch_prompt))
+        return results
 
     results: list[dict | str] = ["" for _ in batches]
-    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+    executor = ThreadPoolExecutor(max_workers=worker_count)
+    try:
         future_to_index = {
             executor.submit(_summarize_single_batch, index, batch, total, settings, batch_prompt): index - 1
             for index, batch in enumerate(batches, start=1)
         }
-        for future in as_completed(future_to_index):
-            results[future_to_index[future]] = future.result()
+        pending = set(future_to_index)
+        while pending:
+            raise_if_cancelled()
+            done, pending = wait(pending, timeout=0.2, return_when=FIRST_COMPLETED)
+            for future in done:
+                results[future_to_index[future]] = future.result()
+    except (KeyboardInterrupt, PipelineCancelled):
+        for future in future_to_index:
+            future.cancel()
+        raise
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
     return results
 
 
@@ -195,6 +211,7 @@ def _summarize_single_batch(
     settings: Settings,
     batch_prompt: str,
 ) -> dict | str:
+    raise_if_cancelled()
     print(f"[info] LLM batch summary {index}/{total}: {len(batch)} articles", flush=True)
     article_text = "\n\n".join(format_article(article, settings.max_chars_per_article) for article in batch)
     content = batch_prompt + "\n\n以下是本批文章：\n\n" + article_text
