@@ -120,7 +120,7 @@ daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
 daily-brief collect --date 2026-06-27 --dry-run
 
 # 采集后直接生成简报
-daily-brief collect --date 2026-06-27 --and-generate
+daily-brief collect --date 2026-06-28 --and-generate
 ```
 
 | 参数 | 说明 |
@@ -168,7 +168,7 @@ daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 -
 
 ```powershell
 # 默认全流程（批次提炼 → 合成简报）
-daily-brief generate --date 2026-06-27
+daily-brief generate --date 2026-06-28
 
 # 只生成 Markdown，不生成 HTML
 daily-brief generate --date 2026-06-17 --markdown-only
