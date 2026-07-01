@@ -111,7 +111,7 @@ bash scripts/health_check.sh
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-06-27
+daily-brief collect --date 2026-07-01
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
 daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
@@ -120,7 +120,7 @@ daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
 daily-brief collect --date 2026-06-27 --dry-run
 
 # 采集后直接生成简报
-daily-brief collect --date 2026-06-28 --and-generate
+daily-brief collect --date 2026-06-30 --and-generate
 ```
 
 | 参数 | 说明 |
@@ -168,7 +168,7 @@ daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 -
 
 ```powershell
 # 默认全流程（批次提炼 → 合成简报）
-daily-brief generate --date 2026-06-28
+daily-brief generate --date 2026-07-01
 
 # 只生成 Markdown，不生成 HTML
 daily-brief generate --date 2026-06-17 --markdown-only
