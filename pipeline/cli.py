@@ -11,6 +11,7 @@ from .collectors.runner import collect_to_sources, collect_single_account
 from .generator import generate_brief, synthesize_from_batches, build_direct_prompt
 from .html import wrap_html
 from .ingest import load_articles
+from .workstation import create_journal_entry
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -506,6 +507,9 @@ def generate_command(args: argparse.Namespace) -> int:
     print(f"Generated Markdown: {md_path}")
     if html_path:
         print(f"Generated HTML: {html_path}")
+    journal = create_journal_entry(brief_date)
+    journal_status = "created" if journal.created else "exists"
+    print(f"Journal template ({journal_status}): {journal.path}")
     print(f"Mode: {'LLM' if used_llm else 'fallback'} ({result_model})")
     return 0
 

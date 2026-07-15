@@ -30,6 +30,7 @@ def make_settings(*, concurrency: int) -> Settings:
         style="strong_narrative_emoji",
         max_chars_per_article=1_000,
         batch_size=2,
+        batch_max_chars=15_000,
         llm_batch_concurrency=concurrency,
         temperature=0.2,
         llm_thinking_type=None,

@@ -120,7 +120,7 @@ daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
 daily-brief collect --date 2026-06-27 --dry-run
 
 # 采集后直接生成简报
-daily-brief collect --date 2026-07-04 --and-generate
+daily-brief collect --date 2026-07-15 --and-generate
 ```
 
 | 参数 | 说明 |
@@ -148,7 +148,7 @@ daily-brief collect-one --name "谢佩德骨头" --date 2026-06-26 --verbose
 daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17
 
 # 采集到独立目录（用于后续单独生成报告）
-daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17 --out-dir sources/买股票的老木匠
+daily-brief collect-one --name "谢佩德骨头" --start-date 2026-06-28 --end-date 2026-07-04 --out-dir sources/谢佩德骨头
 ```
 
 | 参数 | 说明 |
@@ -230,6 +230,39 @@ reports/<date>/daily-brief.md        # Markdown 简报
 reports/<date>/daily-brief.html      # HTML 简报
 reports/<date>/batch-summaries.json  # 批次提炼结果（--batches-only 或默认模式）
 reports/<date>/prompt-for-external.md # 外部模型 prompt（--no-batches）
+journal/YYYY/MM/YYYY-MM-DD.md        # 个人判断模板（generate 后自动创建）
+```
+
+## 个人投研工作台
+
+日报现在默认包含三个训练模块：
+
+- **今日三句话**：压缩当天真正重要的变化、影响和纪律。
+- **待验证假设**：把观点写成可观察、可证伪、可复盘的假设。
+- **我的判断区**：留空给本人填写，AI 不代填。
+
+常用脚本：
+
+```powershell
+# 单独创建某天的个人判断模板（已存在时不覆盖）
+python scripts/new_journal_entry.py --date 2026-07-15
+
+# 创建周复盘模板，并自动索引当周日报和 journal
+python scripts/new_weekly_review.py --week 2026-W29
+
+# 创建月复盘模板，并自动索引当月周复盘
+python scripts/new_monthly_review.py --month 2026-07
+
+# 初始化主题、公司、错题知识库模板
+python scripts/init_knowledge_base.py
+```
+
+建议流程：
+
+```text
+每天：读日报 8 分钟 → 填 journal 5 分钟
+每周：用 reviews/weekly 做一次判断复盘
+每月：用 reviews/monthly 沉淀长期主题、公司和错题
 ```
 ## 账号配置
 
@@ -268,6 +301,9 @@ pipeline/                   简报生成流水线
 config/                     账号清单
 sources/                    原始文章（按日期，不提交）
 reports/                    生成结果（HTML/Markdown）
+journal/                    每日个人判断记录
+reviews/                    周复盘和月复盘
+knowledge/                  主题、公司、错题长期知识库
 memory/                     Agent 运行时数据（不提交）
 scripts/                    启动脚本和调试工具
 templates/                  LLM Prompt 模板
@@ -281,6 +317,7 @@ docs/superpowers/           设计文档和实现计划
 - `memory/` — Agent 运行时数据（SQLite + ChromaDB），**不提交到 Git**，各环境独立
 - `sources/` — 采集的原始文章，**不提交到 Git**
 - `reports/` — 生成的简报 HTML/Markdown，已提交部分历史记录
+- `journal/`、`reviews/`、`knowledge/` — 个人投研沉淀，默认可提交；如内容敏感可自行加入 `.gitignore`
 
 ---
 
