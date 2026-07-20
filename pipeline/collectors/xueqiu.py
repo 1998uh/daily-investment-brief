@@ -8,7 +8,7 @@ import re
 
 from .accounts import Account
 from .base import CollectedItem, CollectionLog
-from .browser import fetch_status_detail, HAS_PLAYWRIGHT
+from .browser import fetch_json, fetch_status_detail, HAS_PLAYWRIGHT
 from .http import HttpClient, absolute_url, clean_text, compact_text
 from ..cancel import interruptible_sleep, raise_if_cancelled
 from ..config import Settings
@@ -274,6 +274,7 @@ def _parse_status(
         url=url,
         published_at=published_at,
         content=content,
+        provider="xueqiu_timeline",
     )
 
 
@@ -303,14 +304,15 @@ def _fetch_full_text(
     # 判断是否需要获取全文
     has_title = bool(str(status.get("title") or "").strip())
     raw_text = str(status.get("text") or "")
-    might_be_truncated = (
+    clearly_truncated = (
         has_title
         or "..." in raw_text[-30:]
         or "展开全文" in raw_text
         or "全文" in raw_text[-50:]
-        or len(raw_text) > 400
     )
-    if not might_be_truncated:
+    # Timeline often already includes a usable long body. Length alone is not a
+    # reason to call fragile detail endpoints or emit noisy warnings.
+    if not clearly_truncated:
         return ""
 
     _polite_sleep(0.3, 0.8)  # 请求全文前短延迟
@@ -342,41 +344,68 @@ def _fetch_full_text(
     headers = _xueqiu_headers(uid)
     headers["Referer"] = f"https://xueqiu.com/{uid}/{status_id}"
 
+    if HAS_PLAYWRIGHT:
+        try:
+            detail_url = f"https://xueqiu.com/statuses/original/show.json?id={status_id}"
+            payload = fetch_json(detail_url)
+            result = _extract_detail_text(payload)
+            if result:
+                return result
+        except Exception as exc:
+            log.debug(f"雪球 / {author}: Playwright original/show 失败: {exc}")
+
     try:
         detail_url = f"https://xueqiu.com/statuses/original/show.json?id={status_id}"
         payload = client.get_json(detail_url, headers=headers)
         if isinstance(payload, dict) and payload.get("error_code"):
             log.debug(f"雪球 / {author}: 详情接口返回错误 {payload.get('error_code')}")
         elif isinstance(payload, dict):
-            for obj in [payload, payload.get("data", {}), payload.get("status", {})]:
-                if not isinstance(obj, dict):
-                    continue
-                full_text = str(obj.get("text") or "")
-                if full_text:
-                    result = clean_text(full_text)
-                    if result:
-                        return result
+            result = _extract_detail_text(payload)
+            if result:
+                return result
     except Exception as exc:
         log.debug(f"雪球 / {author}: 详情接口 original/show 失败: {exc}")
 
     _polite_sleep(0.5, 1.0)
 
     # 方法 3: v4/statuses/show.json（新版接口）
+    if HAS_PLAYWRIGHT:
+        try:
+            show_url = f"https://xueqiu.com/v4/statuses/show.json?id={status_id}"
+            payload = fetch_json(show_url)
+            result = _extract_detail_text(payload)
+            if result:
+                return result
+        except Exception as exc:
+            log.debug(f"雪球 / {author}: Playwright v4/show 失败: {exc}")
+
     try:
         show_url = f"https://xueqiu.com/v4/statuses/show.json?id={status_id}"
         payload = client.get_json(show_url, headers=headers)
-        full_text = ""
-        if isinstance(payload, dict):
-            inner = payload.get("data") or payload.get("status") or payload
-            full_text = str(inner.get("text") or "")
-        if full_text:
-            result = clean_text(full_text)
-            if result:
-                return result
+        result = _extract_detail_text(payload)
+        if result:
+            return result
     except Exception as exc:
         log.debug(f"雪球 / {author}: 详情接口 v4/show 失败: {exc}")
 
     clog.add_warning(f"雪球 / {author}: 文章 {status_id} 全文获取失败，使用摘要")
+    return ""
+
+
+def _extract_detail_text(payload: object) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    candidates = [payload]
+    for key in ("data", "status"):
+        inner = payload.get(key)
+        if isinstance(inner, dict):
+            candidates.append(inner)
+    for obj in candidates:
+        full_text = str(obj.get("text") or obj.get("description") or "")
+        if full_text:
+            result = clean_text(full_text)
+            if result:
+                return result
     return ""
 
 

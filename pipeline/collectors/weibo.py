@@ -7,6 +7,7 @@ from urllib import parse
 
 from .accounts import Account
 from .base import CollectedItem, CollectionLog
+from .browser import fetch_json_with_profile
 from .http import HttpClient, clean_text, compact_text
 from ..cancel import raise_if_cancelled
 from ..config import Settings
@@ -46,8 +47,23 @@ def collect_weibo(
     except Exception as exc:
         log.add_warning(f"微博 / {account.name}: 网页接口失败，尝试移动端接口：{exc}")
 
-    items = collect_weibo_mobile(
-        client,
+    try:
+        items = collect_weibo_mobile(
+            client,
+            account,
+            uid=uid,
+            window_start=window_start,
+            window_end=window_end,
+            settings=settings,
+            limit=limit,
+            include_undated=include_undated,
+        )
+        log.add_info(f"微博 / {account.name}: 采集 {len(items)} 条")
+        return items
+    except Exception as exc:
+        log.add_warning(f"微博 / {account.name}: 移动端接口失败，尝试浏览器登录态：{exc}")
+
+    items = collect_weibo_browser(
         account,
         uid=uid,
         window_start=window_start,
@@ -56,7 +72,7 @@ def collect_weibo(
         limit=limit,
         include_undated=include_undated,
     )
-    log.add_info(f"微博 / {account.name}: 采集 {len(items)} 条")
+    log.add_info(f"微博 / {account.name}: 浏览器登录态采集 {len(items)} 条")
     return items
 
 
@@ -154,6 +170,53 @@ def collect_weibo_mobile(
     return items[:limit]
 
 
+def collect_weibo_browser(
+    account: Account,
+    *,
+    uid: str,
+    window_start: datetime,
+    window_end: datetime,
+    settings: Settings,
+    limit: int,
+    include_undated: bool,
+) -> list[CollectedItem]:
+    items: list[CollectedItem] = []
+    for page in range(1, 4):
+        raise_if_cancelled()
+        api_url = "https://weibo.com/ajax/statuses/mymblog?" + parse.urlencode(
+            {"uid": uid, "page": page, "feature": "0"}
+        )
+        payload = fetch_json_with_profile("weibo", api_url, home_url=f"https://weibo.com/u/{uid}")
+        if not payload:
+            break
+        statuses = payload.get("data", {}).get("list", [])
+        if not statuses:
+            break
+        for status in statuses:
+            item = parse_mblog(status, account, uid, window_end, settings, HttpClient(), web=True)
+            if not item:
+                continue
+            item = item.__class__(
+                source=item.source,
+                author=item.author,
+                title=item.title,
+                url=item.url,
+                published_at=item.published_at,
+                content=item.content,
+                provider="weibo_browser",
+                raw_json=item.raw_json,
+            )
+            if item.published_at is None:
+                if include_undated:
+                    items.append(item)
+                continue
+            if window_start <= item.published_at < window_end:
+                items.append(item)
+            if len(items) >= limit:
+                return items[:limit]
+    return items[:limit]
+
+
 def parse_mblog(
     mblog: dict,
     account: Account,
@@ -196,6 +259,7 @@ def parse_mblog(
         url=url,
         published_at=published_at,
         content=text,
+        provider="weibo_web" if web else "weibo_mobile",
     )
 
 

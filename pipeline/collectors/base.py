@@ -13,6 +13,8 @@ class CollectedItem:
     url: str
     published_at: datetime | None
     content: str
+    provider: str = ""
+    raw_json: str = ""
 
 
 @dataclass

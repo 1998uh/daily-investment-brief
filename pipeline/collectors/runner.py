@@ -11,12 +11,13 @@ from pathlib import Path
 from .accounts import Account, load_accounts
 from .base import CollectedItem, CollectionLog
 from .weibo import collect_weibo
-from .wechat import collect_wechat
+from .wechat import collect_wechat, collect_wechat_manual_urls
 from .writer import write_items
 from .xueqiu import collect_xueqiu
 from ..cancel import PipelineCancelled, interruptible_sleep, is_cancelled, raise_if_cancelled
-from ..config import Settings
+from ..config import ROOT, Settings
 from ..datetime_utils import brief_window, format_window_cn
+from ..storage import query_items, record_source_health, upsert_items
 
 # 每个平台的最大并发数和账号间延时（秒）
 PLATFORM_CONCURRENCY: dict[str, int] = {
@@ -80,6 +81,7 @@ def collect_to_sources(
     include_undated: bool,
     dry_run: bool = False,
     parallel: bool = True,
+    cache_fallback: bool = True,
 ) -> tuple[list[Path], CollectionLog]:
     log = CollectionLog()
     accounts = load_accounts(accounts_path)
@@ -114,9 +116,31 @@ def collect_to_sources(
     else:
         items = _collect_sequential(enabled_accounts, log=log, **collect_kwargs)
 
+    manual_urls = ROOT / "config" / "wechat_urls" / f"{brief_date.isoformat()}.txt"
+    items.extend(
+        collect_wechat_manual_urls(
+            manual_urls,
+            window_start=window_start,
+            window_end=window_end,
+            settings=settings,
+            include_undated=include_undated,
+            log=log,
+        )
+    )
+
     raise_if_cancelled()
-    written = write_items(items, out_dir)
-    log.add_info(f"新增 Markdown: {len(written)} / 采集条目: {len(items)}")
+    changed = upsert_items(items)
+    if cache_fallback:
+        export_items = query_items(window_start, window_end)
+        if include_undated:
+            export_items.extend(item for item in items if item.published_at is None)
+    else:
+        export_items = items
+    written = write_items(export_items, out_dir)
+    log.add_info(
+        f"新增/更新缓存: {changed} / 实时采集条目: {len(items)} / 导出条目: {len(export_items)}"
+    )
+    log.add_info(f"新增 Markdown: {len(written)} / 导出条目: {len(export_items)}")
     return written, log
 
 
@@ -138,11 +162,13 @@ def _collect_sequential(
         try:
             batch = collect_account(account, log=log, **kwargs)
             items.extend(batch)
+            record_source_health(account.source, account.name, ok=True, count=len(batch))
             progress.mark_done(account.source, account.name, len(batch), ok=True)
         except PipelineCancelled:
             raise
         except Exception as exc:
             log.add_error(f"{account.source} / {account.name}: {exc}")
+            record_source_health(account.source, account.name, ok=False, count=0, message=str(exc))
             progress.mark_done(account.source, account.name, 0, ok=False, error=str(exc))
         if i < len(accounts) - 1:
             interruptible_sleep(random.uniform(2.0, 5.0))
@@ -171,7 +197,7 @@ def _collect_parallel(
     # 每个平台一个 ThreadPoolExecutor，所有平台同时运行
     items: list[CollectedItem] = []
     items_lock = threading.Lock()
-    # future -> (platform, account_name)
+    # future -> account
     future_map: dict = {}
     executors: list[ThreadPoolExecutor] = []
 
@@ -194,7 +220,7 @@ def _collect_parallel(
                     delay=delay,
                     **kwargs,
                 )
-                future_map[future] = (platform, account.name)
+                future_map[future] = account
 
         # Poll futures briefly so Esc cancellation is observed.
         pending = set(future_map)
@@ -202,17 +228,21 @@ def _collect_parallel(
             raise_if_cancelled()
             done, pending = wait(pending, timeout=0.2, return_when=FIRST_COMPLETED)
             for future in done:
-                platform, name = future_map[future]
+                account = future_map[future]
                 try:
                     batch = future.result()
                     with items_lock:
                         items.extend(batch)
-                    progress.mark_done(platform, name, len(batch), ok=True)
+                    record_source_health(account.source, account.name, ok=True, count=len(batch))
+                    progress.mark_done(account.source, account.name, len(batch), ok=True)
                 except PipelineCancelled:
                     raise
                 except Exception as exc:
-                    log.add_error(f"{platform} / {name}: {exc}")
-                    progress.mark_done(platform, name, 0, ok=False, error=str(exc))
+                    log.add_error(f"{account.source} / {account.name}: {exc}")
+                    record_source_health(
+                        account.source, account.name, ok=False, count=0, message=str(exc)
+                    )
+                    progress.mark_done(account.source, account.name, 0, ok=False, error=str(exc))
     except (KeyboardInterrupt, PipelineCancelled):
         for future in future_map:
             future.cancel()
@@ -306,6 +336,7 @@ def collect_single_account(
     settings: Settings,
     limit: int,
     include_undated: bool,
+    cache_fallback: bool = True,
 ) -> tuple[list[Path], CollectionLog]:
     """按名称查找并采集单个博主。"""
     log = CollectionLog()
@@ -339,15 +370,27 @@ def collect_single_account(
             include_undated=include_undated,
             log=log,
         )
+        record_source_health(account.source, account.name, ok=True, count=len(items))
     except PipelineCancelled:
         raise
     except Exception as exc:
         log.add_error(f"{account.source} / {account.name}: {exc}")
+        record_source_health(account.source, account.name, ok=False, count=0, message=str(exc))
         items = []
 
     raise_if_cancelled()
-    written = write_items(items, out_dir)
-    log.add_info(f"新增 Markdown: {len(written)} / 采集条目: {len(items)}")
+    changed = upsert_items(items)
+    if cache_fallback:
+        export_items = query_items(window_start, window_end, source=account.source, author=account.name)
+        if include_undated:
+            export_items.extend(item for item in items if item.published_at is None)
+    else:
+        export_items = items
+    written = write_items(export_items, out_dir)
+    log.add_info(
+        f"新增/更新缓存: {changed} / 实时采集条目: {len(items)} / 导出条目: {len(export_items)}"
+    )
+    log.add_info(f"新增 Markdown: {len(written)} / 导出条目: {len(export_items)}")
     return written, log
 
 

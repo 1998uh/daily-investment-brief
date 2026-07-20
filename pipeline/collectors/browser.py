@@ -14,11 +14,14 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 import queue
+import shutil
 import threading
 from typing import Any
 
 from ..cancel import raise_if_cancelled, wait_event
+from ..config import ROOT
 
 log = logging.getLogger(__name__)
 
@@ -53,12 +56,19 @@ def _pw_worker() -> None:
         pw = sync_playwright().start()
         # 允许通过环境变量指定本地已有的 Chromium/Chrome 可执行文件，
         # 避免 playwright 版本与已下载浏览器版本号不一致时报“浏览器未安装”。
-        launch_kwargs: dict[str, Any] = {"headless": True}
-        exe_path = os.getenv("XUEQIU_CHROME_PATH", "")
-        if exe_path:
-            launch_kwargs["executable_path"] = exe_path
-        browser = pw.chromium.launch(**launch_kwargs)
-        log.debug("Playwright worker: Chromium 已启动")
+        launch_kwargs = browser_launch_kwargs("xueqiu", headless=True)
+        profile_dir = default_profile_dir("xueqiu")
+        profile_dir.mkdir(parents=True, exist_ok=True)
+        context = pw.chromium.launch_persistent_context(
+            str(profile_dir),
+            **launch_kwargs,
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/125.0 Safari/537.36"
+            ),
+        )
+        log.debug("Playwright worker: Chromium persistent context 已启动")
 
         # 设置 cookie
         cookie = os.getenv("XUEQIU_COOKIE", "")
@@ -74,13 +84,6 @@ def _pw_worker() -> None:
                     "path": "/",
                 })
 
-        context = browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/125.0 Safari/537.36"
-            ),
-        )
         if cookies:
             context.add_cookies(cookies)
 
@@ -208,6 +211,39 @@ def fetch_status_detail(status_id: str) -> dict | None:
     return fetch_json(url)
 
 
+def fetch_json_with_profile(platform: str, api_url: str, *, home_url: str) -> dict | None:
+    """Fetch JSON once using a platform-specific persistent browser profile."""
+    raise_if_cancelled()
+    if not HAS_PLAYWRIGHT:
+        return None
+
+    profile_dir = default_profile_dir(platform)
+    profile_dir.mkdir(parents=True, exist_ok=True)
+    with sync_playwright() as pw:
+        launch_kwargs = browser_launch_kwargs(platform, headless=True)
+        context = pw.chromium.launch_persistent_context(str(profile_dir), **launch_kwargs)
+        try:
+            page = context.pages[0] if context.pages else context.new_page()
+            page.goto(home_url, timeout=30000, wait_until="domcontentloaded")
+            return page.evaluate(
+                """async (url) => {
+                    try {
+                        const resp = await fetch(url, {
+                            credentials: 'include',
+                            headers: {'Accept': 'application/json, text/plain, */*'}
+                        });
+                        if (!resp.ok) return null;
+                        return await resp.json();
+                    } catch(e) {
+                        return null;
+                    }
+                }""",
+                api_url,
+            )
+        finally:
+            context.close()
+
+
 def close_browser() -> None:
     """关闭浏览器（进程退出时调用）。"""
     global _shutdown
@@ -216,3 +252,79 @@ def close_browser() -> None:
         event = threading.Event()
         _request_q.put(("__SHUTDOWN__", event, []))
         event.wait(timeout=10)
+
+
+def default_profile_dir(platform: str) -> Path:
+    env_name = f"{platform.upper()}_BROWSER_PROFILE"
+    raw = os.getenv(env_name, "").strip()
+    if raw:
+        return Path(raw)
+    return ROOT / ".browser-profiles" / platform
+
+
+def browser_launch_kwargs(platform: str, *, headless: bool) -> dict[str, Any]:
+    """Build Playwright launch kwargs, preferring explicit env vars then system browsers."""
+    launch_kwargs: dict[str, Any] = {"headless": headless}
+    configured = (
+        os.getenv(f"{platform.upper()}_CHROME_PATH", "").strip()
+        or os.getenv("CHROME_PATH", "").strip()
+        or os.getenv("XUEQIU_CHROME_PATH", "").strip()
+    )
+    system_browser = find_system_browser()
+    exe_path = configured
+    # Stale Playwright-managed Chromium builds often break after package updates.
+    # Prefer the installed system browser when an old ms-playwright path is configured.
+    if configured and "ms-playwright" in configured.lower() and system_browser:
+        exe_path = system_browser
+    if not exe_path:
+        exe_path = system_browser
+    if exe_path:
+        launch_kwargs["executable_path"] = exe_path
+    return launch_kwargs
+
+
+def find_system_browser() -> str:
+    candidates = [
+        os.path.join(os.getenv("PROGRAMFILES", ""), "Google", "Chrome", "Application", "chrome.exe"),
+        os.path.join(
+            os.getenv("PROGRAMFILES(X86)", ""), "Google", "Chrome", "Application", "chrome.exe"
+        ),
+        os.path.join(
+            os.getenv("LOCALAPPDATA", ""), "Google", "Chrome", "Application", "chrome.exe"
+        ),
+        os.path.join(
+            os.getenv("PROGRAMFILES", ""), "Microsoft", "Edge", "Application", "msedge.exe"
+        ),
+        os.path.join(
+            os.getenv("PROGRAMFILES(X86)", ""), "Microsoft", "Edge", "Application", "msedge.exe"
+        ),
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).exists():
+            return candidate
+    return shutil.which("chrome") or shutil.which("msedge") or ""
+
+
+def login_persistent_profile(platform: str, *, profile_dir: Path | None = None) -> None:
+    """Open a persistent browser profile so the user can log in once."""
+    if not HAS_PLAYWRIGHT:
+        raise RuntimeError("Playwright is not installed. Run: pip install -e .[collect]")
+
+    urls = {
+        "weibo": "https://weibo.com/",
+        "xueqiu": "https://xueqiu.com/",
+    }
+    if platform not in urls:
+        raise ValueError(f"unsupported platform: {platform}")
+
+    target_profile = profile_dir or default_profile_dir(platform)
+    target_profile.mkdir(parents=True, exist_ok=True)
+    with sync_playwright() as pw:
+        launch_kwargs = browser_launch_kwargs(platform, headless=False)
+        context = pw.chromium.launch_persistent_context(str(target_profile), **launch_kwargs)
+        page = context.pages[0] if context.pages else context.new_page()
+        page.goto(urls[platform], wait_until="domcontentloaded")
+        print(f"[info] Browser profile: {target_profile}")
+        print("[info] Please finish login in the opened browser window.")
+        input("[info] Press Enter here after login is complete...")
+        context.close()

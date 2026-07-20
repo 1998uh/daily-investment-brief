@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import email.utils
+from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 
@@ -104,10 +105,72 @@ def collect_wechat_rss(
                 url=link,
                 published_at=published_at,
                 content=clean_text(content),
+                provider="wechat_rss",
             )
         )
 
     return items
+
+
+def collect_wechat_manual_urls(
+    urls_path: Path,
+    *,
+    window_start: datetime,
+    window_end: datetime,
+    settings: Settings,
+    include_undated: bool,
+    log: CollectionLog,
+) -> list[CollectedItem]:
+    if not urls_path.exists():
+        return []
+
+    client = HttpClient(cookie_env="WECHAT_COOKIE")
+    items: list[CollectedItem] = []
+    seen_urls: set[str] = set()
+    for author, url in parse_manual_url_pool(urls_path):
+        raise_if_cancelled()
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
+        account = Account(source="微信公众号", name=author, urls=[url])
+        try:
+            item = fetch_wechat_article(account, url, client=client, settings=settings, reference=window_end)
+        except Exception as exc:
+            log.add_warning(f"微信公众号 / {author}: 手工 URL 抓取失败 {url}: {exc}")
+            continue
+        if item.published_at is None:
+            if include_undated:
+                items.append(item)
+            continue
+        if window_start <= item.published_at < window_end:
+            items.append(item)
+
+    if items:
+        log.add_info(f"微信公众号 / 手工 URL 池: 采集 {len(items)} 条")
+    return items
+
+
+def parse_manual_url_pool(path: Path) -> list[tuple[str, str]]:
+    entries: list[tuple[str, str]] = []
+    for raw_line in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        author = "手工公众号"
+        url = line
+        if "|" in line:
+            left, right = line.split("|", 1)
+            if left.strip() and right.strip():
+                author = left.strip()
+                url = right.strip()
+        elif " " in line:
+            left, right = line.split(None, 1)
+            if right.startswith("http"):
+                author = left.strip()
+                url = right.strip()
+        if url.startswith("http"):
+            entries.append((author, url))
+    return entries
 
 
 def fetch_wechat_article(
@@ -131,6 +194,7 @@ def fetch_wechat_article(
         url=url,
         published_at=published_at,
         content=content,
+        provider="wechat_manual_url",
     )
 
 

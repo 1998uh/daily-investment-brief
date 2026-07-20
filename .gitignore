@@ -10,6 +10,9 @@ config/accounts*.json
 !config/accounts.example.json
 
 sources/
+data/
+.browser-profiles/
+config/wechat_urls/
 
 !reports/.gitkeep
 

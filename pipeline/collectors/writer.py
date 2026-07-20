@@ -61,6 +61,7 @@ author: {item.author}
 title: {escape_front_matter(item.title)}
 url: {item.url}
 published_at: {published}
+provider: {item.provider}
 collected_at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 ---
 

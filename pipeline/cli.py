@@ -27,6 +27,10 @@ def main(argv: list[str] | None = None) -> int:
                 return collect_command(args)
             if args.command == "collect-one":
                 return collect_one_command(args)
+            if args.command == "source-health":
+                return source_health_command(args)
+            if args.command == "auth-login":
+                return auth_login_command(args)
 
             parser.print_help()
             return 1
@@ -94,6 +98,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="When used with --and-generate, skip HTML output.",
     )
+    collect.add_argument(
+        "--no-cache-fallback",
+        action="store_true",
+        help="Only export items fetched in this run; do not export cached articles.",
+    )
 
     generate = subparsers.add_parser("generate", help="Generate Markdown and HTML brief.")
 
@@ -128,6 +137,26 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enable DEBUG logging for detailed diagnostics.",
     )
+    collect_one.add_argument(
+        "--no-cache-fallback",
+        action="store_true",
+        help="Only export items fetched in this run; do not export cached articles.",
+    )
+
+    health = subparsers.add_parser("source-health", help="Show latest source health status.")
+    health.add_argument(
+        "--db",
+        help="SQLite database path. Defaults to data/articles.sqlite.",
+    )
+
+    auth = subparsers.add_parser("auth-login", help="Open a persistent browser login session.")
+    auth.add_argument(
+        "--platform",
+        required=True,
+        choices=["weibo", "xueqiu"],
+        help="Platform to log in to.",
+    )
+    auth.add_argument("--profile", help="Override browser profile directory.")
 
 
     generate.add_argument("--date", required=True, help="Brief date, e.g. 2026-06-07.")
@@ -193,6 +222,7 @@ def collect_command(args: argparse.Namespace) -> int:
         include_undated=args.include_undated,
         dry_run=args.dry_run,
         parallel=not args.sequential,
+        cache_fallback=not args.no_cache_fallback,
     )
     print_collection_log(log)
 
@@ -258,6 +288,7 @@ def _collect_date_range(args: argparse.Namespace) -> int:
                 include_undated=args.include_undated,
                 dry_run=args.dry_run,
                 parallel=not args.sequential,
+                cache_fallback=not args.no_cache_fallback,
             )
             print_collection_log(log)
 
@@ -318,6 +349,7 @@ def collect_one_command(args: argparse.Namespace) -> int:
         settings=settings,
         limit=args.limit,
         include_undated=args.include_undated,
+        cache_fallback=not args.no_cache_fallback,
     )
     print_collection_log(log)
 
@@ -369,6 +401,7 @@ def _collect_one_date_range(args: argparse.Namespace) -> int:
                 settings=settings,
                 limit=args.limit,
                 include_undated=args.include_undated,
+                cache_fallback=not args.no_cache_fallback,
             )
             print_collection_log(log)
             print(f"Written files: {len(written)}")
@@ -528,6 +561,33 @@ def print_collection_log(log) -> None:
         print(f"[warn] {message}")
     for message in log.errors:
         print(f"[error] {message}", file=sys.stderr)
+
+
+def source_health_command(args: argparse.Namespace) -> int:
+    from .storage import DEFAULT_DB_PATH, load_source_health
+
+    db_path = Path(args.db) if args.db else DEFAULT_DB_PATH
+    rows = load_source_health(db_path)
+    if not rows:
+        print(f"No source health records found in {db_path}")
+        return 0
+    print(f"Source health: {db_path}")
+    for row in rows:
+        status = "ok" if row["ok"] else "fail"
+        message = f" | {row['message']}" if row["message"] else ""
+        print(
+            f"- {status:4} {row['source']} / {row['author']} "
+            f"count={row['count']} checked_at={row['checked_at']}{message}"
+        )
+    return 0
+
+
+def auth_login_command(args: argparse.Namespace) -> int:
+    from .collectors.browser import login_persistent_profile
+
+    profile = Path(args.profile) if args.profile else None
+    login_persistent_profile(args.platform, profile_dir=profile)
+    return 0
 
 
 if __name__ == "__main__":
