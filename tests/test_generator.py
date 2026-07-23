@@ -110,6 +110,29 @@ class FallbackRenderTests(unittest.TestCase):
         self.assertIn("作者X", markdown)
 
 
+class ChunkingTests(unittest.TestCase):
+    def test_oversized_author_is_split_into_multiple_batches(self) -> None:
+        articles = [
+            Article(
+                path=Path(f"article-{index}.md"),
+                source="雪球",
+                author="same-author",
+                title=f"title-{index}",
+                url=f"https://example.com/{index}",
+                published_at="2026-06-10 08:00",
+                content="x" * 7,
+            )
+            for index in range(3)
+        ]
+
+        batches = generator.chunked_by_author(articles, max_chars=10)
+
+        self.assertEqual(
+            [[article.title for article in batch] for batch in batches],
+            [["title-0"], ["title-1"], ["title-2"]],
+        )
+
+
 class SummarizeBatchesTests(unittest.TestCase):
     def test_summarize_batches_preserves_order_when_concurrent(self) -> None:
         batches = generator.chunked([make_article(i) for i in range(5)], 2)

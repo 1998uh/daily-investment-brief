@@ -23,6 +23,8 @@ def main(argv: list[str] | None = None) -> int:
             raise_if_cancelled()
             if args.command == "generate":
                 return generate_command(args)
+            if args.command == "capital-daily":
+                return capital_daily_command(args)
             if args.command == "collect":
                 return collect_command(args)
             if args.command == "collect-one":
@@ -105,6 +107,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     generate = subparsers.add_parser("generate", help="Generate Markdown and HTML brief.")
+
+    capital = subparsers.add_parser(
+        "capital-daily",
+        help="Generate the private portfolio capital-flow PART-B report.",
+    )
+    capital.add_argument("--date", required=True, help="Requested report date, e.g. 2026-07-23.")
+    capital.add_argument(
+        "--holdings-stdin",
+        action="store_true",
+        required=True,
+        help="Read a JSON holdings list or {holdings: [...]} object from stdin.",
+    )
+    capital.add_argument(
+        "--out-dir",
+        help="Output directory. Defaults to private-reports/<date>.",
+    )
+    capital.add_argument(
+        "--cache-dir",
+        help="Capital-flow cache directory. Defaults to data/capital-flow.",
+    )
 
     collect_one = subparsers.add_parser("collect-one", help="Collect articles from a single account.")
     collect_one.add_argument("--name", required=True, help="Account name as in accounts.json.")
@@ -462,7 +484,7 @@ def generate_command(args: argparse.Namespace) -> int:
         print(f"Prompt saved: {prompt_path}")
         print(f"Size: {char_count:,} chars (~{char_count // 4:,} tokens estimated)")
         print(f"Articles: {len(articles)} | System prompt: 你是中文每日投资简报主编。")
-        print(f"Next: paste prompt-for-external.md into Claude / GPT / Gemini to generate the brief.")
+        print("Next: paste prompt-for-external.md into Claude / GPT / Gemini to generate the brief.")
         return 0
 
     # ── 路径 A：--from-batches，跳过提炼，直接从落盘 JSON 合成 ──────────────
@@ -505,7 +527,7 @@ def generate_command(args: argparse.Namespace) -> int:
         )
         print(f"Batch summaries saved: {batches_path}")
         print(f"Batches: {len(summaries)}")
-        print(f"Next step: synthesize with any model using final_brief_prompt.md + batch-summaries.json")
+        print("Next step: synthesize with any model using final_brief_prompt.md + batch-summaries.json")
         print(f"  or run: python -m pipeline.cli generate --date {args.date} --from-batches")
         return 0
 
@@ -544,6 +566,43 @@ def generate_command(args: argparse.Namespace) -> int:
     journal_status = "created" if journal.created else "exists"
     print(f"Journal template ({journal_status}): {journal.path}")
     print(f"Mode: {'LLM' if used_llm else 'fallback'} ({result_model})")
+    return 0
+
+
+def capital_daily_command(args: argparse.Namespace) -> int:
+    from .capital_daily import HoldingsInputError, run_capital_daily_from_stdin
+
+    stream = getattr(sys.stdin, "buffer", None)
+    if stream is None:
+        raw = sys.stdin.read()
+    else:
+        data = stream.read()
+        try:
+            raw = data.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            raw = data.decode(sys.stdin.encoding or "utf-8")
+    if not raw.strip():
+        print("No holdings JSON received on stdin.", file=sys.stderr)
+        return 2
+    try:
+        run = run_capital_daily_from_stdin(
+            raw=raw,
+            requested_date=date.fromisoformat(args.date),
+            out_dir=Path(args.out_dir) if args.out_dir else None,
+            cache_dir=Path(args.cache_dir) if args.cache_dir else None,
+        )
+    except (HoldingsInputError, ValueError) as exc:
+        print(f"Invalid holdings input: {exc}", file=sys.stderr)
+        return 2
+
+    print(f"Generated capital report: {run.report_path}")
+    print(
+        f"Requested date: {run.requested_date} | Actual data date: {run.actual_date} | "
+        f"Holdings: {run.holding_count} | Warnings: {run.warning_count}"
+    )
+    if not run.ok:
+        print("[warn] Report generated with unavailable capital-flow data.", file=sys.stderr)
+        return 1
     return 0
 
 

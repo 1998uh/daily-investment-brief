@@ -10,9 +10,16 @@ services:
     restart: unless-stopped
     environment:
       # LLM settings — override with actual values in production
+      BRIEF_LLM_PROVIDER: ${BRIEF_LLM_PROVIDER:-openai}
       BRIEF_BASE_URL: ${BRIEF_BASE_URL:-}
       BRIEF_MODEL: ${BRIEF_MODEL:-}
       BRIEF_API_KEY: ${BRIEF_API_KEY:-}
+      BRIEF_LLM_TIMEOUT_SECONDS: ${BRIEF_LLM_TIMEOUT_SECONDS:-120}
+      BRIEF_LLM_RETRIES: ${BRIEF_LLM_RETRIES:-2}
+      BRIEF_LLM_RETRY_DELAY_SECONDS: ${BRIEF_LLM_RETRY_DELAY_SECONDS:-2}
+      BRIEF_LLM_BATCH_CONCURRENCY: ${BRIEF_LLM_BATCH_CONCURRENCY:-3}
+      BRIEF_LLM_THINKING: ${BRIEF_LLM_THINKING:-}
+      BRIEF_LLM_MAX_TOKENS: ${BRIEF_LLM_MAX_TOKENS:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       # Agent settings
       AGENT_MEMORY_DIR: /data/memory

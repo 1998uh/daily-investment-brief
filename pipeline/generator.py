@@ -129,6 +129,7 @@ def generate_brief(
             markdown = generate_with_llm(articles, coverage, brief_date, settings, out_dir=out_dir)
             return GenerationResult(markdown=markdown, used_llm=True, model=settings.model)
         except LLMError as exc:
+            print(f"[warn] LLM generation failed; using fallback: {exc}", flush=True)
             markdown = generate_fallback(articles, coverage, brief_date, settings, note=str(exc))
             return GenerationResult(markdown=markdown, used_llm=False, model="fallback")
 
@@ -265,7 +266,7 @@ def generate_fallback(
     authors = "、".join(
         article.display_author for article in articles if article.display_author != "未知作者"
     )
-    model_line = f"🤖 fallback（未调用模型）"
+    model_line = "🤖 fallback（未调用模型）"
     if note:
         model_line += f"\n- ⚠ LLM 调用失败，已切换 fallback：{note}"
 
@@ -485,9 +486,8 @@ def chunked(items: list[Article], size: int) -> list[list[Article]]:
 def chunked_by_author(articles: list[Article], max_chars: int) -> list[list[Article]]:
     """按博主分组后，将小博主合并成不超过 max_chars 的批次。
 
-    同一博主的所有文章保证在同一批次，让 LLM 能看到完整的逻辑链。
-    发帖量大的博主若单人就超过 max_chars，单独成一批（不做截断，由
-    format_article 内部处理单篇截断）。
+    同一博主在不超限时保持同批，让 LLM 能看到完整的逻辑链；单个博主
+    超限时按文章拆分，避免单个超大请求被中转站拒绝。
     """
     from collections import defaultdict
 
@@ -510,6 +510,24 @@ def chunked_by_author(articles: list[Article], max_chars: int) -> list[list[Arti
     for key in author_order:
         group = by_author[key]
         group_chars = author_chars(key)
+        if group_chars > max_chars:
+            if current:
+                batches.append(current)
+                current = []
+                current_chars = 0
+            oversized: list[Article] = []
+            oversized_chars = 0
+            for article in group:
+                article_chars = len(article.content)
+                if oversized and oversized_chars + article_chars > max_chars:
+                    batches.append(oversized)
+                    oversized = []
+                    oversized_chars = 0
+                oversized.append(article)
+                oversized_chars += article_chars
+            if oversized:
+                batches.append(oversized)
+            continue
         # 若当前批次已有内容且加入此博主会超限，先提交当前批次
         if current and current_chars + group_chars > max_chars:
             batches.append(current)

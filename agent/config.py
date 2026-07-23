@@ -35,10 +35,11 @@ class AgentSettings:
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     use_local_embeddings: bool = True
     cookie_secure: bool = False
+    llm_provider: str = "openai"
 
 
 def get_agent_settings() -> AgentSettings:
-    from pipeline.config import load_env
+    from pipeline.config import load_env, normalize_llm_provider
     load_env()
     memory = ROOT / _env("AGENT_MEMORY_DIR", "memory")
     return AgentSettings(
@@ -53,6 +54,7 @@ def get_agent_settings() -> AgentSettings:
         llm_model=_env("BRIEF_MODEL"),            # optional, may be empty during tests
         llm_api_key=_env("BRIEF_API_KEY"),        # optional, may be empty during tests
         tavily_api_key=_env("TAVILY_API_KEY"),    # optional, may be empty during tests
+        llm_provider=normalize_llm_provider(_env("BRIEF_LLM_PROVIDER", "openai")),
         embedding_model=_env(
             "AGENT_EMBEDDING_MODEL",
             "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",

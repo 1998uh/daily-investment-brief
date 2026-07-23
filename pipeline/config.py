@@ -43,10 +43,11 @@ class Settings:
     temperature: float
     llm_thinking_type: str | None = None
     llm_max_tokens: int | None = None
+    llm_provider: str = "openai"
 
     @property
     def has_llm(self) -> bool:
-        return bool(self.base_url and self.model and self.api_key)
+        return bool(self.base_url and self.model)
 
 
 def get_settings() -> Settings:
@@ -70,6 +71,7 @@ def get_settings() -> Settings:
         temperature=_env_float("BRIEF_TEMPERATURE", 0.2, min_value=0),
         llm_thinking_type=_env_choice("BRIEF_LLM_THINKING", {"disabled", "enabled"}),
         llm_max_tokens=_env_optional_int("BRIEF_LLM_MAX_TOKENS", min_value=1),
+        llm_provider=_env_provider("BRIEF_LLM_PROVIDER", "openai"),
     )
 
 
@@ -119,3 +121,41 @@ def _env_choice(name: str, choices: set[str]) -> str | None:
     if raw in choices:
         return raw
     return None
+
+
+def _env_provider(name: str, default: str) -> str:
+    return normalize_llm_provider(os.getenv(name, default))
+
+
+def normalize_llm_provider(value: str) -> str:
+    aliases = {
+        "openai": "openai",
+        "openai-compatible": "openai",
+        "compatible": "openai",
+        "relay": "openai",
+        "deepseek": "openai",
+        "openrouter": "openai",
+        "dashscope": "openai",
+        "qwen": "openai",
+        "moonshot": "openai",
+        "kimi": "openai",
+        "zhipu": "openai",
+        "glm": "openai",
+        "siliconflow": "openai",
+        "groq": "openai",
+        "together": "openai",
+        "mistral": "openai",
+        "xai": "openai",
+        "vllm": "openai",
+        "lmstudio": "openai",
+        "openai-responses": "openai-responses",
+        "openai_responses": "openai-responses",
+        "responses": "openai-responses",
+        "anthropic": "anthropic",
+        "claude": "anthropic",
+        "gemini": "gemini",
+        "google": "gemini",
+        "ollama": "ollama",
+    }
+    raw = value.strip().lower()
+    return aliases.get(raw, raw)

@@ -41,7 +41,8 @@ Copy-Item .env.example .env
 在 `.env` 中填写：
 
 ```env
-# LLM（OpenAI 兼容接口）
+# LLM（DeepSeek、OpenAI 及绝大多数中转站）
+BRIEF_LLM_PROVIDER=openai
 BRIEF_BASE_URL=https://api.deepseek.com/v1
 BRIEF_MODEL=deepseek-chat
 BRIEF_API_KEY=sk-...
@@ -56,6 +57,48 @@ WECHAT_COOKIE=
 
 # 可选：Tavily 搜索
 TAVILY_API_KEY=
+```
+
+### LLM 平台与中转站
+
+`BRIEF_LLM_PROVIDER` 支持 `openai`、`openai-responses`、`anthropic`、`gemini` 和 `ollama`。如果中转站文档写着“OpenAI 兼容接口”，通常选择 `openai`；程序在模型只支持 Responses 协议时会自动切换到 `/responses`。也可显式选择 `openai-responses`，省去第一次协议探测。模型名使用中转站提供的原始模型 ID。
+
+```env
+# OpenAI 兼容中转站（推荐；BASE_URL 可写到 /v1 或完整端点）
+BRIEF_LLM_PROVIDER=openai
+BRIEF_BASE_URL=https://your-relay.example/v1
+# 也支持：https://your-relay.example/v1/chat/completions
+BRIEF_MODEL=your-relay-model-id
+BRIEF_API_KEY=sk-...
+```
+
+常见平台配置：
+
+| 平台/协议 | `BRIEF_LLM_PROVIDER` | `BRIEF_BASE_URL` |
+|---|---|---|
+| DeepSeek | `openai` | `https://api.deepseek.com/v1` |
+| OpenAI | `openai` | `https://api.openai.com/v1` |
+| 通义千问兼容模式 | `openai` | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| Moonshot/Kimi | `openai` | `https://api.moonshot.cn/v1` |
+| 智谱 GLM | `openai` | `https://open.bigmodel.cn/api/paas/v4` |
+| OpenRouter | `openai` | `https://openrouter.ai/api/v1` |
+| OpenAI Responses 协议/中转 | `openai-responses` | 服务商提供的 `/v1` 根地址 |
+| Anthropic 原生协议 | `anthropic` | `https://api.anthropic.com/v1` |
+| Google Gemini 原生协议 | `gemini` | `https://generativelanguage.googleapis.com/v1beta` |
+| Ollama 本地模型 | `ollama` | `http://localhost:11434` |
+
+Anthropic/Gemini 原生协议的中转站分别选择 `anthropic`/`gemini`，`BRIEF_BASE_URL` 填中转站给出的 API 根地址。Ollama 可将 `BRIEF_API_KEY` 留空；其他平台按服务商要求填写。CLI 简报生成和网页 Agent 对话共用这套配置。
+
+网络不稳定或中转站限流时，可降低并发并增加重试：
+
+```env
+BRIEF_LLM_BATCH_CONCURRENCY=1
+BRIEF_MAX_CHARS_PER_ARTICLE=3000
+BRIEF_BATCH_MAX_CHARS=5000
+BRIEF_LLM_MAX_TOKENS=3000
+BRIEF_LLM_TIMEOUT_SECONDS=180
+BRIEF_LLM_RETRIES=4
+BRIEF_LLM_RETRY_DELAY_SECONDS=2
 ```
 
 生成随机 JWT 密钥：
@@ -111,7 +154,7 @@ bash scripts/health_check.sh
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-07-21
+daily-brief collect --date 2026-07-23
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
 daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
@@ -168,7 +211,7 @@ daily-brief collect-one --name "谢佩德骨头" --start-date 2026-06-28 --end-d
 
 ```powershell
 # 默认全流程（批次提炼 → 合成简报）
-daily-brief generate --date 2026-07-20
+daily-brief generate --date 2026-07-22
 
 # 只生成 Markdown，不生成 HTML
 daily-brief generate --date 2026-06-17 --markdown-only
