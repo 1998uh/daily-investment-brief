@@ -7,12 +7,13 @@ from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
 
-from .capital_flow import CapitalFlowError, EastmoneyProvider, normalize_thscode
+from .capital_flow import CapitalFlowError, normalize_thscode
+from .capital_flow_factory import build_default_capital_flow_provider
 from .config import ROOT
 
 
 mcp = FastMCP("capital-flow-mcp")
-_provider = EastmoneyProvider(ROOT / "data" / "capital-flow")
+_provider = build_default_capital_flow_provider(ROOT / "data" / "capital-flow")
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -46,7 +47,7 @@ def get_sector_capital_flow(
     sectors: list[str],
     trade_date: str | None = None,
 ) -> dict[str, Any]:
-    """Get current flow records for named Eastmoney industry sectors or sector codes."""
+    """Get current flow records for named industry sectors or sector codes."""
     try:
         if not sectors or len(sectors) > 50:
             return _error("sectors must contain 1-50 items")

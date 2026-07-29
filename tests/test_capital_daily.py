@@ -60,8 +60,49 @@ class FakeProvider:
                     "sector_name": "有色金属",
                     "trade_date": (self.as_of - timedelta(days=offset)).isoformat(),
                     "main_net": 100_000_000,
+                    "source": "fixture",
                 }
                 for offset in range(1, 20)
+            ]
+        return []
+
+
+class TonghuashunFallbackReportProvider(FakeProvider):
+    source_label = "Eastmoney public API（个股）+ 同花顺公开资金流（板块净额 fallback）"
+    diagnostics = ["Eastmoney 板块资金流失败，已切换同花顺公开资金净额 fallback"]
+
+    def fetch_sector_flow(self, trade_date=None):
+        return [
+            {
+                "sector_code": "881168.TI",
+                "sector_name": "有色金属",
+                "trade_date": self.as_of.isoformat(),
+                "main_net": None,
+                "total_net": 300_000_000,
+                "source": "tonghuashun",
+                "flow_metric": "total_net",
+                "flow_label": "同花顺资金净额",
+            }
+        ]
+
+    def load_history(self, kind, *, before_or_equal):
+        if kind == "sectors":
+            return [
+                {
+                    "sector_code": "881168.TI",
+                    "sector_name": "有色金属",
+                    "trade_date": (self.as_of - timedelta(days=1)).isoformat(),
+                    "main_net": 9_999_999_999,
+                    "total_net": 200_000_000,
+                    "source": "tonghuashun",
+                },
+                {
+                    "sector_code": "BK0478",
+                    "sector_name": "有色金属",
+                    "trade_date": (self.as_of - timedelta(days=2)).isoformat(),
+                    "main_net": 8_888_888_888,
+                    "source": "eastmoney",
+                },
             ]
         return []
 
@@ -152,6 +193,24 @@ def test_provider_failure_writes_diagnostic_report_and_returns_nonzero_state(tmp
     assert "顺风持仓 | 0只" in report
 
 
+def test_report_uses_fallback_metric_without_mixing_eastmoney_history(tmp_path):
+    run = run_capital_daily(
+        payload=sample_payload(),
+        requested_date=date(2026, 7, 23),
+        out_dir=tmp_path / "private",
+        cache_dir=tmp_path / "cache",
+        provider=TonghuashunFallbackReportProvider(),
+    )
+
+    report = run.report_path.read_text(encoding="utf-8")
+    assert run.ok
+    assert "同花顺公开资金流（板块净额 fallback）" in report
+    assert "+5.00亿（2日）" in report
+    assert "同花顺资金净额口径" in report
+    assert "+88.89亿" not in report
+    assert "顺风持仓 | 2只" in report
+
+
 def test_eastmoney_provider_parses_verified_contract(monkeypatch, tmp_path):
     responses = iter(
         [
@@ -232,3 +291,25 @@ def test_eastmoney_provider_reuses_same_day_cache(monkeypatch, tmp_path):
 
     assert provider.fetch_stock_flow(["600519.SH"], date(2026, 7, 23)) == [stock_record]
     assert provider.fetch_sector_flow(date(2026, 7, 23)) == [sector_record]
+
+
+def test_eastmoney_provider_reuses_latest_weekday_sector_cache(monkeypatch, tmp_path):
+    sector_dir = tmp_path / "sectors"
+    sector_dir.mkdir(parents=True)
+    sector_record = {
+        "sector_code": "BK1200",
+        "sector_name": "电力设备",
+        "trade_date": "2026-07-24",
+        "main_net": 2,
+    }
+    (sector_dir / "2026-07-24.json").write_text(
+        json.dumps([sector_record]),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "pipeline.capital_flow._get_json",
+        lambda *args, **kwargs: pytest.fail("weekend cache should avoid network"),
+    )
+    provider = EastmoneyProvider(tmp_path)
+
+    assert provider.fetch_sector_flow(date(2026, 7, 25)) == [sector_record]

@@ -8,7 +8,7 @@ AkShare or another MCP-backed provider without changing report calculations.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 from pathlib import Path
 import re
@@ -28,12 +28,74 @@ class CapitalFlowError(RuntimeError):
     """Raised when a capital-flow response cannot be trusted."""
 
 
+def _latest_weekday(value: date) -> date:
+    while value.weekday() >= 5:
+        value -= timedelta(days=1)
+    return value
+
+
 class CapitalFlowProvider(Protocol):
     def fetch_stock_flow(self, thscodes: Sequence[str], trade_date: date | None = None) -> list[dict[str, Any]]:
         ...
 
     def fetch_sector_flow(self, trade_date: date | None = None) -> list[dict[str, Any]]:
         ...
+
+
+class FallbackCapitalFlowProvider:
+    """Use a secondary sector provider while keeping stock flow on the primary."""
+
+    def __init__(
+        self,
+        primary: CapitalFlowProvider,
+        sector_fallback: CapitalFlowProvider,
+        *,
+        primary_label: str = "Eastmoney public API",
+        fallback_label: str = "Tonghuashun sector net-flow fallback",
+    ) -> None:
+        self.primary = primary
+        self.sector_fallback = sector_fallback
+        self.primary_label = primary_label
+        self.fallback_label = fallback_label
+        self.source_label = primary_label
+        self.diagnostics: list[str] = []
+        self._active_sector_provider: CapitalFlowProvider = primary
+
+    def fetch_sector_flow(self, trade_date: date | None = None) -> list[dict[str, Any]]:
+        try:
+            rows = self.primary.fetch_sector_flow(trade_date)
+            self._active_sector_provider = self.primary
+            self.source_label = self.primary_label
+            return rows
+        except Exception as primary_error:
+            try:
+                rows = self.sector_fallback.fetch_sector_flow(trade_date)
+            except Exception as fallback_error:
+                raise CapitalFlowError(
+                    f"primary sector provider failed: {primary_error}; "
+                    f"fallback sector provider failed: {fallback_error}"
+                ) from fallback_error
+            self._active_sector_provider = self.sector_fallback
+            self.source_label = f"{self.primary_label}（个股）+ {self.fallback_label}"
+            self.diagnostics.append(
+                "Eastmoney 板块资金流失败，已切换同花顺公开资金净额 fallback；"
+                f"原始错误：{primary_error}"
+            )
+            return rows
+
+    def fetch_stock_flow(
+        self,
+        thscodes: Sequence[str],
+        trade_date: date | None = None,
+    ) -> list[dict[str, Any]]:
+        return self.primary.fetch_stock_flow(thscodes, trade_date)
+
+    def load_history(self, kind: str, *, before_or_equal: date) -> list[dict[str, Any]]:
+        provider = self._active_sector_provider if kind == "sectors" else self.primary
+        loader = getattr(provider, "load_history", None)
+        if not callable(loader):
+            return []
+        return loader(kind, before_or_equal=before_or_equal)
 
 
 @dataclass(frozen=True)
@@ -218,6 +280,11 @@ class EastmoneyProvider:
             cached = self._read_cache("sectors", trade_date.isoformat())
             if cached:
                 return cached
+            latest_weekday = _latest_weekday(trade_date)
+            if latest_weekday != trade_date:
+                cached = self._read_cache("sectors", latest_weekday.isoformat())
+                if cached:
+                    return cached
         rows: list[dict[str, Any]] = []
         page = 1
         total = 1

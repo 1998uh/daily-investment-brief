@@ -9,7 +9,8 @@ from pathlib import Path
 import re
 from typing import Any, Iterable
 
-from .capital_flow import CapitalFlowProvider, EastmoneyProvider, normalize_thscode
+from .capital_flow import CapitalFlowProvider, normalize_thscode
+from .capital_flow_factory import build_default_capital_flow_provider
 from .config import ROOT
 
 
@@ -203,6 +204,22 @@ def _sector_flow_for(holding: Holding, sector_rows: list[dict[str, Any]]) -> dic
     return None
 
 
+def _flow_metric(row: dict[str, Any] | None) -> tuple[str, float | None]:
+    if not row:
+        return "main_net", None
+    main_net = _number(row.get("main_net"))
+    if main_net is not None:
+        return "main_net", main_net
+    return "total_net", _number(row.get("total_net"))
+
+
+def _same_flow_source(rows: Iterable[dict[str, Any]], current: dict[str, Any]) -> list[dict[str, Any]]:
+    source = str(current.get("source") or "").strip()
+    if not source:
+        return list(rows)
+    return [row for row in rows if str(row.get("source") or "").strip() == source]
+
+
 def _holding_section(
     title: str,
     holdings: list[Holding],
@@ -210,13 +227,14 @@ def _holding_section(
     stock_by_code: dict[str, dict[str, Any]],
     weights: dict[int, float] | None,
 ) -> list[str]:
-    lines = [f"### {title}", "", "| 名称 | 代码 | 仓位 | 当日涨跌 | 板块 | 个股主力 | 板块主力 | 判断 |", "|---|---|---:|---:|---|---:|---:|---|"]
+    lines = [f"### {title}", "", "| 名称 | 代码 | 仓位 | 当日涨跌 | 板块 | 个股主力 | 板块资金 | 判断 |", "|---|---|---:|---:|---|---:|---:|---|"]
     if not holdings:
         lines.append("| — | — | — | — | — | — | — | 无符合条件持仓 |")
     for holding in holdings:
         sector = _sector_flow_for(holding, sector_rows)
         stock = stock_by_code.get(holding.thscode)
-        sector_direction = _direction(_number(sector.get("main_net")) if sector else None)
+        _, sector_value = _flow_metric(sector)
+        sector_direction = _direction(sector_value)
         lines.append(
             "| {name} | {code} | {weight} | {change} | {sector_name} | {stock_flow} | {sector_flow} | {direction} |".format(
                 name=holding.name,
@@ -225,7 +243,7 @@ def _holding_section(
                 change=_format_pct(holding.price_change_ratio_pct),
                 sector_name=holding.sector or "待映射",
                 stock_flow=_format_yi(_number(stock.get("main_net")) if stock else None),
-                sector_flow=_format_yi(_number(sector.get("main_net")) if sector else None),
+                sector_flow=_format_yi(sector_value),
                 direction=sector_direction,
             )
         )
@@ -250,7 +268,7 @@ def render_capital_report(
     sector_lines: list[str] = [
         "## 板块暴露 × 资金流趋势",
         "",
-        "| 板块 | 持仓数 | 仓位 | 当日主力 | 5日主力 | 20日主力 | 趋势 |",
+        "| 板块 | 持仓数 | 仓位 | 当日资金 | 5日资金 | 20日资金 | 趋势 |",
         "|---|---:|---:|---:|---:|---:|---|",
     ]
     if not sector_names:
@@ -259,13 +277,17 @@ def render_capital_report(
         members = [h for h in holdings if h.sector == sector_name]
         row = _sector_flow_for(members[0], sector_rows)
         history_rows = [r for r in sector_history if str(r.get("sector_name") or "").strip() == sector_name]
-        current = _number(row.get("main_net")) if row else None
-        five, five_days = _window_sum(history_rows + ([row] if row else []), "main_net", actual_date, 5)
-        twenty, twenty_days = _window_sum(history_rows + ([row] if row else []), "main_net", actual_date, 20)
+        metric_key, current = _flow_metric(row)
+        if row:
+            history_rows = _same_flow_source(history_rows, row)
+        five, five_days = _window_sum(history_rows + ([row] if row else []), metric_key, actual_date, 5)
+        twenty, twenty_days = _window_sum(history_rows + ([row] if row else []), metric_key, actual_date, 20)
         sector_weight = sum(weights.get(id(h), 0) for h in members) if weights else None
         trend = _direction(current)
-        if row and _number(row.get("total_net")) is None:
+        if row and metric_key == "main_net" and _number(row.get("total_net")) is None:
             trend += "（仅主力口径）"
+        elif row and metric_key == "total_net":
+            trend += f"（{row.get('flow_label') or '资金净额'}口径）"
         sector_lines.append(
             f"| {sector_name} | {len(members)} | {_format_pct(sector_weight)} | {_format_yi(current)} | {_format_yi(five)}（{five_days}日） | {_format_yi(twenty)}（{twenty_days}日） | {trend} |"
         )
@@ -273,8 +295,16 @@ def render_capital_report(
 
     eligible = [h for h in holdings if h.supported]
     flow_known = [h for h in eligible if _sector_flow_for(h, sector_rows)]
-    flow_in = [h for h in flow_known if _direction(_number((_sector_flow_for(h, sector_rows) or {}).get("main_net"))) == "流入"]
-    flow_out = [h for h in flow_known if _direction(_number((_sector_flow_for(h, sector_rows) or {}).get("main_net"))) == "流出"]
+    flow_in = [
+        h
+        for h in flow_known
+        if _direction(_flow_metric(_sector_flow_for(h, sector_rows))[1]) == "流入"
+    ]
+    flow_out = [
+        h
+        for h in flow_known
+        if _direction(_flow_metric(_sector_flow_for(h, sector_rows))[1]) == "流出"
+    ]
     unknown = [h for h in holdings if h not in flow_in and h not in flow_out]
 
     lines = [
@@ -309,7 +339,7 @@ def render_capital_report(
         lines.append("- 输入校验通过。")
     lines.extend(
         [
-            "- 5日历史实际可用窗口按缓存计算；20日窗口不足时报告实际天数。",
+            "- 5日/20日只累计与当日相同数据源、相同资金口径的真实日缓存；窗口不足时报告实际天数。",
             "- 当前首版仅覆盖 A 股个股和 ETF；港股、现金及无法消歧资产不参与资金流方向判断。",
             "- 本报告仅为数据分析，不构成投资建议。",
             "",
@@ -330,7 +360,7 @@ def run_capital_daily(
     target_out = Path(out_dir) if out_dir else ROOT / "private-reports" / requested_date.isoformat()
     target_cache = Path(cache_dir) if cache_dir else ROOT / "data" / "capital-flow"
     target_out.mkdir(parents=True, exist_ok=True)
-    provider = provider or EastmoneyProvider(target_cache)
+    provider = provider or build_default_capital_flow_provider(target_cache)
 
     errors: list[str] = []
     sector_rows: list[dict[str, Any]] = []
@@ -360,6 +390,8 @@ def run_capital_daily(
         )
     sector_history = _load_history(provider, "sectors", actual_date)
     stock_history = _load_history(provider, "stocks", actual_date)
+    provider_diagnostics = getattr(provider, "diagnostics", [])
+    warnings.extend(str(item) for item in provider_diagnostics if str(item).strip())
     if errors:
         warnings.extend(errors)
     if not sector_rows:
@@ -373,7 +405,7 @@ def run_capital_daily(
         sector_history=sector_history,
         stock_rows=stock_rows,
         stock_history=stock_history,
-        source="Eastmoney public API",
+        source=str(getattr(provider, "source_label", "Eastmoney public API")),
     )
     report_path = target_out / "capital-daily.md"
     report_path.write_text(markdown, encoding="utf-8")

@@ -154,7 +154,7 @@ bash scripts/health_check.sh
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-07-23
+daily-brief collect --date 2026-07-29
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
 daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
