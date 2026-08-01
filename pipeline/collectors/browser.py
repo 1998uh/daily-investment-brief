@@ -313,6 +313,7 @@ def login_persistent_profile(platform: str, *, profile_dir: Path | None = None) 
     urls = {
         "weibo": "https://weibo.com/",
         "xueqiu": "https://xueqiu.com/",
+        "weread": "https://weread.qq.com/",
     }
     if platform not in urls:
         raise ValueError(f"unsupported platform: {platform}")
@@ -328,3 +329,69 @@ def login_persistent_profile(platform: str, *, profile_dir: Path | None = None) 
         print("[info] Please finish login in the opened browser window.")
         input("[info] Press Enter here after login is complete...")
         context.close()
+
+
+def extract_weread_cookie(*, profile_dir: Path | None = None) -> str:
+    """从微信读书持久化 profile 中提取最新 Cookie 字符串。"""
+    return extract_platform_cookie(
+        "weread",
+        ["https://weread.qq.com", "https://qq.com"],
+        profile_dir=profile_dir,
+    )
+
+
+def extract_platform_cookie(platform: str, urls: list[str], *, profile_dir: Path | None = None) -> str:
+    """从指定平台的持久化 profile 中提取 Cookie 字符串。通用实现。"""
+    if not HAS_PLAYWRIGHT:
+        return ""
+
+    target_profile = profile_dir or default_profile_dir(platform)
+    if not target_profile.exists():
+        return ""
+
+    try:
+        with sync_playwright() as pw:
+            launch_kwargs = browser_launch_kwargs(platform, headless=True)
+            context = pw.chromium.launch_persistent_context(str(target_profile), **launch_kwargs)
+            try:
+                all_cookies = context.cookies(urls)
+                seen: set[str] = set()
+                parts: list[str] = []
+                for c in all_cookies:
+                    name = c.get("name", "")
+                    if name and name not in seen:
+                        seen.add(name)
+                        parts.append(f"{name}={c['value']}")
+                return "; ".join(parts)
+            finally:
+                context.close()
+    except Exception as exc:
+        log.debug(f"extract_platform_cookie({platform}) 失败: {exc}")
+        return ""
+
+
+def inject_weread_cookie() -> bool:
+    """从 weread browser profile 提取 Cookie 并注入到 WEREAD_COOKIE 环境变量。"""
+    cookie = extract_weread_cookie()
+    if cookie:
+        os.environ["WEREAD_COOKIE"] = cookie
+        log.debug("WEREAD_COOKIE 已从 browser profile 自动注入")
+        return True
+    return False
+
+
+def inject_browser_cookies() -> None:
+    """从各平台 browser profile 提取最新 Cookie，覆盖注入到环境变量。
+
+    支持 weread / weibo / xueqiu，profile 不存在时静默跳过。
+    """
+    _PLATFORM_CONFIG: list[tuple[str, str, list[str]]] = [
+        ("weread", "WEREAD_COOKIE", ["https://weread.qq.com", "https://qq.com"]),
+        ("weibo",  "WEIBO_COOKIE",  ["https://weibo.com", "https://s.weibo.com"]),
+        ("xueqiu", "XUEQIU_COOKIE", ["https://xueqiu.com"]),
+    ]
+    for platform, env_key, urls in _PLATFORM_CONFIG:
+        cookie = extract_platform_cookie(platform, urls)
+        if cookie:
+            os.environ[env_key] = cookie
+            log.debug(f"{env_key} 已从 browser profile 自动注入")

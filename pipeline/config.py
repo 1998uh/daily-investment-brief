@@ -10,17 +10,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def load_env(path: Path | None = None) -> None:
     env_path = path or ROOT / ".env"
-    if not env_path.exists():
-        return
+    if env_path.exists():
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            os.environ.setdefault(key, value)
 
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        os.environ.setdefault(key, value)
+    # 从各平台 browser profile 提取最新 Cookie，覆盖注入（profile 不存在时静默跳过）
+    try:
+        from .collectors.browser import inject_browser_cookies
+        inject_browser_cookies()
+    except Exception:
+        pass
 
 
 @dataclass(frozen=True)

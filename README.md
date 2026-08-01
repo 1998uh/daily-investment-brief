@@ -38,7 +38,7 @@ cd frontend && npm install && cd ..
 Copy-Item .env.example .env
 ```
 
-在 `.env` 中填写：
+在 `.env` 中填写：  
 
 ```env
 # LLM（DeepSeek、OpenAI 及绝大多数中转站）
@@ -107,7 +107,26 @@ BRIEF_LLM_RETRY_DELAY_SECONDS=2
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-### 3. 启动服务
+### 3. 平台登录（一次性）
+
+微信读书、微博、雪球的 Cookie 通过持久化浏览器 profile 自动管理，**每个平台只需登录一次**，之后 pipeline 启动时自动读取最新 Cookie，无需手动维护。
+
+```powershell
+# 微信读书（微信公众号采集）
+python -m pipeline.cli auth-login --platform weread
+
+# 微博
+python -m pipeline.cli auth-login --platform weibo
+
+# 雪球
+python -m pipeline.cli auth-login --platform xueqiu
+```
+
+运行后会弹出浏览器窗口，完成登录、等页面完全加载后，回到终端按 Enter 保存 session。
+
+> session 通常有效 7-30 天。过期后重新运行对应命令扫码一次即可。
+
+### 4. 启动服务
 
 ```powershell
 # 终端 1：后端（端口 8080）
@@ -154,7 +173,7 @@ bash scripts/health_check.sh
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-07-29
+daily-brief collect --date 2026-08-01
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
 daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
@@ -191,7 +210,7 @@ daily-brief collect-one --name "睿知睿见" --date 2026-07-16 --verbose
 daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17
 
 # 采集到独立目录（用于后续单独生成报告）
-daily-brief collect-one --name "谢佩德骨头" --start-date 2026-06-28 --end-date 2026-07-04 --out-dir sources/谢佩德骨头
+daily-brief collect-one --name "谢佩德骨头" --start-date 2026-07-28 --end-date 2026-08-01 --out-dir sources/谢佩德骨头
 ```
 
 | 参数 | 说明 |
@@ -211,7 +230,7 @@ daily-brief collect-one --name "谢佩德骨头" --start-date 2026-06-28 --end-d
 
 ```powershell
 # 默认全流程（批次提炼 → 合成简报）
-daily-brief generate --date 2026-07-22
+daily-brief generate --date 2026-07-30
 
 # 只生成 Markdown，不生成 HTML
 daily-brief generate --date 2026-06-17 --markdown-only
@@ -256,7 +275,7 @@ daily-brief generate --date 2026-07-16 --from-batches
 daily-brief collect --date 2026-07-20 --and-generate
 
 # 工作流 2：补采某个博主
-daily-brief collect-one --name "谢佩德骨头" --date 2026-06-17
+daily-brief collect-one --name "三岁小怪兽" --date 2026-07-30
 
 # 工作流 3：针对特定博主生成专属报告
 daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17 --out-dir sources/买股票的老木匠

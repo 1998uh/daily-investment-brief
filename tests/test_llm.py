@@ -50,6 +50,20 @@ class FakeResponse:
         return None
 
 
+class FakeStreamResponse:
+    def __init__(self, body: str) -> None:
+        self._body = BytesIO(body.encode("utf-8"))
+
+    def readline(self) -> bytes:
+        return self._body.readline()
+
+    def __enter__(self) -> "FakeStreamResponse":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        return None
+
+
 class ChatCompletionTests(unittest.TestCase):
     def test_chat_completion_wraps_timeout_error(self) -> None:
         with patch("pipeline.llm.request.urlopen", side_effect=TimeoutError("timed out")):
@@ -238,6 +252,99 @@ class ChatCompletionTests(unittest.TestCase):
         )
 
         self.assertEqual(content, "response text")
+
+    def test_responses_chat_completion_streams_and_collects_deltas(self) -> None:
+        captured_request = None
+        body = "".join(
+            [
+                "event: response.output_text.delta\n",
+                'data: {"type":"response.output_text.delta","delta":"hello "}\n\n',
+                "event: response.output_text.delta\n",
+                'data: {"type":"response.output_text.delta","delta":"world"}\n\n',
+                "event: response.completed\n",
+                'data: {"type":"response.completed","response":{"status":"completed"}}\n\n',
+            ]
+        )
+
+        def fake_urlopen(req, timeout):
+            nonlocal captured_request
+            captured_request = req
+            return FakeStreamResponse(body)
+
+        settings = make_settings(llm_provider="openai-responses")
+        with patch("pipeline.llm.request.urlopen", side_effect=fake_urlopen):
+            result = llm.chat_completion(
+                settings,
+                [{"role": "user", "content": "hello"}],
+                label="",
+            )
+
+        self.assertEqual(result, "hello world")
+        self.assertIsNotNone(captured_request)
+        payload = json.loads(captured_request.data.decode("utf-8"))
+        self.assertTrue(payload["stream"])
+        self.assertEqual(captured_request.headers["Accept"], "text/event-stream")
+
+    def test_responses_stream_uses_completed_response_without_deltas(self) -> None:
+        body = "".join(
+            [
+                "event: response.completed\n",
+                "data: "
+                '{"type":"response.completed","response":{"status":"completed",'
+                '"output":[{"type":"message","content":['
+                '{"type":"output_text","text":"completed text"}]}]}}\n\n',
+            ]
+        )
+
+        with patch(
+            "pipeline.llm.request.urlopen",
+            return_value=FakeStreamResponse(body),
+        ):
+            result = llm.chat_completion(
+                make_settings(llm_provider="openai-responses"),
+                [{"role": "user", "content": "hello"}],
+                label="",
+            )
+
+        self.assertEqual(result, "completed text")
+
+    def test_responses_stream_rejects_error_event(self) -> None:
+        body = "".join(
+            [
+                "event: error\n",
+                'data: {"type":"error","message":"upstream failed"}\n\n',
+            ]
+        )
+
+        with patch(
+            "pipeline.llm.request.urlopen",
+            return_value=FakeStreamResponse(body),
+        ):
+            with self.assertRaisesRegex(llm.LLMError, "upstream failed"):
+                llm.chat_completion(
+                    make_settings(llm_provider="openai-responses"),
+                    [{"role": "user", "content": "hello"}],
+                    label="",
+                )
+
+    def test_responses_stream_rejects_unterminated_output(self) -> None:
+        body = "".join(
+            [
+                "event: response.output_text.delta\n",
+                'data: {"type":"response.output_text.delta","delta":"partial"}\n\n',
+            ]
+        )
+
+        with patch(
+            "pipeline.llm.request.urlopen",
+            return_value=FakeStreamResponse(body),
+        ):
+            with self.assertRaisesRegex(llm.LLMError, "before a completion event"):
+                llm.chat_completion(
+                    make_settings(llm_provider="openai-responses"),
+                    [{"role": "user", "content": "hello"}],
+                    label="",
+                )
 
     def test_openai_relay_auto_switches_to_responses_protocol(self) -> None:
         captured_urls = []

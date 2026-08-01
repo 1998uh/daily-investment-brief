@@ -48,7 +48,11 @@ def chat_completion(
         max_tokens=settings.llm_max_tokens,
         thinking_type=settings.llm_thinking_type,
     )
-    request_data = build_request(provider=effective_provider, **request_kwargs)
+    request_data = build_request(
+        provider=effective_provider,
+        stream=effective_provider == "openai-responses",
+        **request_kwargs,
+    )
     attempts = settings.llm_retries + 1
     last_error: LLMError | None = None
     attempt = 1
@@ -71,7 +75,15 @@ def chat_completion(
                 headers=request_data.headers,
             )
             with request.urlopen(req, timeout=settings.llm_timeout_seconds) as response:
-                body = response.read().decode("utf-8")
+                if effective_provider == "openai-responses" and request_data.payload["stream"]:
+                    content = _read_responses_stream(response)
+                    body = None
+                else:
+                    body = response.read().decode("utf-8")
+            if body is None:
+                if label:
+                    print(f"[info] {label}: LLM response received", flush=True)
+                return content
             try:
                 parsed = json.loads(body)
             except json.JSONDecodeError as exc:
@@ -82,7 +94,11 @@ def chat_completion(
                 ):
                     effective_provider = "openai-responses"
                     protocol_switched = True
-                    request_data = build_request(provider=effective_provider, **request_kwargs)
+                    request_data = build_request(
+                        provider=effective_provider,
+                        stream=True,
+                        **request_kwargs,
+                    )
                     if label:
                         print(
                             f"[warn] {label}: Chat Completions endpoint returned HTML; "
@@ -110,7 +126,11 @@ def chat_completion(
             ):
                 effective_provider = "openai-responses"
                 protocol_switched = True
-                request_data = build_request(provider=effective_provider, **request_kwargs)
+                request_data = build_request(
+                    provider=effective_provider,
+                    stream=True,
+                    **request_kwargs,
+                )
                 if label:
                     print(
                         f"[warn] {label}: model requires Responses protocol; "
@@ -309,6 +329,136 @@ def parse_response(provider: str, parsed: dict) -> str:
         return parsed["message"]["content"].strip()
 
     raise LLMError(f"Unsupported LLM provider: {provider}")
+
+
+def _read_responses_stream(response) -> str:
+    readline = getattr(response, "readline", None)
+    if not callable(readline):
+        return _parse_responses_json_body(response.read())
+
+    text_parts: list[str] = []
+    done_text: str | None = None
+    completed_response: dict | None = None
+    event_name = ""
+    data_lines: list[str] = []
+    plain_lines: list[str] = []
+    saw_sse = False
+    saw_terminal = False
+
+    def consume_event() -> None:
+        nonlocal done_text, completed_response, saw_terminal
+        if not data_lines:
+            return
+        raw_data = "\n".join(data_lines)
+        if raw_data == "[DONE]":
+            saw_terminal = True
+            return
+        try:
+            event = json.loads(raw_data)
+        except json.JSONDecodeError as exc:
+            excerpt = " ".join(raw_data[:300].split())
+            raise LLMError(f"LLM returned invalid SSE JSON: {exc}; event={excerpt!r}") from exc
+        if not isinstance(event, dict):
+            raise LLMError(f"Unexpected LLM stream event shape: {type(event).__name__}")
+
+        event_type = str(event.get("type") or event_name)
+        if event_type == "response.output_text.delta":
+            delta = event.get("delta")
+            if isinstance(delta, str):
+                text_parts.append(delta)
+            return
+        if event_type == "response.output_text.done":
+            text = event.get("text")
+            if isinstance(text, str):
+                done_text = text
+            return
+        if event_type == "response.completed":
+            response_data = event.get("response")
+            if isinstance(response_data, dict):
+                status = response_data.get("status")
+                if status not in {None, "completed"}:
+                    detail = response_data.get("error") or response_data.get("incomplete_details")
+                    raise LLMError(
+                        f"LLM stream completed with status={status}: "
+                        f"{_format_error_detail(detail)}"
+                    )
+                completed_response = response_data
+            saw_terminal = True
+            return
+        if event_type in {"error", "response.failed", "response.incomplete"}:
+            detail = event.get("error") or event.get("response") or event
+            raise LLMError(f"LLM stream failed: {_format_error_detail(detail)}")
+
+        if event.get("object") == "response" and event.get("status") == "completed":
+            completed_response = event
+            saw_terminal = True
+
+    while True:
+        raise_if_cancelled()
+        raw_line = readline()
+        if not raw_line:
+            consume_event()
+            break
+        if isinstance(raw_line, bytes):
+            line = raw_line.decode("utf-8")
+        else:
+            line = str(raw_line)
+        line = line.rstrip("\r\n")
+        if not line:
+            consume_event()
+            event_name = ""
+            data_lines = []
+            continue
+        if line.startswith(":"):
+            saw_sse = True
+            continue
+
+        field, separator, value = line.partition(":")
+        if separator and field in {"event", "data", "id", "retry"}:
+            saw_sse = True
+            value = value[1:] if value.startswith(" ") else value
+            if field == "event":
+                event_name = value
+            elif field == "data":
+                data_lines.append(value)
+            continue
+        plain_lines.append(line)
+
+    if not saw_sse:
+        return _parse_responses_json_body("\n".join(plain_lines).encode("utf-8"))
+    if not saw_terminal:
+        raise LLMError("LLM stream ended before a completion event")
+
+    text = "".join(text_parts).strip()
+    if text:
+        return text
+    if done_text:
+        return done_text.strip()
+    if completed_response is not None:
+        return parse_response("openai-responses", completed_response)
+    raise LLMError("Unexpected LLM response shape: no output_text content")
+
+
+def _parse_responses_json_body(body: bytes) -> str:
+    try:
+        parsed = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        excerpt = " ".join(body[:300].decode("utf-8", errors="replace").split())
+        raise LLMError(
+            f"LLM returned invalid JSON: {exc}; response starts with: {excerpt!r}"
+        ) from exc
+    if not isinstance(parsed, dict):
+        raise LLMError(f"Unexpected LLM response shape: {type(parsed).__name__}")
+    return parse_response("openai-responses", parsed)
+
+
+def _format_error_detail(detail) -> str:
+    if isinstance(detail, str):
+        return detail[:1000]
+    try:
+        return json.dumps(detail, ensure_ascii=False)[:1000]
+    except (TypeError, ValueError):
+        return str(detail)[:1000]
 
 
 def _endpoint(base_url: str, suffix: str) -> str:

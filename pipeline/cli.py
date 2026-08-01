@@ -175,7 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     auth.add_argument(
         "--platform",
         required=True,
-        choices=["weibo", "xueqiu"],
+        choices=["weibo", "xueqiu", "weread"],
         help="Platform to log in to.",
     )
     auth.add_argument("--profile", help="Override browser profile directory.")
