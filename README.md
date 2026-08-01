@@ -154,7 +154,7 @@ bash scripts/health_check.sh
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-07-29
+daily-brief collect --date 2026-08-01
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
 daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
@@ -211,7 +211,7 @@ daily-brief collect-one --name "谢佩德骨头" --start-date 2026-06-28 --end-d
 
 ```powershell
 # 默认全流程（批次提炼 → 合成简报）
-daily-brief generate --date 2026-07-22
+daily-brief generate --date 2026-07-30
 
 # 只生成 Markdown，不生成 HTML
 daily-brief generate --date 2026-06-17 --markdown-only
@@ -256,7 +256,7 @@ daily-brief generate --date 2026-07-16 --from-batches
 daily-brief collect --date 2026-07-20 --and-generate
 
 # 工作流 2：补采某个博主
-daily-brief collect-one --name "谢佩德骨头" --date 2026-06-17
+daily-brief collect-one --name "三岁小怪兽" --date 2026-07-30
 
 # 工作流 3：针对特定博主生成专属报告
 daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17 --out-dir sources/买股票的老木匠
