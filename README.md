@@ -1,23 +1,10 @@
 # Daily Investment Brief
 
-A/H 股投资智能助手系统：从雪球、微信公众号、微博采集观点，生成每日简报，并提供 AI 对话界面。
+A/H 股投资简报生成工具：从雪球、微信公众号、微博采集观点，使用 LLM 生成每日简报。
 
 ---
 
-## 系统架构
-
-```
-前端 (Next.js 14)  ←→  Agent 后端 (FastAPI)  ←→  Pipeline (简报生成)
-  :3000                   :8080                      CLI 工具
-```
-
-- **前端**：对话界面、会话管理、自选股面板、交易/事件记录
-- **Agent 后端**：JWT 认证、SSE 流式对话、记忆系统（SQLite + ChromaDB）
-- **Pipeline**：从社交平台采集文章，调用 LLM 生成 Markdown/HTML 简报
-
----
-
-## 快速启动（本地开发）
+## 快速启动
 
 ### 1. 安装依赖
 
@@ -27,9 +14,6 @@ A/H 股投资智能助手系统：从雪球、微信公众号、微博采集观�
 
 # 如需采集雪球专栏全文（Playwright）
 .\scripts\setup.ps1 -InstallPlaywright
-
-# 前端依赖
-cd frontend && npm install && cd ..
 ```
 
 ### 2. 配置环境变量
@@ -47,16 +31,10 @@ BRIEF_BASE_URL=https://api.deepseek.com/v1
 BRIEF_MODEL=deepseek-chat
 BRIEF_API_KEY=sk-...
 
-# Agent 认证密钥（必填，用于 JWT 签名）
-AGENT_JWT_SECRET=your-secret-key-here
-
 # 可选：雪球/微博/微信 Cookie
 XUEQIU_COOKIE=
 WEIBO_COOKIE=
 WECHAT_COOKIE=
-
-# 可选：Tavily 搜索
-TAVILY_API_KEY=
 ```
 
 ### LLM 平台与中转站
@@ -87,7 +65,7 @@ BRIEF_API_KEY=sk-...
 | Google Gemini 原生协议 | `gemini` | `https://generativelanguage.googleapis.com/v1beta` |
 | Ollama 本地模型 | `ollama` | `http://localhost:11434` |
 
-Anthropic/Gemini 原生协议的中转站分别选择 `anthropic`/`gemini`，`BRIEF_BASE_URL` 填中转站给出的 API 根地址。Ollama 可将 `BRIEF_API_KEY` 留空；其他平台按服务商要求填写。CLI 简报生成和网页 Agent 对话共用这套配置。
+Anthropic/Gemini 原生协议的中转站分别选择 `anthropic`/`gemini`，`BRIEF_BASE_URL` 填中转站给出的 API 根地址。Ollama 可将 `BRIEF_API_KEY` 留空；其他平台按服务商要求填写。
 
 网络不稳定或中转站限流时，可降低并发并增加重试：
 
@@ -99,12 +77,6 @@ BRIEF_LLM_MAX_TOKENS=3000
 BRIEF_LLM_TIMEOUT_SECONDS=180
 BRIEF_LLM_RETRIES=4
 BRIEF_LLM_RETRY_DELAY_SECONDS=2
-```
-
-生成随机 JWT 密钥：
-
-```bash
-python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 ### 3. 平台登录（一次性）
@@ -126,41 +98,6 @@ python -m pipeline.cli auth-login --platform xueqiu
 
 > session 通常有效 7-30 天。过期后重新运行对应命令扫码一次即可。
 
-### 4. 启动服务
-
-```powershell
-# 终端 1：后端（端口 8080）
-.\.venv\Scripts\Activate.ps1
-python -m agent --port 8080
-
-# 终端 2：前端（端口 3000）
-cd frontend && npm run dev
-```
-
-打开 http://localhost:3000，注册账号后即可使用。
-
----
-
-## Docker 一键启动
-
-```bash
-# 1. 准备 .env
-cp .env.example .env
-# 编辑 .env，填写 BRIEF_API_KEY 和 AGENT_JWT_SECRET
-
-# 2. 启动
-bash scripts/docker-start.sh
-
-# 3. 等待健康检查
-bash scripts/health_check.sh
-```
-
-服务启动后：
-- 前端：http://localhost:3000
-- 后端 API：http://localhost:8080
-
-停止：`docker compose down`
-
 ---
 
 ## Pipeline CLI
@@ -173,7 +110,12 @@ bash scripts/health_check.sh
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-08-01
+daily-brief collect --date 2026-08-03
+
+# 只采集指定平台
+daily-brief collect --date 2026-08-03 --platform wechat   # 微信公众号
+daily-brief collect --date 2026-08-03 --platform xueqiu   # 雪球
+daily-brief collect --date 2026-08-03 --platform weibo    # 微博
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
 daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17
@@ -189,6 +131,7 @@ daily-brief collect --date 2026-07-20 --and-generate
 |------|------|
 | `--date` | 单日采集，与 `--start-date` 互斥 |
 | `--start-date` + `--end-date` | 日期范围采集（含首尾），与 `--date` 互斥 |
+| `--platform` | 只采集指定平台，可选值：`xueqiu`（雪球）、`wechat`（微信公众号）、`weibo`（微博）。不指定则采集所有平台 |
 | `--sequential` | 串行模式（调试用，默认并行） |
 | `--limit N` | 每账号最多 N 条，默认 20 |
 | `--include-undated` | 保留无法解析发布时间的条目 |
@@ -274,14 +217,19 @@ daily-brief generate --date 2026-07-16 --from-batches
 # 工作流 1：一步完成采集 + 生成
 daily-brief collect --date 2026-07-20 --and-generate
 
-# 工作流 2：补采某个博主
-daily-brief collect-one --name "三岁小怪兽" --date 2026-07-30
+# 工作流 2：分平台采集（适用于网络不稳定或调试单个平台）
+daily-brief collect --date 2026-08-03 --platform wechat   # 只采集微信公众号
+daily-brief collect --date 2026-08-03 --platform xueqiu   # 只采集雪球
+daily-brief collect --date 2026-08-03 --platform weibo    # 只采集微博
 
-# 工作流 3：针对特定博主生成专属报告
+# 工作流 3：补采某个博主
+daily-brief collect-one --name "三岁小怪兽" --date 2026-08-03
+
+# 工作流 4：针对特定博主生成专属报告
 daily-brief collect-one --name "买股票的老木匠" --start-date 2026-06-10 --end-date 2026-06-17 --out-dir sources/买股票的老木匠
 daily-brief generate --date 2026-06-17 --source-dir sources/买股票的老木匠
 
-# 工作流 4：导出 prompt 给外部模型（Claude/GPT/Gemini）
+# 工作流 5：导出 prompt 给外部模型（Claude/GPT/Gemini）
 daily-brief generate --date 2026-06-17 --no-batches
 ```
 
@@ -351,12 +299,6 @@ Copy-Item config/accounts.example.json config/accounts.json
 ## 目录结构
 
 ```text
-agent/                      FastAPI 后端
-  routers/                  路由（auth, sessions, memory, chat, pipeline）
-  main.py                   应用入口
-frontend/                   Next.js 14 前端
-  app/                      页面（login, chat, memory, profile）
-  components/               组件（Sidebar, WatchlistPanel, ChatInput...）
 pipeline/                   简报生成流水线
   collectors/               各平台采集器（雪球、微博、微信）
   cli.py                    命令行入口
@@ -366,27 +308,17 @@ reports/                    生成结果（HTML/Markdown）
 journal/                    每日个人判断记录
 reviews/                    周复盘和月复盘
 knowledge/                  主题、公司、错题长期知识库
-memory/                     Agent 运行时数据（不提交）
 scripts/                    启动脚本和调试工具
 templates/                  LLM Prompt 模板
-docs/superpowers/           设计文档和实现计划
+docs/                       设计文档和实现计划
 ```
 
 ---
 
 ## 数据说明
 
-- `memory/` — Agent 运行时数据（SQLite + ChromaDB），**不提交到 Git**，各环境独立
 - `sources/` — 采集的原始文章，**不提交到 Git**
 - `reports/` — 生成的简报 HTML/Markdown，已提交部分历史记录
 - `journal/`、`reviews/`、`knowledge/` — 个人投研沉淀，默认可提交；如内容敏感可自行加入 `.gitignore`
 
 ---
-
-## Docker 数据备份
-
-```bash
-# 备份 memory 数据
-docker compose exec backend tar czf /tmp/backup.tar.gz /data/memory
-docker cp investment-backend:/tmp/backup.tar.gz ./backup-$(date +%Y%m%d).tar.gz
-```

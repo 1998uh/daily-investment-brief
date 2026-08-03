@@ -82,10 +82,21 @@ def collect_to_sources(
     dry_run: bool = False,
     parallel: bool = True,
     cache_fallback: bool = True,
+    platform_filter: str | None = None,
 ) -> tuple[list[Path], CollectionLog]:
     log = CollectionLog()
     accounts = load_accounts(accounts_path)
     enabled_accounts = [account for account in accounts if account.enabled]
+
+    # 平台筛选
+    if platform_filter:
+        from .accounts import normalize_source
+        normalized_filter = normalize_source(platform_filter)
+        enabled_accounts = [acc for acc in enabled_accounts if acc.source == normalized_filter]
+        if not enabled_accounts:
+            log.add_error(f"未找到平台 '{platform_filter}' 的启用账号")
+            return [], log
+
     window_start, window_end = brief_window(
         brief_date,
         timezone_name=settings.timezone,
@@ -95,6 +106,8 @@ def collect_to_sources(
 
     log.add_info(f"账号配置: {accounts_path}")
     log.add_info(f"采集窗口: {format_window_cn(window_start, window_end)}（{settings.timezone}）")
+    if platform_filter:
+        log.add_info(f"平台筛选: {platform_filter}")
     log.add_info(f"启用账号: {len(enabled_accounts)} / {len(accounts)}")
 
     if dry_run:
@@ -131,7 +144,13 @@ def collect_to_sources(
     raise_if_cancelled()
     changed = upsert_items(items)
     if cache_fallback:
-        export_items = query_items(window_start, window_end)
+        if platform_filter:
+            # 平台筛选时只导出该平台的缓存数据
+            from .accounts import normalize_source
+            normalized_filter = normalize_source(platform_filter)
+            export_items = query_items(window_start, window_end, source=normalized_filter)
+        else:
+            export_items = query_items(window_start, window_end)
         if include_undated:
             export_items.extend(item for item in items if item.published_at is None)
     else:

@@ -16,10 +16,3 @@ private-reports/
 config/wechat_urls/
 
 !reports/.gitkeep
-
-# Agent runtime data
-memory/
-!frontend/app/memory/
-
-# Docker test artifacts
-.env.docker.test

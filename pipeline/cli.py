@@ -105,6 +105,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Only export items fetched in this run; do not export cached articles.",
     )
+    collect.add_argument(
+        "--platform",
+        choices=["xueqiu", "wechat", "weibo"],
+        help="Only collect from the specified platform (xueqiu, wechat, or weibo).",
+    )
 
     generate = subparsers.add_parser("generate", help="Generate Markdown and HTML brief.")
 
@@ -245,6 +250,7 @@ def collect_command(args: argparse.Namespace) -> int:
         dry_run=args.dry_run,
         parallel=not args.sequential,
         cache_fallback=not args.no_cache_fallback,
+        platform_filter=getattr(args, "platform", None),
     )
     print_collection_log(log)
 
@@ -311,6 +317,7 @@ def _collect_date_range(args: argparse.Namespace) -> int:
                 dry_run=args.dry_run,
                 parallel=not args.sequential,
                 cache_fallback=not args.no_cache_fallback,
+                platform_filter=getattr(args, "platform", None),
             )
             print_collection_log(log)
 
