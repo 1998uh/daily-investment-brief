@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,8 +66,8 @@ def get_settings() -> Settings:
         llm_retries=_env_int("BRIEF_LLM_RETRIES", 2, min_value=0),
         llm_retry_delay_seconds=_env_float("BRIEF_LLM_RETRY_DELAY_SECONDS", 2.0, min_value=0),
         timezone=os.getenv("BRIEF_TIMEZONE", "Asia/Shanghai"),
-        window_start=os.getenv("BRIEF_WINDOW_START", "08:00"),
-        window_end=os.getenv("BRIEF_WINDOW_END", "08:00"),
+        window_start=_env_clock("BRIEF_WINDOW_START", "08:00"),
+        window_end=_env_clock("BRIEF_WINDOW_END", "08:00"),
         markets=os.getenv("BRIEF_MARKETS", "A股,港股"),
         style=os.getenv("BRIEF_STYLE", "strong_narrative_emoji"),
         max_chars_per_article=_env_int("BRIEF_MAX_CHARS_PER_ARTICLE", 6000, min_value=500),
@@ -104,6 +105,21 @@ def _env_float(name: str, default: float, *, min_value: float | None = None) -> 
     if min_value is not None and value < min_value:
         return default
     return value
+
+
+_CLOCK_RE = re.compile(r"^(\d{1,2}):(\d{2})$")
+
+
+def _env_clock(name: str, default: str) -> str:
+    """Read a HH:MM setting and fall back safely when the value is invalid."""
+    raw = os.getenv(name, "").strip()
+    match = _CLOCK_RE.fullmatch(raw)
+    if not match:
+        return default
+    hour, minute = (int(part) for part in match.groups())
+    if hour > 23 or minute > 59:
+        return default
+    return f"{hour:02d}:{minute:02d}"
 
 
 def _env_optional_int(name: str, *, min_value: int | None = None) -> int | None:

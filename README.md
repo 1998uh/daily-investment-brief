@@ -37,6 +37,17 @@ WEIBO_COOKIE=
 WECHAT_COOKIE=
 ```
 
+覆盖窗口可以直接在 `.env` 中调整（使用北京时间 `HH:MM`）：
+
+```env
+BRIEF_TIMEZONE=Asia/Shanghai
+BRIEF_WINDOW_START=08:45
+BRIEF_WINDOW_END=09:55
+```
+
+例如生成 `2026-08-04` 时，上面的配置会采集 `2026-08-03 08:45` 至
+`2026-08-04 09:55` 的内容。未配置或格式不合法时使用 `08:00`。
+
 ### LLM 平台与中转站
 
 `BRIEF_LLM_PROVIDER` 支持 `openai`、`openai-responses`、`anthropic`、`gemini` 和 `ollama`。如果中转站文档写着“OpenAI 兼容接口”，通常选择 `openai`；程序在模型只支持 Responses 协议时会自动切换到 `/responses`。也可显式选择 `openai-responses`，省去第一次协议探测。模型名使用中转站提供的原始模型 ID。
@@ -96,7 +107,7 @@ python -m pipeline.cli auth-login --platform xueqiu
 
 运行后会弹出浏览器窗口，完成登录、等页面完全加载后，回到终端按 Enter 保存 session。
 
-> session 通常有效 7-30 天。过期后重新运行对应命令扫码一次即可。
+> session 通常有效 7-30 天。过期后重新运行对应命令扫码一次即可。n  
 
 ---
 
@@ -110,10 +121,10 @@ python -m pipeline.cli auth-login --platform xueqiu
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-08-03
+daily-brief collect --date 2026-08-04
 
 # 只采集指定平台
-daily-brief collect --date 2026-08-03 --platform wechat   # 微信公众号
+daily-brief collect --date 2026-08-04 --platform wechat   # 微信公众号
 daily-brief collect --date 2026-08-03 --platform xueqiu   # 雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 微博
 
@@ -173,7 +184,7 @@ daily-brief collect-one --name "谢佩德骨头" --start-date 2026-07-28 --end-d
 
 ```powershell
 # 默认全流程（批次提炼 → 合成简报）
-daily-brief generate --date 2026-07-30
+daily-brief generate --date 2026-08-04
 
 # 只生成 Markdown，不生成 HTML
 daily-brief generate --date 2026-06-17 --markdown-only

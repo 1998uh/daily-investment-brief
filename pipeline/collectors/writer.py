@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 import hashlib
@@ -7,9 +8,31 @@ import re
 
 from .base import CollectedItem
 
+SOURCE_SLUGS = {
+    "雪球": "xueqiu",
+    "微信公众号": "wechat",
+    "微博": "weibo",
+}
+
+_REPLY_RE = re.compile(r"^回复[@\[]")
+
 
 def write_items(items: list[CollectedItem], out_dir: Path) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
+    reply_items = [item for item in items if is_reply_item(item)]
+    normal_items = [item for item in items if not is_reply_item(item)]
+
+    written = _write_normal_items(normal_items, out_dir)
+    written.extend(_write_reply_groups(reply_items, out_dir))
+    return written
+
+
+def is_reply_item(item: CollectedItem) -> bool:
+    """判断是否为"回复"类内容（同作者同天的回复会合并成一个文件）。"""
+    return bool(_REPLY_RE.match(item.content.strip()) or _REPLY_RE.match(item.title.strip()))
+
+
+def _write_normal_items(items: list[CollectedItem], out_dir: Path) -> list[Path]:
     written: list[Path] = []
     existing = load_existing_files(out_dir)  # key -> (path, content_length)
 
@@ -34,6 +57,60 @@ def write_items(items: list[CollectedItem], out_dir: Path) -> list[Path]:
         written.append(path)
 
     return written
+
+
+def _write_reply_groups(items: list[CollectedItem], out_dir: Path) -> list[Path]:
+    written: list[Path] = []
+    groups: dict[tuple[str, str, str], list[CollectedItem]] = defaultdict(list)
+    for item in items:
+        groups[_reply_group_key(item)].append(item)
+
+    for (source, author, date_str), group_items in groups.items():
+        group_items.sort(key=lambda i: i.published_at or datetime.min)
+        content = render_reply_group_markdown(source, author, date_str, group_items)
+        path = out_dir / make_reply_group_filename(source, author, date_str)
+        if path.exists() and path.read_text(encoding="utf-8", errors="replace") == content:
+            continue
+        path.write_text(content, encoding="utf-8")
+        written.append(path)
+
+    return written
+
+
+def _reply_group_key(item: CollectedItem) -> tuple[str, str, str]:
+    date_str = item.published_at.strftime("%Y-%m-%d") if item.published_at else "undated"
+    return (item.source, item.author, date_str)
+
+
+def render_reply_group_markdown(
+    source: str, author: str, date_str: str, items: list[CollectedItem]
+) -> str:
+    sections = []
+    for item in items:
+        time_str = item.published_at.strftime("%H:%M:%S") if item.published_at else ""
+        header = f"## {time_str} [查看原文]({item.url})" if item.url else f"## {time_str}"
+        sections.append(f"{header}\n\n{item.content.strip()}")
+    body = "\n\n---\n\n".join(sections)
+
+    return f"""---
+source: {source}
+author: {author}
+title: {escape_front_matter(author)} 回复合集 - {date_str}
+url:
+published_at: {date_str}
+provider: xueqiu_reply_digest
+collected_at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+---
+
+{body}
+"""
+
+
+def make_reply_group_filename(source: str, author: str, date_str: str) -> str:
+    source_slug = SOURCE_SLUGS.get(source, "source")
+    name_slug = slugify(author, 20)
+    digest = hashlib.sha1(f"{source}|{author}|{date_str}|reply".encode("utf-8")).hexdigest()[:8]
+    return f"{source_slug}-{name_slug}-回复合集-{date_str}-{digest}.md"
 
 
 def load_existing_files(out_dir: Path) -> dict[str, tuple[Path, int]]:
@@ -70,11 +147,7 @@ collected_at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 
 def make_filename(item: CollectedItem) -> str:
-    source_slug = {
-        "雪球": "xueqiu",
-        "微信公众号": "wechat",
-        "微博": "weibo",
-    }.get(item.source, "source")
+    source_slug = SOURCE_SLUGS.get(item.source, "source")
     name_slug = slugify(item.author, 20)
     title_slug = slugify(item.title, 30)
     digest = hashlib.sha1((item.url or item.title or item.content[:200]).encode("utf-8")).hexdigest()[:8]
