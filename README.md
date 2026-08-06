@@ -104,10 +104,36 @@ python -m pipeline.cli auth-login --platform weibo
 # 雪球
 python -m pipeline.cli auth-login --platform xueqiu
 ```
-
+  
 运行后会弹出浏览器窗口，完成登录、等页面完全加载后，回到终端按 Enter 保存 session。
 
-> session 通常有效 7-30 天。过期后重新运行对应命令扫码一次即可。n  
+> session 通常有效 7-30 天。过期后重新运行对应命令扫码一次即可。
+
+**重要：重新登录必须走 `auth-login` 命令，不要手动打开浏览器登录。**
+Cookie 提取带有 30 分钟文件缓存（`.browser-profiles/.cookie_cache.json`），避免每次运行命令都重新打开浏览器抢占 profile 文件锁。`auth-login` 命令登录成功后会自动清除对应平台的缓存；如果绕过这个命令手动登录，缓存不会失效，30 分钟内仍会读到登录前的旧 Cookie，表现为"浏览器里明明是登录状态，却依然采集不到数据"。
+
+如果手动登录后想立即生效，可以直接删除缓存文件强制重新读取：
+
+```powershell
+Remove-Item .browser-profiles\.cookie_cache.json
+```
+
+缓存时长可通过环境变量调整：
+
+```env
+BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
+```
+
+### 微信公众号采集排查（`-2041` / `-2010`）
+
+微信公众号采集走微信读书 Web API，常见报错和排查顺序：
+
+| 报错 | 含义 | 排查方式 |
+|---|---|---|
+| `errCode: -2010` | 未登录/会话失效 | 检查 `WEREAD_COOKIE` 是否包含 `wr_skey`/`wr_vid`/`wr_rt`（缺失说明登录态丢失，重新 `auth-login`） |
+| `errCode: -2041` | 该公众号未同步到账号数据 | 1) 确认已在微信读书里关注该公众号；2) **仅关注不够**，需要在手机微信读书 App 里手动点开该公众号最近一篇文章浏览一次，触发同步后才能被 `/web/mp/articles` 接口读到 |
+
+`-2041` 和"是否关注"没有稳定的对应关系（接口返回的 `follow` 字段不可靠），点开文章浏览一次是目前已知唯一稳定复现有效的解法。
 
 ---
 
@@ -121,11 +147,11 @@ python -m pipeline.cli auth-login --platform xueqiu
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-08-04
+daily-brief collect --date 2026-08-06
 
 # 只采集指定平台
-daily-brief collect --date 2026-08-04 --platform wechat   # 微信公众号
-daily-brief collect --date 2026-08-03 --platform xueqiu   # 雪球
+daily-brief collect --date 2026-08-06 --platform wechat   # 微信公众号
+daily-brief collect --date 2 026-08-03 --platform xueqiu   # 雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 微博
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）

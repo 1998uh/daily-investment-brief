@@ -12,12 +12,14 @@ fetch_json / fetch_status_detail。
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 from pathlib import Path
 import queue
 import shutil
 import threading
+import time
 from typing import Any
 
 from ..cancel import raise_if_cancelled, wait_event
@@ -30,6 +32,55 @@ try:
     HAS_PLAYWRIGHT = True
 except ImportError:
     HAS_PLAYWRIGHT = False
+
+
+# ---------------------------------------------------------------------------
+# Cookie 缓存：避免每次运行命令都重新打开浏览器 profile 抢文件锁
+# ---------------------------------------------------------------------------
+
+_COOKIE_CACHE_TTL_SECONDS = 1800  # 30 分钟
+
+
+def _cookie_cache_path() -> Path:
+    return ROOT / ".browser-profiles" / ".cookie_cache.json"
+
+
+def _cookie_cache_ttl() -> float:
+    raw = os.getenv("BROWSER_COOKIE_CACHE_TTL_SECONDS", "").strip()
+    if raw:
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            pass
+    return _COOKIE_CACHE_TTL_SECONDS
+
+
+def _load_cookie_cache() -> dict[str, dict[str, Any]]:
+    path = _cookie_cache_path()
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_cookie_cache(cache: dict[str, dict[str, Any]]) -> None:
+    path = _cookie_cache_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+    except OSError as exc:
+        log.debug(f"写入 cookie 缓存失败: {exc}")
+
+
+def invalidate_cookie_cache(platform: str) -> None:
+    """清除指定平台的缓存，登录后调用以确保下次立即读取最新 cookie。"""
+    cache = _load_cookie_cache()
+    if platform in cache:
+        del cache[platform]
+        _save_cookie_cache(cache)
 
 
 # ---------------------------------------------------------------------------
@@ -340,8 +391,25 @@ def extract_weread_cookie(*, profile_dir: Path | None = None) -> str:
     )
 
 
-def extract_platform_cookie(platform: str, urls: list[str], *, profile_dir: Path | None = None) -> str:
-    """从指定平台的持久化 profile 中提取 Cookie 字符串。通用实现。"""
+def extract_platform_cookie(
+    platform: str,
+    urls: list[str],
+    *,
+    profile_dir: Path | None = None,
+    use_cache: bool = True,
+) -> str:
+    """从指定平台的持久化 profile 中提取 Cookie 字符串。通用实现。
+
+    默认 profile（profile_dir 未显式指定）会经过短期文件缓存（见
+    _COOKIE_CACHE_TTL_SECONDS），避免每次运行命令都重新打开浏览器抢占
+    profile 目录的文件锁，导致 cookie 数据库读出不完整/损坏的中间状态。
+    """
+    cache_key = platform if (use_cache and profile_dir is None) else None
+    if cache_key:
+        cached = _load_cookie_cache().get(cache_key)
+        if cached and time.time() - cached.get("ts", 0) < _cookie_cache_ttl():
+            return cached.get("cookie", "")
+
     if not HAS_PLAYWRIGHT:
         return ""
 
@@ -362,12 +430,18 @@ def extract_platform_cookie(platform: str, urls: list[str], *, profile_dir: Path
                     if name and name not in seen:
                         seen.add(name)
                         parts.append(f"{name}={c['value']}")
-                return "; ".join(parts)
+                cookie = "; ".join(parts)
             finally:
                 context.close()
     except Exception as exc:
         log.debug(f"extract_platform_cookie({platform}) 失败: {exc}")
         return ""
+
+    if cache_key and cookie:
+        cache = _load_cookie_cache()
+        cache[cache_key] = {"cookie": cookie, "ts": time.time()}
+        _save_cookie_cache(cache)
+    return cookie
 
 
 def inject_weread_cookie() -> bool:

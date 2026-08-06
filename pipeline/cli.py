@@ -649,10 +649,11 @@ def source_health_command(args: argparse.Namespace) -> int:
 
 
 def auth_login_command(args: argparse.Namespace) -> int:
-    from .collectors.browser import login_persistent_profile
+    from .collectors.browser import invalidate_cookie_cache, login_persistent_profile
 
     profile = Path(args.profile) if args.profile else None
     login_persistent_profile(args.platform, profile_dir=profile)
+    invalidate_cookie_cache(args.platform)
     return 0
 
 
