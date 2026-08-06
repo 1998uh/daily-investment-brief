@@ -33,6 +33,12 @@ def main(argv: list[str] | None = None) -> int:
                 return source_health_command(args)
             if args.command == "auth-login":
                 return auth_login_command(args)
+            if args.command == "prepare":
+                return prepare_command(args)
+            if args.command == "verify":
+                return verify_command(args)
+            if args.command == "validate":
+                return validate_command(args)
 
             parser.print_help()
             return 1
@@ -184,6 +190,57 @@ def build_parser() -> argparse.ArgumentParser:
         help="Platform to log in to.",
     )
     auth.add_argument("--profile", help="Override browser profile directory.")
+
+    prepare = subparsers.add_parser(
+        "prepare",
+        help="Prepare Codex context and active hypotheses without calling an LLM.",
+    )
+    prepare.add_argument("--date", required=True, help="Report date, e.g. 2026-08-07.")
+    prepare.add_argument(
+        "--source-dir", help="Source directory. Defaults to sources/<date>."
+    )
+    prepare.add_argument(
+        "--out-dir", help="Output directory. Defaults to reports/<date>."
+    )
+    prepare.add_argument(
+        "--accounts",
+        help="Account config JSON for coverage stats. Defaults to config/accounts.json.",
+    )
+    prepare.add_argument(
+        "--reports-root", help="Historical reports root. Defaults to reports/."
+    )
+
+    verify = subparsers.add_parser(
+        "verify",
+        help="Evaluate active hypotheses from structured evidence.",
+    )
+    verify.add_argument("--date", required=True, help="Report date, e.g. 2026-08-07.")
+    verify.add_argument(
+        "--evidence", help="Evidence JSON. Defaults to reports/<date>/evidence.json."
+    )
+    verify.add_argument(
+        "--out-dir", help="Output directory. Defaults to reports/<date>."
+    )
+    verify.add_argument(
+        "--reports-root", help="Historical reports root. Defaults to reports/."
+    )
+
+    validate = subparsers.add_parser(
+        "validate",
+        help="Validate the Codex-native report bundle and generate HTML/manifest.",
+    )
+    validate.add_argument("--date", required=True, help="Report date, e.g. 2026-08-07.")
+    validate.add_argument(
+        "--out-dir", help="Output directory. Defaults to reports/<date>."
+    )
+    validate.add_argument(
+        "--reports-root", help="Historical reports root. Defaults to reports/."
+    )
+    validate.add_argument(
+        "--strict",
+        action="store_true",
+        help="Require all workflow artifacts and fail on missing context/evidence/verification.",
+    )
 
 
     generate.add_argument("--date", required=True, help="Brief date, e.g. 2026-06-07.")
@@ -654,6 +711,81 @@ def auth_login_command(args: argparse.Namespace) -> int:
     profile = Path(args.profile) if args.profile else None
     login_persistent_profile(args.platform, profile_dir=profile)
     invalidate_cookie_cache(args.platform)
+    return 0
+
+
+def prepare_command(args: argparse.Namespace) -> int:
+    from .hypothesis_models import ContractError
+    from .hypothesis_workflow import prepare_hypothesis_context
+
+    report_date = date.fromisoformat(args.date)
+    source_dir = Path(args.source_dir) if args.source_dir else ROOT / "sources" / args.date
+    out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
+    reports_root = Path(args.reports_root) if args.reports_root else ROOT / "reports"
+    accounts_path = Path(args.accounts) if args.accounts else default_accounts_path()
+    if not accounts_path.exists():
+        accounts_path = None
+    try:
+        path = prepare_hypothesis_context(
+            report_date=report_date,
+            settings=get_settings(),
+            source_dir=source_dir,
+            out_dir=out_dir,
+            reports_root=reports_root,
+            accounts_path=accounts_path,
+        )
+    except (ContractError, FileNotFoundError, ValueError) as exc:
+        print(f"Prepare failed: {exc}", file=sys.stderr)
+        return 2
+    print(f"Prepared Codex context: {path}")
+    return 0
+
+
+def verify_command(args: argparse.Namespace) -> int:
+    from .hypothesis_models import ContractError
+    from .hypothesis_workflow import verify_hypotheses
+
+    report_date = date.fromisoformat(args.date)
+    out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
+    reports_root = Path(args.reports_root) if args.reports_root else ROOT / "reports"
+    evidence_path = Path(args.evidence) if args.evidence else out_dir / "evidence.json"
+    try:
+        path = verify_hypotheses(
+            report_date=report_date,
+            out_dir=out_dir,
+            reports_root=reports_root,
+            evidence_path=evidence_path,
+        )
+    except (ContractError, FileNotFoundError, ValueError) as exc:
+        print(f"Verification failed: {exc}", file=sys.stderr)
+        return 2
+    print(f"Generated verification results: {path}")
+    return 0
+
+
+def validate_command(args: argparse.Namespace) -> int:
+    from .report_validator import validate_report_bundle
+
+    report_date = date.fromisoformat(args.date)
+    out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
+    reports_root = Path(args.reports_root) if args.reports_root else ROOT / "reports"
+    report = validate_report_bundle(
+        report_date=report_date,
+        out_dir=out_dir,
+        reports_root=reports_root,
+        strict=args.strict,
+    )
+    for warning in report.warnings:
+        print(f"[warn] {warning}")
+    for error in report.errors:
+        print(f"[error] {error}", file=sys.stderr)
+    if not report.ok:
+        return 1
+    if report.html_path:
+        print(f"Generated HTML: {report.html_path}")
+    if report.manifest_path:
+        print(f"Generated run manifest: {report.manifest_path}")
+    print("Report bundle validation passed.")
     return 0
 
 

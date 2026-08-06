@@ -7,6 +7,18 @@ description: 生成或调整每日 A/H 股投资简报和私有持仓资金日�
 
 当用户说"生成报告"、"重新生成"、"采集今天的文章"、"调整简报"，或提到具体日期+简报时，使用此 skill。
 
+## 项目位置
+
+此个人 Skill 对应的固定项目根目录是：
+
+```text
+D:\ai-project\daily-investment-brief
+```
+
+所有 `python -m pipeline.cli ...`、文章来源检查和报告文件读写都必须以该目录作为工作目录。
+新对话的当前目录不在项目根目录时，直接为工具调用指定上述 `workdir`，不要在其他目录创建
+`sources/`、`reports/`、`data/` 或 `private-reports/`。
+
 ---
 
 ## 快速操作
@@ -26,7 +38,60 @@ python -m pipeline.cli capital-daily --date YYYY-MM-DD --holdings-stdin
 
 默认输出：`private-reports/YYYY-MM-DD/capital-daily.md`。只在用户明确要求普通文章简报时走下方原有流程；PART-B 失败不得阻塞文章简报。
 
-### 全流程（采集 + 提炼 + 合成，DeepSeek 完成所有 LLM 工作）
+### 三平台完整性门禁
+
+所有普通文章日报都必须同时包含以下三个平台的当期采集数据：
+
+- 雪球
+- 微博
+- 微信公众号
+
+采集结束后、执行 `prepare` 或任何日报生成操作之前，必须统计
+`sources/YYYY-MM-DD/` 中三个平台各自的有效文章数。只有三个平台的文章数都大于 0，才视为
+数据完整并允许自动继续。
+
+如果任一平台为 0、采集失败、登录失效或无法确认来源：
+
+1. 立即停止自动日报流程，不得执行 `prepare`、`verify`、`generate`，也不得写入或覆盖
+   `daily-brief.md`、`daily-brief.html` 和 `hypotheses.json`。
+2. 向用户明确列出三个平台各自的文章数、缺失平台和已知失败原因。
+3. 询问用户是否确认使用不完整数据继续，并等待用户回复；原始的“生成日报”请求不视为对
+   不完整数据的授权。
+4. 只有用户在看到缺失情况后明确回复“确认继续”“用现有数据生成”或同等含义，才可继续。
+5. 经用户确认后生成的日报必须在标题元信息和数据覆盖章节显著注明“数据源不完整”，列出
+   缺失平台；不得把缺失平台描述为“当日无观点”或“市场静默”。
+
+该门禁适用于 Codex 默认流程、旧版内部 LLM 流程和外部模型流程。私有持仓资金日报 PART-B
+独立运行，不受三平台文章完整性门禁影响。
+
+### Codex 默认日报流程
+
+普通文章日报默认使用 Codex 原生工作流，不再调用项目内部 LLM 生成器。开始前必须完整读取
+[结构化假设与自动验证契约](references/hypothesis-contract.md)。
+
+```powershell
+python -m pipeline.cli collect --date YYYY-MM-DD
+python -m pipeline.cli prepare --date YYYY-MM-DD
+```
+
+随后由 Codex 读取 `codex-context.json`，调用金融 MCP 和官方网页补充证据，写入
+`evidence.json`，再执行：
+
+```powershell
+python -m pipeline.cli verify --date YYYY-MM-DD
+```
+
+Codex 根据原始文章和 `verification.json` 直接生成 `daily-brief.md` 与
+`hypotheses.json`，最后执行：
+
+```powershell
+python -m pipeline.cli validate --date YYYY-MM-DD --strict
+```
+
+必须修复所有严格校验错误后才算完成。历史验证状态以 `verification.json` 为唯一事实来源，
+不得由 Codex 直接改写。
+
+### 旧版内部 LLM 全流程（仅在用户明确要求时使用）
 
 ```powershell
 python -m pipeline.cli collect --date YYYY-MM-DD
@@ -82,6 +147,11 @@ python -m pipeline.cli collect --date YYYY-MM-DD --dry-run
 ### 输出位置
 
 ```
+reports/YYYY-MM-DD/codex-context.json      ← 当日素材目录、覆盖率和活跃假设
+reports/YYYY-MM-DD/evidence.json           ← Codex 获取的结构化行情和事件证据
+reports/YYYY-MM-DD/verification.json       ← Python 确定性验证结果
+reports/YYYY-MM-DD/hypotheses.json         ← 当日新增结构化假设
+reports/YYYY-MM-DD/run-manifest.json       ← 文件哈希、数据源和校验记录
 reports/YYYY-MM-DD/batch-summaries.json   ← 批次提炼 JSON（中间产物）
 reports/YYYY-MM-DD/daily-brief.md         ← 最终简报
 reports/YYYY-MM-DD/daily-brief.html       ← HTML 版本
@@ -141,10 +211,19 @@ python -m pipeline.cli generate --date YYYY-MM-DD --from-batches --markdown-only
 1. **确认日期**：若用户未指定，使用今天的日期（`date` 命令获取）
 2. **检查 sources**：确认 `sources/YYYY-MM-DD/` 目录存在且有文章
    - 若为空，先运行 collect
-   - 若已有文章，直接生成
-3. **运行生成**：`python -m pipeline.cli generate --date YYYY-MM-DD`
-4. **检查输出**：确认 `reports/YYYY-MM-DD/daily-brief.md` 已生成，读取前 60 行确认结构正确
-5. **汇报结果**：告知批次数、耗时、是否包含上期验证章节
+   - 若已有文章，跳过采集
+3. **检查三平台门禁**：分别统计雪球、微博、微信公众号文章数
+   - 三个平台都大于 0：继续
+   - 任一平台为 0 或无法确认：停止流程，汇报缺失情况并等待用户明确确认
+   - 未得到确认前，不得调用后续生成命令或写入日报产物
+4. **准备上下文**：运行 `python -m pipeline.cli prepare --date YYYY-MM-DD`
+5. **获取证据**：读取 `codex-context.json`，按契约调用金融 MCP 和官方来源，写入 `evidence.json`
+6. **验证历史假设**：运行 `python -m pipeline.cli verify --date YYYY-MM-DD`
+7. **生成日报**：Codex 读取文章和 `verification.json`，直接写入 `daily-brief.md`
+8. **生成新假设**：按契约写入 `hypotheses.json`，每条假设必须有完整 ID、来源、期限和反证条件
+9. **严格校验**：运行 `python -m pipeline.cli validate --date YYYY-MM-DD --strict`
+10. **修复错误**：根据校验输出修正产物并重跑，直到退出码为 0
+11. **汇报结果**：告知三个平台文章数、历史验证结果、新增假设数、缺失证据和输出位置
 
 ---
 
@@ -239,16 +318,21 @@ published_at: 2026-06-12 07:30
 
 ---
 
-## 上期观察点验证机制
+## 上期观察点验证机制（Codex 默认流程）
 
-每次生成时，自动从 `reports/{前一天}/daily-brief.md` 提取「下期关注」章节，注入本期提示词。LLM 对每条上期关注点用当天素材逐条验证，输出状态：
+`prepare` 会扫描全部历史 `hypotheses.json` 和 `verification.json`，查找最近有效报告并重建所有
+未结束假设。它不再依赖上一自然日，因此周末、节假日和漏跑日期不会断链。
+
+Codex 只负责获取真实证据；`verify` 根据预定义规则输出状态：
 
 - ✅ 已兑现
 - ❌ 未兑现
 - ⚠ 部分兑现
 - ⏳ 尚无定论（今日素材无相关信息）
 
-若上期无「下期关注」章节（如首次生成），自动跳过，不输出零章节。
+若没有历史结构化假设，`verification.json` 输出空结果，日报跳过验证章节。
+
+旧版 `generate` 命令仍保留从前一日 Markdown 提取观察点的兼容逻辑，但不属于默认流程。
 
 ---
 

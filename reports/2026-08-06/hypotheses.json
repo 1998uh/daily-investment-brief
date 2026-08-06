@@ -1,0 +1,172 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-06",
+  "hypotheses": [
+    {
+      "id": "H-20260806-001",
+      "created_date": "2026-08-06",
+      "claim": "B浪修复突破创业板3590点和上证3886点后进入轮动上行阶段",
+      "subject": {
+        "type": "market",
+        "name": "A_SHARE",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "wu2198、诸葛孔暗",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "两市成交约2.65万亿元、3706只上涨，重大利空下承接强。"
+        }
+      ],
+      "deadline": "2026-08-13",
+      "verification_mode": "quantitative",
+      "conditions": [
+        {
+          "type": "price_threshold",
+          "entity": "399006.SZ",
+          "field": "close",
+          "operator": ">",
+          "value": 3590,
+          "unit": "point",
+          "required_days": 1
+        },
+        {
+          "type": "price_threshold",
+          "entity": "000001.SH",
+          "field": "close",
+          "operator": ">",
+          "value": 3886,
+          "unit": "point",
+          "required_days": 1
+        },
+        {
+          "type": "turnover_threshold",
+          "entity": "A_SHARE",
+          "field": "turnover",
+          "operator": ">=",
+          "value": 22000,
+          "unit": "亿元",
+          "required_days": 1
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "type": "price_threshold",
+          "entity": "399006.SZ",
+          "field": "close",
+          "operator": "<",
+          "value": 3486,
+          "unit": "point",
+          "required_days": 1
+        },
+        {
+          "type": "turnover_threshold",
+          "entity": "A_SHARE",
+          "field": "turnover",
+          "operator": "<",
+          "value": 22000,
+          "unit": "亿元",
+          "required_days": 1
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "H-20260806-002",
+      "created_date": "2026-08-06",
+      "claim": "光模块政策折价继续存在，但产业订单在未来一个月保持稳定",
+      "subject": {
+        "type": "theme",
+        "name": "光模块政策与订单",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "猫笔刀、九洲仙人",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "北美短期难替代中国供应，窗口内尚无正式规则和订单取消。"
+        }
+      ],
+      "deadline": "2026-09-06",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要FCC等正式政策文件、海外工厂适用范围、公司公告或云厂商订单披露，不能用股价代替。",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260806-003",
+      "created_date": "2026-08-06",
+      "claim": "碳酸锂去库主要由真实需求驱动，电池材料在未来两周形成波段修复",
+      "subject": {
+        "type": "theme",
+        "name": "碳酸锂与电池材料",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "柯中投研笔记、wu2198",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "样本库存周减7280吨、产线检修、矿端延期及板块温和放量。"
+        }
+      ],
+      "deadline": "2026-08-20",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要后续库存、排产、隐藏库存、期现价格和板块表现联合验证，股票行情不能替代产业库存事实。",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260806-004",
+      "created_date": "2026-08-06",
+      "claim": "存储行业处于公司分化阶段，而不是全行业景气见顶",
+      "subject": {
+        "type": "theme",
+        "name": "存储行业景气",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "淡淡的相思林",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "A股存储上涨、长鑫议价增强，个别海外公司弱指引未带动全行业同步下跌。"
+        }
+      ],
+      "deadline": "2026-08-20",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要美光、海力士、三星价格与资本开支、DRAM现货价格和月度营收数据联合验证。",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260806-005",
+      "created_date": "2026-08-06",
+      "claim": "AI估值锚在本轮财报季继续从收入增速迁移到自由现金流和投资回报率",
+      "subject": {
+        "type": "theme",
+        "name": "AI资本开支与估值锚",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "陆家嘴幽灵、谢佩德骨头",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "高收入增长但资本开支和现金流承压的公司正在受到更严格的估值审视。"
+        }
+      ],
+      "deadline": "2026-09-30",
+      "verification_mode": "manual",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要跨公司财报、自由现金流、资本开支和估值反应比较，由人工判断叙事是否发生迁移。",
+      "status": "pending"
+    }
+  ]
+}

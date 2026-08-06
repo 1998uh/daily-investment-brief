@@ -139,7 +139,45 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 
 ## Pipeline CLI
 
-系统提供三个子命令：`collect`（全量采集）、`collect-one`（单博主采集）、`generate`（生成简报）。
+系统提供采集、旧版内部生成、Codex 原生假设工作流、资金日报和数据源诊断命令。
+
+### Codex 原生日报与假设验证
+
+当前推荐工作流由 Codex 完成语义理解、金融取数和日报写作，Python 负责历史账本、确定性验证和一致性校验。
+
+内部执行顺序：
+
+```powershell
+# 1. 采集文章
+daily-brief collect --date 2026-08-07
+
+# 2. 整理当日文章和全部活跃假设
+daily-brief prepare --date 2026-08-07
+
+# 3. Codex 根据 codex-context.json 调用金融 MCP，写入 evidence.json
+
+# 4. 程序根据证据执行确定性验证
+daily-brief verify --date 2026-08-07
+
+# 5. Codex 写入 daily-brief.md 和 hypotheses.json
+
+# 6. 严格检查产物一致性，并生成 HTML 与运行清单
+daily-brief validate --date 2026-08-07 --strict
+```
+
+普通使用时只需在项目目录中要求 Codex“生成今天的日报”。项目 Skill 会自动执行上述步骤。
+
+新增产物：
+
+```text
+reports/<date>/codex-context.json   # 当日文章目录、覆盖率和活跃假设
+reports/<date>/evidence.json        # 行情、公告和政策证据
+reports/<date>/verification.json    # 确定性验证结果
+reports/<date>/hypotheses.json      # 当日新增结构化假设
+reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
+```
+
+`generate` 命令继续保留，适用于明确需要项目内部 LLM 生成器的旧工作流。
 
 ### collect — 全量采集
 
