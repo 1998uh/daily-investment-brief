@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-07",
+  "items": [
+    {
+      "evidence_id": "E-20260807-001",
+      "hypothesis_id": "H-20260806-001",
+      "evidence_type": "market_metric",
+      "metric": "index.close",
+      "entity": {
+        "name": "创业板指",
+        "thscode": "399006.SZ"
+      },
+      "observed_date": "2026-08-06",
+      "value": 3515.56,
+      "unit": "point",
+      "provider": "hithink-finance",
+      "request_id": "7e4b33ab5c0340c8a9a2e7f4ddaeeb81",
+      "source_url": "",
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    },
+    {
+      "evidence_id": "E-20260807-002",
+      "hypothesis_id": "H-20260806-001",
+      "evidence_type": "market_metric",
+      "metric": "index.close",
+      "entity": {
+        "name": "上证综指",
+        "thscode": "000001.SH"
+      },
+      "observed_date": "2026-08-06",
+      "value": 3900.35,
+      "unit": "point",
+      "provider": "hithink-finance",
+      "request_id": "0b47a187f1f74de4b7eaa424d76673b4",
+      "source_url": "",
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    },
+    {
+      "evidence_id": "E-20260807-003",
+      "hypothesis_id": "H-20260806-001",
+      "evidence_type": "market_metric",
+      "metric": "market.turnover",
+      "entity": {
+        "name": "沪深两市",
+        "thscode": "A_SHARE"
+      },
+      "observed_date": "2026-08-06",
+      "value": 25287.8148,
+      "unit": "亿元",
+      "provider": "hithink-finance（上证综指与深证综指成交额合计）",
+      "request_id": "0b47a187f1f74de4b7eaa424d76673b4,47a81857ffdd4aa7aa186f1b910136a9",
+      "source_url": "",
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    },
+    {
+      "evidence_id": "E-20260807-004",
+      "hypothesis_id": "H-20260806-002",
+      "evidence_type": "event",
+      "event_type": "policy_progress",
+      "title": "FCC 事实说明材料继续讨论光收发器等设备的供应链安全适用范围",
+      "published_at": "2026-07-01",
+      "source_level": "official",
+      "publisher": "Federal Communications Commission",
+      "url": "https://docs.fcc.gov/public/attachments/DOC-422746A1.pdf",
+      "quote": "材料列举 semiconductors, IoT and cellular modules, optical transceivers, baseband processors 等设备，并引用既有 Second Report and Order；截至本报告窗口未检索到针对中国光模块企业的新型号最终禁令文本。",
+      "supports": true,
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    },
+    {
+      "evidence_id": "E-20260807-005",
+      "hypothesis_id": "H-20260806-003",
+      "evidence_type": "event",
+      "event_type": "industry_inventory",
+      "title": "碳酸锂总库存延续去化，但8月排产计划回升",
+      "published_at": "2026-08-03",
+      "source_level": "authoritative",
+      "publisher": "Mysteel（上海钢联）",
+      "url": "https://mri.mysteel.com/a/26080317/266BB470EF957A03.html",
+      "quote": "截至7月29日，207家样本总库存162450吨，周降6950吨；7月实际产量环比下降4.0%，8月排产计划环比回升7.6%，去库能否由真实终端需求持续驱动仍需后续确认。",
+      "supports": true,
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    },
+    {
+      "evidence_id": "E-20260807-006",
+      "hypothesis_id": "H-20260806-004",
+      "evidence_type": "event",
+      "event_type": "company_results",
+      "title": "SK海力士发布2026财年第二季度财务报告",
+      "published_at": "2026-07-29",
+      "source_level": "official",
+      "publisher": "SK海力士",
+      "url": "https://news.skhynix.com/cn/q2-2026-business-results",
+      "quote": "DRAM和NAND闪存价格延续上季度涨势，均实现大幅提升；公司称AI存储与通用存储需求同步增长，并继续坚持设备投资纪律。",
+      "supports": true,
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    },
+    {
+      "evidence_id": "E-20260807-007",
+      "hypothesis_id": "H-20260806-004",
+      "evidence_type": "event",
+      "event_type": "company_results",
+      "title": "Micron Technology Reports Record Results for the Third Quarter of Fiscal 2026",
+      "published_at": "2026-06-24",
+      "source_level": "official",
+      "publisher": "Micron Technology",
+      "url": "https://investors.micron.com/news-releases/news-release-details/micron-technology-inc-reports-record-results-third-quarter",
+      "quote": "Micron reported fiscal Q3 revenue of $41.456 billion, adjusted free cash flow of $18.304 billion and Q4 revenue guidance of $50.0 billion plus or minus $1.0 billion, supporting continued demand strength rather than a synchronized industry downturn.",
+      "supports": true,
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    },
+    {
+      "evidence_id": "E-20260807-008",
+      "hypothesis_id": "H-20260806-005",
+      "evidence_type": "event",
+      "event_type": "company_results",
+      "title": "Meta Reports Second Quarter 2026 Results",
+      "published_at": "2026-07-29",
+      "source_level": "official",
+      "publisher": "Meta Platforms",
+      "url": "https://investor.atmeta.com/investor-news/press-release-details/2026/Meta-Reports-Second-Quarter-2026-Results/",
+      "quote": "Meta reported quarterly capital expenditures of $31.08 billion and free cash flow of $784 million while narrowing 2026 capital expenditure guidance to $130-145 billion, illustrating why investors are comparing AI spending with cash conversion.",
+      "supports": true,
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    },
+    {
+      "evidence_id": "E-20260807-009",
+      "hypothesis_id": "H-20260806-005",
+      "evidence_type": "event",
+      "event_type": "company_results",
+      "title": "Alphabet Announces Second Quarter 2026 Results",
+      "published_at": "2026-07-22",
+      "source_level": "official",
+      "publisher": "Alphabet",
+      "url": "https://s206.q4cdn.com/479360582/files/doc_financials/2026/q2/2026q2-alphabet-earnings-release.pdf",
+      "quote": "Alphabet reported quarterly revenue growth of 24% to $119.8 billion and free cash flow of $24.551 billion, providing a positive cash-generation comparison within the same AI capital-spending cycle.",
+      "supports": true,
+      "fetched_at": "2026-08-07T09:17:33+08:00"
+    }
+  ]
+}

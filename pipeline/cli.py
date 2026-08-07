@@ -193,7 +193,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     prepare = subparsers.add_parser(
         "prepare",
-        help="Prepare Codex context and active hypotheses without calling an LLM.",
+        help="Prepare compact Codex context, evidence tasks, and article pack.",
     )
     prepare.add_argument("--date", required=True, help="Report date, e.g. 2026-08-07.")
     prepare.add_argument(
@@ -738,6 +738,9 @@ def prepare_command(args: argparse.Namespace) -> int:
         print(f"Prepare failed: {exc}", file=sys.stderr)
         return 2
     print(f"Prepared Codex context: {path}")
+    print(f"Prepared evidence tasks: {out_dir / 'evidence-tasks.json'}")
+    print(f"Prepared article pack: {out_dir / 'article-pack.md'}")
+    print(f"Prepared article index: {out_dir / 'article-index.jsonl'}")
     return 0
 
 

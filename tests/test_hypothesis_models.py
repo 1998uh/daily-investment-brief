@@ -59,6 +59,7 @@ def test_hypothesis_roundtrip_validates_contract():
 
     assert hypothesis.id == "H-20260806-001"
     assert hypothesis.subject.thscode == "399006.SZ"
+    assert hypothesis.review_policy == "daily"
     assert hypothesis.to_dict()["conditions"][0]["required_days"] == 2
 
 
@@ -81,6 +82,25 @@ def test_manual_hypothesis_requires_reason():
     )
     with pytest.raises(ContractError, match="manual_reason"):
         Hypothesis.from_dict(payload)
+
+
+def test_event_triggered_hypothesis_requires_trigger_terms():
+    payload = hypothesis_payload(
+        verification_mode="event",
+        conditions=[],
+        falsification_conditions=[],
+        manual_reason="等待正式政策文件。",
+        review_policy="event_triggered",
+    )
+    with pytest.raises(ContractError, match="trigger_terms"):
+        Hypothesis.from_dict(payload)
+
+
+def test_review_date_must_not_exceed_deadline():
+    with pytest.raises(ContractError, match="between created_date and deadline"):
+        Hypothesis.from_dict(
+            hypothesis_payload(next_review_date="2026-08-11")
+        )
 
 
 def test_hypotheses_document_rejects_duplicate_ids():

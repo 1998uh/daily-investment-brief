@@ -1,0 +1,194 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-07",
+  "hypotheses": [
+    {
+      "id": "H-20260807-001",
+      "created_date": "2026-08-07",
+      "claim": "科技反弹在未来5个交易日进入内部缩圈，科创50相对沪深300落后至少2个百分点",
+      "subject": {
+        "type": "index",
+        "name": "科创50",
+        "thscode": "000688.SH"
+      },
+      "sources": [
+        {
+          "author": "睿知睿见",
+          "article_id": "A-aaa7c9d48e8d",
+          "url": "https://xueqiu.com/1843761023/404047170",
+          "quote": "进一步缩圈是大概率事件，科技股的内讧才刚刚开始。"
+        },
+        {
+          "author": "诸葛孔暗",
+          "article_id": "A-eaa34e5869b9",
+          "url": "https://xueqiu.com/1071814723/403930322",
+          "quote": "科技股后面越涨越卖，节奏是先海外链，然后国产链。"
+        }
+      ],
+      "deadline": "2026-08-14",
+      "verification_mode": "quantitative",
+      "conditions": [
+        {
+          "type": "relative_return",
+          "entity": "000688.SH",
+          "benchmark": "000300.SH",
+          "operator": "<=",
+          "value": -2.0,
+          "unit": "percentage_point",
+          "window_trading_days": 5
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "type": "relative_return",
+          "entity": "000688.SH",
+          "benchmark": "000300.SH",
+          "operator": ">=",
+          "value": 3.0,
+          "unit": "percentage_point",
+          "window_trading_days": 5
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "H-20260807-002",
+      "created_date": "2026-08-07",
+      "claim": "黄金与有色的宏观溢价继续回归，有色金属ETF未来5个交易日跑赢沪深300至少2个百分点",
+      "subject": {
+        "type": "etf",
+        "name": "有色金属ETF南方",
+        "thscode": "512400.SH"
+      },
+      "sources": [
+        {
+          "author": "热点投研",
+          "article_id": "A-aa04568fe653",
+          "url": "https://mp.weixin.qq.com/s/3FBxNEs3DNNIotYfsvJMlw",
+          "quote": "金是赔率最好，铜是胜率最强；宏观溢价回归催化了整个板块的做多情绪。"
+        },
+        {
+          "author": "大橘养基桶",
+          "article_id": "A-5fa084de9b88",
+          "url": "https://xueqiu.com/8224941924/404013908",
+          "quote": "世界地缘格局正在剧变，机会不止科技。"
+        }
+      ],
+      "deadline": "2026-08-14",
+      "verification_mode": "quantitative",
+      "conditions": [
+        {
+          "type": "relative_return",
+          "entity": "512400.SH",
+          "benchmark": "000300.SH",
+          "operator": ">=",
+          "value": 2.0,
+          "unit": "percentage_point",
+          "window_trading_days": 5
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "type": "relative_return",
+          "entity": "512400.SH",
+          "benchmark": "000300.SH",
+          "operator": "<=",
+          "value": -3.0,
+          "unit": "percentage_point",
+          "window_trading_days": 5
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "H-20260807-003",
+      "created_date": "2026-08-07",
+      "claim": "宇树科技上市首日不破发且较150.80元发行价上涨至少50%",
+      "subject": {
+        "type": "ipo",
+        "name": "宇树科技",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "柯中投研笔记",
+          "article_id": "A-a04d236bacb6",
+          "url": "https://mp.weixin.qq.com/s/p8XM4Jfqqz2zpFPE-wdh~Q",
+          "quote": "个人认为这个应该还是个肉签，而且可能会不小。"
+        },
+        {
+          "author": "猫笔刀",
+          "article_id": "A-8c3013833a9f",
+          "url": "https://mp.weixin.qq.com/s/0JfLq41ywboSLTCFz3nsbA",
+          "quote": "以宇树科技这几年在全国的知名度和人气，600亿不贵。"
+        }
+      ],
+      "deadline": "2026-09-30",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要交易所上市公告、首日收盘价、绿鞋执行情况和实际流通盘数据；链上挂钩品种价格不能替代正式上市交易价格。",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260807-004",
+      "created_date": "2026-08-07",
+      "claim": "离岸收益征税执行强化将在一个月内削弱香港储蓄分红险吸引力并压制相关险企新单预期",
+      "subject": {
+        "type": "theme",
+        "name": "香港储蓄分红险税务影响",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "猫笔刀",
+          "article_id": "A-8c3013833a9f",
+          "url": "https://mp.weixin.qq.com/s/0JfLq41ywboSLTCFz3nsbA",
+          "quote": "收益缴税20%后香港保险相比大陆保险的收益优势缩小了不少。"
+        },
+        {
+          "author": "Value_at_Risk",
+          "article_id": "A-fc9457bbbbfe",
+          "url": "https://weibo.com/2031030981/Rc7QovzOa",
+          "quote": "针对富人的税会大面积开征，目前来看趋势已经非常明确。"
+        }
+      ],
+      "deadline": "2026-09-07",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要税务机关正式文件、CRS执行口径以及友邦、保诚等险企的新业务价值或渠道新单披露；单日股价不能独立证明保费需求变化。",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260807-005",
+      "created_date": "2026-08-07",
+      "claim": "国内大模型迭代将在一个月内把算力叙事从资本开支预期推进到可核验的超节点订单或招标",
+      "subject": {
+        "type": "theme",
+        "name": "国内大模型与超节点订单",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "唐史主任司马迁",
+          "article_id": "A-6a75a5aff400",
+          "url": "https://weibo.com/2014433131/RcfnXFUT5",
+          "quote": "再反馈到硬件的形式，或许就不是资本开支的预期，而是实打实的订单和招标。"
+        },
+        {
+          "author": "陈达美股投资",
+          "article_id": "A-56d1310984c9",
+          "url": "",
+          "quote": "云计算按Token计费把每一次使用变成收入，开源权重可以成为获客漏斗。"
+        }
+      ],
+      "deadline": "2026-09-07",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要模型官方发布、云厂商API调用与收入披露、招标公告或供应商订单公告；模型热度和股价上涨不能替代订单证据。",
+      "status": "pending"
+    }
+  ]
+}

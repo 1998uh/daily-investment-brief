@@ -1,0 +1,212 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-07",
+  "results": [
+    {
+      "hypothesis_id": "H-20260806-001",
+      "previous_status": "pending",
+      "status": "partially_confirmed",
+      "conditions": [
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "399006.SZ",
+            "operator": ">",
+            "value": 3590.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3515.56,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-001"
+          ],
+          "reason": "0 of 1 observed days matched > 3590 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "000001.SH",
+            "operator": ">",
+            "value": 3886.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": true,
+          "partial": false,
+          "observed": {
+            "matching_days": 1,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3900.35,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-002"
+          ],
+          "reason": "1 of 1 observed days matched > 3886 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "turnover_threshold",
+            "entity": "A_SHARE",
+            "operator": ">=",
+            "value": 22000.0,
+            "unit": "亿元",
+            "required_days": 1,
+            "field": "turnover"
+          },
+          "available": true,
+          "passed": true,
+          "partial": false,
+          "observed": {
+            "matching_days": 1,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 25287.8148,
+                "unit": "亿元"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-003"
+          ],
+          "reason": "1 of 1 observed days matched >= 22000 亿元; requires 1 day(s)."
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "399006.SZ",
+            "operator": "<",
+            "value": 3486.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3515.56,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-001"
+          ],
+          "reason": "0 of 1 observed days matched < 3486 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "turnover_threshold",
+            "entity": "A_SHARE",
+            "operator": "<",
+            "value": 22000.0,
+            "unit": "亿元",
+            "required_days": 1,
+            "field": "turnover"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 25287.8148,
+                "unit": "亿元"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-003"
+          ],
+          "reason": "0 of 1 observed days matched < 22000 亿元; requires 1 day(s)."
+        }
+      ],
+      "reason": "Some support conditions were met, but the full confirmation rule was not satisfied.",
+      "deterministic": true,
+      "evidence_ids": [
+        "E-20260807-001",
+        "E-20260807-002",
+        "E-20260807-003"
+      ],
+      "evaluated_at": "2026-08-07T09:18:58+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260806-002",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要FCC等正式政策文件、海外工厂适用范围、公司公告或云厂商订单披露，不能用股价代替。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-07T09:18:58+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260806-003",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要后续库存、排产、隐藏库存、期现价格和板块表现联合验证，股票行情不能替代产业库存事实。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-07T09:18:58+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260806-004",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要美光、海力士、三星价格与资本开支、DRAM现货价格和月度营收数据联合验证。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-07T09:18:58+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260806-005",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要跨公司财报、自由现金流、资本开支和估值反应比较，由人工判断叙事是否发生迁移。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-07T09:18:58+08:00"
+    }
+  ]
+}

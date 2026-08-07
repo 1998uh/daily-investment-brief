@@ -46,12 +46,23 @@ def read_json(path: Path) -> Any:
 
 
 def write_json(path: Path, payload: Any) -> Path:
+    return _write_json_text(
+        path,
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=False) + "\n",
+    )
+
+
+def write_compact_json(path: Path, payload: Any) -> Path:
+    return _write_json_text(
+        path,
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
+    )
+
+
+def _write_json_text(path: Path, content: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=False) + "\n",
-        encoding="utf-8",
-    )
+    temporary.write_text(content, encoding="utf-8")
     temporary.replace(path)
     return path
 

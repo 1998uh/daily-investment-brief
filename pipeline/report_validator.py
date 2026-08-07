@@ -22,6 +22,10 @@ from .hypothesis_models import (
 )
 
 
+MIN_NEW_HYPOTHESES = 2
+MAX_NEW_HYPOTHESES = 4
+
+
 @dataclass(frozen=True)
 class ValidationReport:
     errors: tuple[str, ...]
@@ -46,8 +50,12 @@ def validate_report_bundle(
     md_path = out_dir / "daily-brief.md"
     hypotheses_path = out_dir / "hypotheses.json"
     context_path = out_dir / "codex-context.json"
+    article_pack_path = out_dir / "article-pack.md"
+    article_index_path = out_dir / "article-index.jsonl"
+    evidence_tasks_path = out_dir / "evidence-tasks.json"
     evidence_path = out_dir / "evidence.json"
     verification_path = out_dir / "verification.json"
+    context_payload: dict[str, Any] = {}
 
     if not md_path.exists():
         errors.append(f"missing daily brief: {md_path}")
@@ -60,14 +68,42 @@ def validate_report_bundle(
             message = f"missing workflow artifact: {path}"
             (errors if strict else warnings).append(message)
 
+    if context_path.exists():
+        try:
+            context_payload = read_json(context_path)
+            if not isinstance(context_payload, dict):
+                raise ContractError("codex-context.json must contain an object")
+            for key, path in (
+                ("article_pack", article_pack_path),
+                ("article_index", article_index_path),
+                ("evidence_tasks", evidence_tasks_path),
+            ):
+                if context_payload.get(key) and not path.exists():
+                    errors.append(f"missing context artifact: {path}")
+        except ContractError as exc:
+            errors.append(str(exc))
+
     hypotheses = []
     verification_results: list[dict[str, Any]] = []
     evidence_items: list[dict[str, Any]] = []
     if hypotheses_path.exists():
         try:
-            document_date, hypotheses = parse_hypotheses_document(read_json(hypotheses_path))
+            hypotheses_payload = read_json(hypotheses_path)
+            document_date, hypotheses = parse_hypotheses_document(hypotheses_payload)
             if document_date != report_date:
                 errors.append("hypotheses report_date does not match requested date")
+            if not MIN_NEW_HYPOTHESES <= len(hypotheses) <= MAX_NEW_HYPOTHESES:
+                errors.append(
+                    "hypotheses.json must contain 2-4 new hypotheses; "
+                    f"found {len(hypotheses)}"
+                )
+            if context_payload.get("article_pack"):
+                for index, item in enumerate(hypotheses_payload.get("hypotheses", [])):
+                    if not str(item.get("review_policy") or "").strip():
+                        errors.append(
+                            f"hypotheses[{index}].review_policy is required "
+                            "for token-efficient runtime"
+                        )
         except ContractError as exc:
             errors.append(str(exc))
     if evidence_path.exists():
@@ -153,6 +189,9 @@ def _build_manifest(
 ) -> dict[str, Any]:
     names = [
         "codex-context.json",
+        "article-pack.md",
+        "article-index.jsonl",
+        "evidence-tasks.json",
         "evidence.json",
         "verification.json",
         "hypotheses.json",

@@ -12,6 +12,7 @@ HYPOTHESIS_ID_RE = re.compile(r"^H-(\d{8})-(\d{3,})$")
 EVIDENCE_ID_RE = re.compile(r"^E-(\d{8})-(\d{3,})$")
 
 VERIFICATION_MODES = {"quantitative", "event", "hybrid", "manual"}
+REVIEW_POLICIES = {"daily", "weekly", "event_triggered", "deadline_only"}
 HYPOTHESIS_STATUSES = {
     "pending",
     "partially_confirmed",
@@ -211,6 +212,9 @@ class Hypothesis:
     falsification_conditions: tuple[Condition, ...]
     status: str = "pending"
     manual_reason: str = ""
+    review_policy: str = ""
+    next_review_date: date | None = None
+    trigger_terms: tuple[str, ...] = ()
 
     @classmethod
     def from_dict(cls, payload: Any) -> "Hypothesis":
@@ -248,6 +252,35 @@ class Hypothesis:
 
         subject = Subject.from_dict(data.get("subject"))
         manual_reason = _optional_text(data.get("manual_reason"))
+        review_policy = _optional_text(data.get("review_policy")) or {
+            "quantitative": "daily",
+            "event": "weekly",
+            "hybrid": "weekly",
+            "manual": "deadline_only",
+        }[verification_mode]
+        if review_policy not in REVIEW_POLICIES:
+            raise ContractError(f"unsupported review_policy: {review_policy}")
+        next_review_date = (
+            _iso_date(data.get("next_review_date"), "hypothesis.next_review_date")
+            if data.get("next_review_date") not in (None, "")
+            else None
+        )
+        if next_review_date and not created_date <= next_review_date <= deadline:
+            raise ContractError(
+                "hypothesis.next_review_date must be between created_date and deadline"
+            )
+        raw_trigger_terms = data.get("trigger_terms", [])
+        if not isinstance(raw_trigger_terms, list):
+            raise ContractError("hypothesis.trigger_terms must be a list")
+        trigger_terms = tuple(
+            text
+            for item in raw_trigger_terms
+            if (text := _optional_text(item))
+        )
+        if review_policy == "event_triggered" and not trigger_terms:
+            raise ContractError(
+                "event_triggered hypothesis requires non-empty trigger_terms"
+            )
         conditions = tuple(
             Condition.from_dict(item, f"conditions[{index}]")
             for index, item in enumerate(raw_conditions)
@@ -287,6 +320,9 @@ class Hypothesis:
             falsification_conditions=falsification,
             status=status,
             manual_reason=manual_reason,
+            review_policy=review_policy,
+            next_review_date=next_review_date,
+            trigger_terms=trigger_terms,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -302,10 +338,15 @@ class Hypothesis:
             "falsification_conditions": [
                 condition.to_dict() for condition in self.falsification_conditions
             ],
+            "review_policy": self.review_policy,
             "status": self.status,
         }
         if self.manual_reason:
             result["manual_reason"] = self.manual_reason
+        if self.next_review_date:
+            result["next_review_date"] = self.next_review_date.isoformat()
+        if self.trigger_terms:
+            result["trigger_terms"] = list(self.trigger_terms)
         return result
 
 

@@ -1,0 +1,1165 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-07",
+  "timezone": "Asia/Shanghai",
+  "source_dir": "sources/2026-08-07",
+  "article_count": 83,
+  "articles": [
+    {
+      "article_id": "A-bb3847dbe0a2",
+      "path": "sources/2026-08-07/wechat-三岁小怪兽-亏哭了-bb3847db.md",
+      "source": "微信公众号",
+      "author": "三岁小怪兽",
+      "title": "亏哭了",
+      "url": "https://mp.weixin.qq.com/s/-i-QGDHSLsVENP4mLlYciw",
+      "published_at": "2026-08-07 06:56:50",
+      "sha256": "00063907ac2d9afce7541de47958526c214522cac1bf3b5635a094b5c8a3025b"
+    },
+    {
+      "article_id": "A-a04d236bacb6",
+      "path": "sources/2026-08-07/wechat-柯中投研笔记-破发还是大肉-a04d236b.md",
+      "source": "微信公众号",
+      "author": "柯中投研笔记",
+      "title": "破发还是大肉？",
+      "url": "https://mp.weixin.qq.com/s/p8XM4Jfqqz2zpFPE-wdh~Q",
+      "published_at": "2026-08-06 23:47:45",
+      "sha256": "4c964e769ddff125d721e3f4b432a286c556298258ca511486cc5b4a4a7258f5"
+    },
+    {
+      "article_id": "A-aa04568fe653",
+      "path": "sources/2026-08-07/wechat-热点投研-右侧信号-aa04568f.md",
+      "source": "微信公众号",
+      "author": "热点投研",
+      "title": "右侧信号",
+      "url": "https://mp.weixin.qq.com/s/3FBxNEs3DNNIotYfsvJMlw",
+      "published_at": "2026-08-06 15:46:00",
+      "sha256": "b87b3d95655d1c9f06708c195f751ced5dd53b8fc1e2caba8d3c3f7aca36eb26"
+    },
+    {
+      "article_id": "A-8c3013833a9f",
+      "path": "sources/2026-08-07/wechat-猫笔刀-150元-股-很多人担心会破发-8c301383.md",
+      "source": "微信公众号",
+      "author": "猫笔刀",
+      "title": "150元/股，很多人担心会破发",
+      "url": "https://mp.weixin.qq.com/s/0JfLq41ywboSLTCFz3nsbA",
+      "published_at": "2026-08-06 22:24:42",
+      "sha256": "3812c3309423a3601a0031cc01872db9977318531f4a14889ce132fc2ca10f4a"
+    },
+    {
+      "article_id": "A-27fba560ea3e",
+      "path": "sources/2026-08-07/weibo-Value_at_Risk-刷到了一个视频http-t-cn-AXCFSHNO-说的是沈-27fba560.md",
+      "source": "微博",
+      "author": "Value_at_Risk",
+      "title": "刷到了一个视频http://t.cn/AXCFSHNO 说的是沈阳一个荒地停放的了100多辆贴…",
+      "url": "https://weibo.com/2031030981/RccoX8FdR",
+      "published_at": "2026-08-07 00:36:57",
+      "sha256": "dac93dd003f2e88061a89e26f3c9c8ec6cffe17713130e810139b5061a1bbd06"
+    },
+    {
+      "article_id": "A-fc9457bbbbfe",
+      "path": "sources/2026-08-07/weibo-Value_at_Risk-早些年我曾预测针对富人的税会大面积开征-目前来看趋势已经非常-fc9457bb.md",
+      "source": "微博",
+      "author": "Value_at_Risk",
+      "title": "早些年我曾预测针对富人的税会大面积开征，目前来看趋势已经非常明确。其实这是一个非常简单的数学问…",
+      "url": "https://weibo.com/2031030981/Rc7QovzOa",
+      "published_at": "2026-08-06 13:00:50",
+      "sha256": "77a03b0d4956dfe8c9dfd9f98137e96dc2cce5d02bc847abe3bbfe1b6c0da926"
+    },
+    {
+      "article_id": "A-eeb3d6dc81de",
+      "path": "sources/2026-08-07/weibo-wu2198-8月7日有1只新股申购-是科创板新股频准激光-申购代码787-eeb3d6dc.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "8月7日有1只新股申购，是科创板新股频准激光（申购代码787826）。频准激光是精准激光龙头企…",
+      "url": "https://weibo.com/1216826604/Rcfxx6oD2",
+      "published_at": "2026-08-07 08:36:20",
+      "sha256": "a187ec3d31cb34957e5d397187eb1a1a9de112c7ffa08cfc39c049992dd9dbc0"
+    },
+    {
+      "article_id": "A-23b4923072b0",
+      "path": "sources/2026-08-07/weibo-wu2198-今天指数收复3886点-收在3900-35点-承接早盘给大家-23b49230.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "今天指数收复3886点（收在3900.35点），承接早盘给大家分析的思路，接下是3956点方向…",
+      "url": "https://weibo.com/1216826604/Rc8EqmRUo",
+      "published_at": "2026-08-06 15:04:05",
+      "sha256": "dd1a0c40523c6af1130a524e07dc2185e5db9c06de8f94b7ec3af51b32f37e9f"
+    },
+    {
+      "article_id": "A-2985ec0d5a9d",
+      "path": "sources/2026-08-07/weibo-wu2198-今天指数收复3886点-收在3900-35点-接下是3956-2985ec0d.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "今天指数收复3886点（收在3900.35点），接下是3956点方向...........收到…",
+      "url": "https://weibo.com/1216826604/Rc8C1ElHJ",
+      "published_at": "2026-08-06 14:58:11",
+      "sha256": "cbb9624832bf93a1c7e08dc3b23c00b69489871fe0f07bfa2e1cfbbd3a64d79e"
+    },
+    {
+      "article_id": "A-49cb58ce90cc",
+      "path": "sources/2026-08-07/weibo-wu2198-创业板指数和深成指目前均转跌了-分别跌1-65-1-10-49cb58ce.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "创业板指数和深成指目前均转跌了，分别跌1.65%，1.10%。 ​​​",
+      "url": "https://weibo.com/1216826604/Rc8j487YB",
+      "published_at": "2026-08-06 14:11:28",
+      "sha256": "3827fc8aed5d5416bd3c7842e4ddcd704c5663582ab7ee85848171bfec56d563"
+    },
+    {
+      "article_id": "A-31dcd21b5e4d",
+      "path": "sources/2026-08-07/weibo-wu2198-在B反的过程或许还有一些波折-但是B反趋势和预期暂时不变-明-31dcd21b.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "在B反的过程或许还有一些波折，但是B反趋势和预期暂时不变，明白6666 ​​​",
+      "url": "https://weibo.com/1216826604/Rc6EAdsUk",
+      "published_at": "2026-08-06 09:58:59",
+      "sha256": "8753122502b72db07be453e2f4da31203b70a2d6991279850aa681a4e073509a"
+    },
+    {
+      "article_id": "A-4d6dec34a05e",
+      "path": "sources/2026-08-07/weibo-wu2198-大盘指数自3741和3767连线的B反行情-指数正式收复38-4d6dec34.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "大盘指数自3741和3767连线的B反行情，指数正式收复3886点（日线收盘为准)之后，下一反…",
+      "url": "https://weibo.com/1216826604/Rc6M7FmAt",
+      "published_at": "2026-08-06 10:17:34",
+      "sha256": "bfd7867f824cb026de472e5f2c146461c865481274a370b21cbc7985b2a1933f"
+    },
+    {
+      "article_id": "A-43176e2529ad",
+      "path": "sources/2026-08-07/weibo-wu2198-宁王连续反弹之后今天高开转跌-目前跌4-21-领跌电池股-43176e25.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "宁王连续反弹之后今天高开转跌，目前跌4.21%，领跌电池股。 ​​​",
+      "url": "https://weibo.com/1216826604/Rc7dtah0n",
+      "published_at": "2026-08-06 11:24:56",
+      "sha256": "9c0fa7c82fc63f2c7c67959d1333fe7a7755b7975bd76e0ceaa6509d6c5c211d"
+    },
+    {
+      "article_id": "A-f577b3dc098b",
+      "path": "sources/2026-08-07/weibo-wu2198-宇树科技中签率-公告显示-本次发行价格为150-80元-股-f577b3dc.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "",
+      "url": "https://weibo.com/1216826604/RceIQ0OiW",
+      "published_at": "2026-08-07 06:31:26",
+      "sha256": "7e5bab6712bd3098591ae1a6ab907e1e2a9b0dc8ceeccaa24a5f1f8ffed9046c"
+    },
+    {
+      "article_id": "A-ebc754a30cd2",
+      "path": "sources/2026-08-07/weibo-wu2198-对于短线来说-创业板指数在没有突破3590点之前会有反复-整-ebc754a3.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "对于短线来说，创业板指数在没有突破3590点之前会有反复，整体不影响B反趋势。把握好热点，控制…",
+      "url": "https://weibo.com/1216826604/Rc74u91F6",
+      "published_at": "2026-08-06 11:02:48",
+      "sha256": "592db7f79ed61b029ddf69ab990ec11748ef29ac9f3c409fb826bc182a81100e"
+    },
+    {
+      "article_id": "A-f18c267e0734",
+      "path": "sources/2026-08-07/weibo-wu2198-封装-电容-光纤-CPO-PCB-算力阻力-交换机-SoC芯-f18c267e.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "封装，电容，光纤，CPO，PCB，算力阻力，交换机，SoC芯片等目前均有上涨。 ​​​",
+      "url": "https://weibo.com/1216826604/Rc6PU5zOD",
+      "published_at": "2026-08-06 10:26:52",
+      "sha256": "b9cadab0611bbd640fbfed0803e91816a64ca1817a165317656c77181701b13b"
+    },
+    {
+      "article_id": "A-d87fcc3b17e5",
+      "path": "sources/2026-08-07/weibo-wu2198-截止11-30两市成交了17651亿元-有3706只个股下跌-d87fcc3b.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "截止11：30两市成交了17651亿元，有3706只个股下跌，大盘资金流出368.55亿元，量…",
+      "url": "https://weibo.com/1216826604/Rc7g3A7Mp",
+      "published_at": "2026-08-06 11:31:19",
+      "sha256": "d8977f9331618b5a3516547ad5c159e9e77c297cba44bcdfabb0184e92d31460"
+    },
+    {
+      "article_id": "A-c3a32e5c742b",
+      "path": "sources/2026-08-07/weibo-wu2198-截止15-00两市成交了25475亿元-有2590只个股下跌-c3a32e5c.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "截止15：00两市成交了25475亿元，有2590只个股下跌，大盘资金流出460亿元，量能比上…",
+      "url": "https://weibo.com/1216826604/Rc8DDaZnm",
+      "published_at": "2026-08-06 15:02:08",
+      "sha256": "65b937bf06f9990c0f1da67577850e24d027b0b94f0062a36c2980f607157d39"
+    },
+    {
+      "article_id": "A-1447a450ed53",
+      "path": "sources/2026-08-07/weibo-wu2198-截止目前来看-香港股市跌489点-日本股市跌550点-韩国股-1447a450.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "截止目前来看，香港股市跌489点，日本股市跌550点，韩国股市跌4.07%。 ​​​",
+      "url": "https://weibo.com/1216826604/Rc7YDcKyv",
+      "published_at": "2026-08-06 13:21:07",
+      "sha256": "ba944f2c0624c23d3bb1ebbc41edd5906ff933ab98dba8d19d69061e87002d35"
+    },
+    {
+      "article_id": "A-ae3cf5bab237",
+      "path": "sources/2026-08-07/weibo-wu2198-所有人早安-已起床的点赞应一声-耶-耶-耶-祝愿点赞和回帖的-ae3cf5ba.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "所有人早安，已起床的点赞应一声……[耶][耶][耶]祝愿点赞和回帖的朋友们，中大肉签，炒股大赚…",
+      "url": "https://weibo.com/1216826604/RceKjcuUJ",
+      "published_at": "2026-08-07 06:35:04",
+      "sha256": "b1a2e7e63b886129716f5cf4677863032c978a64d019d64a1785e6af4943440d"
+    },
+    {
+      "article_id": "A-b4a7b11bd016",
+      "path": "sources/2026-08-07/weibo-wu2198-早盘指数上试了3896点-收在3878-92点-下午注意看能-b4a7b11b.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "早盘指数上试了3896点，收在3878.92点，下午注意看能不能收复3886点即可.....创…",
+      "url": "https://weibo.com/1216826604/Rc7hsjQ9k",
+      "published_at": "2026-08-06 11:34:45",
+      "sha256": "f1409cf3fbb88a3ee7642028026fa77b876a9b7af6ef8063fb0350a2b33f527b"
+    },
+    {
+      "article_id": "A-54e86485d82d",
+      "path": "sources/2026-08-07/weibo-wu2198-相亲是选股-分手是止损-结婚是满仓-生娃是加杠杆-离婚是爆仓-54e86485.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "相亲是选股，分手是止损；结婚是满仓，生娃是加杠杆，离婚是爆仓！[嘻嘻] ​​​​",
+      "url": "https://weibo.com/1216826604/Rc7Pu4kGu",
+      "published_at": "2026-08-06 12:58:35",
+      "sha256": "88671740dea3f0783ec9389ad1f779a31a116b34de5b324f7405e6e573b74637"
+    },
+    {
+      "article_id": "A-3004d1c01308",
+      "path": "sources/2026-08-07/weibo-wu2198-转载-据香港交易所披露-高盛对中际旭创H股的多头持仓比例于2-3004d1c0.md",
+      "source": "微博",
+      "author": "wu2198",
+      "title": "转载： 据香港交易所披露，高盛对中际旭创H股的多头持仓比例于2026年8月3日从11.65%增…",
+      "url": "https://weibo.com/1216826604/Rca5i3gfq",
+      "published_at": "2026-08-06 18:43:01",
+      "sha256": "5641dca733d587a0a11c4f827fc5377955eb26f2f5426bba449d8ba7cba8bdb0"
+    },
+    {
+      "article_id": "A-550086f1d618",
+      "path": "sources/2026-08-07/weibo-唐史主任司马迁-LYTE后续应该成交会逐步放大-叠加港股上市-就多了两个市场-550086f1.md",
+      "source": "微博",
+      "author": "唐史主任司马迁",
+      "title": "LYTE后续应该成交会逐步放大，叠加港股上市，就多了两个市场的定价模式。 海外链海外定价，国产…",
+      "url": "https://weibo.com/2014433131/RcfyCflS3",
+      "published_at": "2026-08-07 08:39:00",
+      "sha256": "b4cc079d0dd5537e15926c8af75f4cdb3641fcd0621f53e7162915a61ffc06c7"
+    },
+    {
+      "article_id": "A-6a75a5aff400",
+      "path": "sources/2026-08-07/weibo-唐史主任司马迁-市场连续进行了两天的反弹-且昨天有点和日韩走势分离的意思-海-6a75a5af.md",
+      "source": "微博",
+      "author": "唐史主任司马迁",
+      "title": "市场连续进行了两天的反弹，且昨天有点和日韩走势分离的意思。 海外存储的目标价下调也没有太影响其…",
+      "url": "https://weibo.com/2014433131/RcfnXFUT5",
+      "published_at": "2026-08-07 08:12:46",
+      "sha256": "affc80d1d8c14f9bb38176c6b3c0062c80da167a70e5c1d300bce5a89c9823e3"
+    },
+    {
+      "article_id": "A-cff7868f8c62",
+      "path": "sources/2026-08-07/weibo-挖地瓜的超级鹿鼎公-2026年8月6日CCI指数-5500大卡-844-5-50-cff7868f.md",
+      "source": "微博",
+      "author": "挖地瓜的超级鹿鼎公",
+      "title": "2026年8月6日CCI指数 5500大卡 844 （+5） 5000大卡 755 （+5） …",
+      "url": "https://weibo.com/3962719063/Rcbkg0H1I",
+      "published_at": "2026-08-06 21:52:38",
+      "sha256": "843743015cc54749f17953df21825f98fd16b59988e0e3a60c77096501f18b34"
+    },
+    {
+      "article_id": "A-0968b783b18a",
+      "path": "sources/2026-08-07/weibo-挖地瓜的超级鹿鼎公-http-t-cn-AXCgJgvh-Lynnfay7038-0968b783.md",
+      "source": "微博",
+      "author": "挖地瓜的超级鹿鼎公",
+      "title": "http://t.cn/AXCgJgvh //@Lynnfay70387090:老舅地道[赞]…",
+      "url": "https://weibo.com/3962719063/Rc6QLu0vD",
+      "published_at": "2026-08-06 10:29:00",
+      "sha256": "b71611a7dc5aee33371c4537bcf8fac77e0402bc7a09f2c5051bc4f9d71f86e9"
+    },
+    {
+      "article_id": "A-67857c85ee71",
+      "path": "sources/2026-08-07/weibo-挖地瓜的超级鹿鼎公-为什么我特别支持华为-1华为的分配体系是国内最领先的-华为给-67857c85.md",
+      "source": "微博",
+      "author": "挖地瓜的超级鹿鼎公",
+      "title": "为什么我特别支持华为： 1华为的分配体系是国内最领先的，华为给了高科技人才100万，200万，…",
+      "url": "https://weibo.com/3962719063/RcfDry6rS",
+      "published_at": "2026-08-07 08:50:53",
+      "sha256": "798874d65e00debbade8cb3121d90698931e80b6211612f10f01b1f5da89bc55"
+    },
+    {
+      "article_id": "A-55e4ae043ae5",
+      "path": "sources/2026-08-07/weibo-挖地瓜的超级鹿鼎公-回复合集-2026-08-06-d786e80e.md",
+      "source": "微博",
+      "author": "挖地瓜的超级鹿鼎公",
+      "title": "挖地瓜的超级鹿鼎公 回复合集 - 2026-08-06",
+      "url": "",
+      "published_at": "2026-08-06",
+      "sha256": "b24d4bb20c45c30d8e15ef8a4ef93ebb1b02a2109b995546408bbda6c4db510c"
+    },
+    {
+      "article_id": "A-4a2ef8f33594",
+      "path": "sources/2026-08-07/weibo-谢佩德骨头-发布了头条文章-联创光电-600363-SH-立案事件深度调-4a2ef8f3.md",
+      "source": "微博",
+      "author": "谢佩德骨头",
+      "title": "发布了头条文章：《联创光电（600363.SH）立案事件深度调研报告》 这几天有几位网友问这家…",
+      "url": "https://weibo.com/1905240827/RcaIh6j6t",
+      "published_at": "2026-08-06 20:19:04",
+      "sha256": "99b26a6c9dd327cbe1421b4adf4e7749f59b956ebbf3b0b2b3f7c7b1d8f787b3"
+    },
+    {
+      "article_id": "A-3a54b5aaeded",
+      "path": "sources/2026-08-07/weibo-谢佩德骨头-总有人说宏观预测很难-不如跟随数据做右侧-但我从最近一段时间-3a54b5aa.md",
+      "source": "微博",
+      "author": "谢佩德骨头",
+      "title": "总有人说宏观预测很难，不如跟随数据做右侧。 但我从最近一段时间的数据及市场对响应看，做右侧一点…",
+      "url": "https://weibo.com/1905240827/RccbT28S2",
+      "published_at": "2026-08-07 00:04:46",
+      "sha256": "a4a512880e205b6533c32b67ae2a6da0ac8683eab749bb7c5d0543b222bc991a"
+    },
+    {
+      "article_id": "A-0fd04493f32a",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-Hubspot-HUBS-https-xueqiu-com-0fd04493.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "[$Hubspot(HUBS)$](https://xueqiu.com/S/HUBS)[$F…",
+      "url": "https://xueqiu.com/1583821491/404021005",
+      "published_at": "2026-08-06 21:43:01",
+      "sha256": "c566c5ef9789c7e4b9fe46145d330d6f8a9b490c3d4fbdfbcaccf7fed1220593"
+    },
+    {
+      "article_id": "A-ff2b63e8697f",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-分散投资很重要-科技板块反弹时往往是普涨行情-具体谁先涨-涨-ff2b63e8.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "分散投资很重要，科技板块反弹时往往是普涨行情，具体谁先涨，涨到多少不好说。 如果你只握着一两只…",
+      "url": "https://xueqiu.com/1583821491/403937300",
+      "published_at": "2026-08-06 12:14:15",
+      "sha256": "efe3e04de60b4e2a5daecd55ccc4404067b6076d2e63bf80f2d1ba338501f62b"
+    },
+    {
+      "article_id": "A-7f1d121b5c3c",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-回复合集-2026-08-06-16f7963f.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "九洲仙人 回复合集 - 2026-08-06",
+      "url": "",
+      "published_at": "2026-08-06",
+      "sha256": "01e4def3699701a3d5f13c6587cb806f28abee71c24c3c04b34d22762250f115"
+    },
+    {
+      "article_id": "A-c2cf381ed220",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-天天吹牛逼-说什么不追求利润-什么十个月就回本-怎么就涨价了-c2cf381e.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "天天吹牛逼，说什么不追求利润，什么十个月就回本，怎么就涨价了？也就雪球这群人天天吹什么文圣，不…",
+      "url": "https://xueqiu.com/1583821491/403936967",
+      "published_at": "2026-08-06 12:11:29",
+      "sha256": "ac8ee4f65fb114666ebec0fdde3dd73eb9591279687c3a9e7be57001c642a020"
+    },
+    {
+      "article_id": "A-48c3d7b19f55",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-对持有刚果的利空-其他利好-紫金矿业-SH601899-ht-48c3d7b1.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "对持有刚果的利空，其他利好？[$紫金矿业(SH601899)$](https://xueqiu…",
+      "url": "https://xueqiu.com/1583821491/403994678",
+      "published_at": "2026-08-06 17:55:08",
+      "sha256": "245c0c964a190772aca38ba4c75b5dad0feed013c91c6ad690103ba26f5d960c"
+    },
+    {
+      "article_id": "A-712f5e985c90",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-最无语的板块-要业绩没业绩-要股息没股息-要估值没估值-永远-712f5e98.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "最无语的板块，要业绩没业绩，要股息没股息，要估值没估值，永远涨，[$淮北矿业(SH600985…",
+      "url": "https://xueqiu.com/1583821491/403958724",
+      "published_at": "2026-08-06 14:27:17",
+      "sha256": "e4648d2dcbac6737d238b88d0a61c993a2ece9decd01c205acedd77534dccb32"
+    },
+    {
+      "article_id": "A-fa9a5b0844a0",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-美股还是讲逻辑的-Palantir-PLTR-https-x-fa9a5b08.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "美股还是讲逻辑的 [$Palantir(PLTR)$](https://xueqiu.com/…",
+      "url": "https://xueqiu.com/1583821491/403994459",
+      "published_at": "2026-08-06 17:53:12",
+      "sha256": "10e386da09a677ca2d7353f2d38edacaea5c4f7fc8a9be4d8b2971e58db22ff5"
+    },
+    {
+      "article_id": "A-2433ed623967",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-英伟达-NVDA-https-xueqiu-com-S-NV-2433ed62.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "[$英伟达(NVDA)$](https://xueqiu.com/S/NVDA) [$台积电(…",
+      "url": "https://xueqiu.com/1583821491/404020709",
+      "published_at": "2026-08-06 21:41:08",
+      "sha256": "390a2f8f0be551f360f189f8a35da5203875841031536edc6675019376552f87"
+    },
+    {
+      "article_id": "A-75bea46611e9",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-这次反弹-光明显比存好的多-闪迪-SNDK-https-xu-75bea466.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "这次反弹，光明显比存好的多[$闪迪(SNDK)$](https://xueqiu.com/S/…",
+      "url": "https://xueqiu.com/1583821491/404021509",
+      "published_at": "2026-08-06 21:46:44",
+      "sha256": "413a0e4b09cafd616121c45921a6b42b31867c97b467273666218b6c6dfacbab"
+    },
+    {
+      "article_id": "A-20173b520c8b",
+      "path": "sources/2026-08-07/xueqiu-九洲仙人-高盛-摩根大通大幅度增持-且纽约梅隆银行在中际旭创的H股好仓-20173b52.md",
+      "source": "雪球",
+      "author": "九洲仙人",
+      "title": "高盛、摩根大通大幅度增持，且纽约梅隆银行在中际旭创的H股好仓（L）比例于8月4日从4.07%上…",
+      "url": "https://xueqiu.com/1583821491/403994434",
+      "published_at": "2026-08-06 17:53:05",
+      "sha256": "b1f82d7ca5e6002c1fac2ac6c6c0b81af6f24f28890bf4fb12642001a050bf4e"
+    },
+    {
+      "article_id": "A-99d3e8b88984",
+      "path": "sources/2026-08-07/xueqiu-买股票的老木匠-回复合集-2026-08-06-24929dd2.md",
+      "source": "雪球",
+      "author": "买股票的老木匠",
+      "title": "买股票的老木匠 回复合集 - 2026-08-06",
+      "url": "",
+      "published_at": "2026-08-06",
+      "sha256": "06f8375671775fffb9ac41599dbb540be8c6eba4ed6bea4ef2180f35115a5a10"
+    },
+    {
+      "article_id": "A-ee8fa844c788",
+      "path": "sources/2026-08-07/xueqiu-买股票的老木匠-我现在每天看盘看的都是双创和热门科技股-我自己的持仓基本不看-ee8fa844.md",
+      "source": "雪球",
+      "author": "买股票的老木匠",
+      "title": "我现在每天看盘看的都是双创和热门科技股，我自己的持仓基本不看。 有人问我，为什么你不关心自己的…",
+      "url": "https://xueqiu.com/3058599833/403903748",
+      "published_at": "2026-08-06 10:12:06",
+      "sha256": "909e503389d511539211bcecd11a1454ab561328ab3081d14716c1ba40f00c40"
+    },
+    {
+      "article_id": "A-ba85e765dda9",
+      "path": "sources/2026-08-07/xueqiu-买股票的老木匠-现在美国的股市和商品市场-我认为还是在赌美联储的看跌期权-其-ba85e765.md",
+      "source": "雪球",
+      "author": "买股票的老木匠",
+      "title": "现在美国的股市和商品市场，我认为还是在赌美联储的看跌期权。其推导的路径大致是，一旦美国的纳斯达…",
+      "url": "https://xueqiu.com/3058599833/403994636",
+      "published_at": "2026-08-06 17:54:55",
+      "sha256": "3e8904f06b76635396da52fab5ecb8ba1cfc87ad60e908ef2abdf15b1758adb8"
+    },
+    {
+      "article_id": "A-5fa084de9b88",
+      "path": "sources/2026-08-07/xueqiu-大橘养基桶-杨宗昌又杀回科技了-5fa084de.md",
+      "source": "雪球",
+      "author": "大橘养基桶",
+      "title": "杨宗昌又杀回科技了？",
+      "url": "https://xueqiu.com/8224941924/404013908",
+      "published_at": "2026-08-06 20:50:26",
+      "sha256": "3b8d4c446d518fe44da6dc63647385314cdecd469062e4d41a705392063aedab"
+    },
+    {
+      "article_id": "A-c72206e2bbed",
+      "path": "sources/2026-08-07/xueqiu-小豆小瓜_-又要借钱了-c72206e2.md",
+      "source": "雪球",
+      "author": "小豆小瓜_",
+      "title": "又要借钱了",
+      "url": "https://xueqiu.com/6028781397/404036600",
+      "published_at": "2026-08-07 00:23:56",
+      "sha256": "b1027b7280da724d6d8c533949ab71c8d2a4f28f308e8a99fd44dddf2d55331f"
+    },
+    {
+      "article_id": "A-ac65cba8dcb2",
+      "path": "sources/2026-08-07/xueqiu-我不会选股2019-今年像2021年-ac65cba8.md",
+      "source": "雪球",
+      "author": "我不会选股2019",
+      "title": "今年像2021年？",
+      "url": "https://xueqiu.com/6561443609/403954071",
+      "published_at": "2026-08-06 14:05:06",
+      "sha256": "b4bc131648bd1b587aed6933f6c138e6ed128454c935d90c343668113e1bda43"
+    },
+    {
+      "article_id": "A-b16fd477eaf3",
+      "path": "sources/2026-08-07/xueqiu-泡沫艺术家-风险承受能力-决定了你在市场里能玩什么游戏-b16fd477.md",
+      "source": "雪球",
+      "author": "泡沫艺术家",
+      "title": "风险承受能力，决定了你在市场里能玩什么游戏",
+      "url": "https://xueqiu.com/9222280625/403993683",
+      "published_at": "2026-08-06 17:48:51",
+      "sha256": "987414bca37e1bab67aa663963a632c799fdf2bef8b3b68535d25fd550d86b08"
+    },
+    {
+      "article_id": "A-bfa01704ab07",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-A股利基存储的两大竞争对手-不说去年人家已经涨了十倍-就说今-bfa01704.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "A股利基存储的两大竞争对手，不说去年人家已经涨了十倍，就说今年，华邦电收复了最高点下来跌幅的一…",
+      "url": "https://xueqiu.com/7977283243/403984608",
+      "published_at": "2026-08-06 16:48:40",
+      "sha256": "30a9b042876a6d3565b41eaec32a8fc84cf99beed44254a003dc049716df2b93"
+    },
+    {
+      "article_id": "A-d959100928ba",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-五天四板的华邦电正在进行业绩说明会-市場與營運展望-高容量N-d9591009.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "五天四板的华邦电正在进行业绩说明会 市場與營運展望 • 高容量NOR Flash市場持續供不應…",
+      "url": "https://xueqiu.com/7977283243/403975990",
+      "published_at": "2026-08-06 15:52:16",
+      "sha256": "415c55a0a8995cc2c79a49c85226eccc420470cf01bcbc2cf565623757f9e5e8"
+    },
+    {
+      "article_id": "A-17d4cf4190f6",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-啥时候咱能跟美股这样就好了-两大硬盘-西部数据可以被认为是自-17d4cf41.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "啥时候咱能跟美股这样就好了 两大硬盘，西部数据可以被认为是自身问题暴跌，而希捷科技反而是存储里…",
+      "url": "https://xueqiu.com/7977283243/404048236",
+      "published_at": "2026-08-07 07:31:13",
+      "sha256": "f8a4482ce9984c933536d622deb3d3796e5f9165352acec13fad6785f8704e05"
+    },
+    {
+      "article_id": "A-4ac422909206",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-回复合集-2026-08-06-b92c0c03.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "淡淡的相思林 回复合集 - 2026-08-06",
+      "url": "",
+      "published_at": "2026-08-06",
+      "sha256": "a1d2f9a6be595ae58f3b6d60d2031de6453f53c65c72f7681348deae0f319989"
+    },
+    {
+      "article_id": "A-70157dc91a38",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-回复合集-2026-08-07-c1dbcba2.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "淡淡的相思林 回复合集 - 2026-08-07",
+      "url": "",
+      "published_at": "2026-08-07",
+      "sha256": "5528045700c356cabb1aa07498b41e13e0d727aef9d0e7a8fbe3440fabcc7504"
+    },
+    {
+      "article_id": "A-c2fad2b1ec5e",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-大摩存储总空头shawn-kim表示存储器已经回调到位-战略-c2fad2b1.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "大摩存储总空头shawn kim表示存储器已经回调到位，战略性看多。同时认为，利基型存储器厂商…",
+      "url": "https://xueqiu.com/7977283243/404049455",
+      "published_at": "2026-08-07 07:54:30",
+      "sha256": "8a911e045282c182483c2cd0e0f031886687366a9e6613e3676905fee3471238"
+    },
+    {
+      "article_id": "A-06c42a10f5dc",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-大摩那个唱翻了韩国股市的md都说利基存储表现会比三星-美光和-06c42a10.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "大摩那个唱翻了韩国股市的md都说利基存储表现会比三星，美光和海力士更好 台股也是这么演绎的，结…",
+      "url": "https://xueqiu.com/7977283243/404050390",
+      "published_at": "2026-08-07 08:08:29",
+      "sha256": "b853f5cf0aa05ceca281f900e9afd82b0806a229861743aa63398ccff04e796e"
+    },
+    {
+      "article_id": "A-b1a27f63dcff",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-截止今日收盘台湾利基存储涨幅已经碾压了全部头部存储企业-三家-b1a27f63.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "截止今日收盘台湾利基存储涨幅已经碾压了全部头部存储企业，三家给出的指引都是加速上行 [$兆易创…",
+      "url": "https://xueqiu.com/7977283243/404001340",
+      "published_at": "2026-08-06 18:48:04",
+      "sha256": "987c6527fff438ca039c0db6fe60499d14e834d46c660cc5e877fb0c747140fa"
+    },
+    {
+      "article_id": "A-579abb36975f",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-所以说A股外行多-天天二阶导-却说二介导最好的不如二介导差的-579abb36.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "所以说A股外行多，天天二阶导，却说二介导最好的不如二介导差的。主流外资行都推利基存储，觉得比三…",
+      "url": "https://xueqiu.com/7977283243/404052293",
+      "published_at": "2026-08-07 08:29:07",
+      "sha256": "3f50509ae559de36bab7f113f2cf72f43384a56f032c8b5a195c896050460d42"
+    },
+    {
+      "article_id": "A-73f9635f4568",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-最新报告如图-美光科技-MU-https-xueqiu-co-73f9635f.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "最新报告如图 [$美光科技(MU)$](https://xueqiu.com/S/MU) [$…",
+      "url": "https://xueqiu.com/7977283243/404050901",
+      "published_at": "2026-08-07 08:14:52",
+      "sha256": "6229db4ead580772573fa88f51bca956602c505ac5b72f2effa3448463013024"
+    },
+    {
+      "article_id": "A-e6dde4ddbd9d",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-笑死-华邦电陈沛铭还挺有意思的-还提到了大陆老二跟我们涨价都-e6dde4dd.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "笑死，华邦电陈沛铭还挺有意思的，还提到了大陆老二跟我们涨价都算保守的了，旺宏那是真的把nor转…",
+      "url": "https://xueqiu.com/7977283243/403980448",
+      "published_at": "2026-08-06 16:19:24",
+      "sha256": "40759f1461d7b6934e0b328b0d984324a3ee48f7d86c0e2e420b827e79a1e416"
+    },
+    {
+      "article_id": "A-14f2f1904382",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-美股还是很清晰的-能觉得希捷科技和西部数据差这么多是西部数据-14f2f190.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "美股还是很清晰的，能觉得希捷科技和西部数据差这么多是西部数据自己的问题，我尼玛大A别说两一样的…",
+      "url": "https://xueqiu.com/7977283243/403982808",
+      "published_at": "2026-08-06 16:35:25",
+      "sha256": "e29f3090c2c43d23d5859ffd3a5f9d0f73b72bd7d3cc34a2dc06456d72a2fec5"
+    },
+    {
+      "article_id": "A-99fd2e8654b8",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-至少不像主流存储厂商开始减速了Q3还在加速-这两天披露的7月-99fd2e86.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "至少不像主流存储厂商开始减速了Q3还在加速 这两天披露的7月营收数据 南亚科2026年各月营收…",
+      "url": "https://xueqiu.com/7977283243/404017794",
+      "published_at": "2026-08-06 21:28:08",
+      "sha256": "837e61073779ec4ac8b77de124019760dfa810431af48096916b7145ae85123c"
+    },
+    {
+      "article_id": "A-02c658b56d4e",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-说实在的我都觉得滑稽-有的光通信研究员研究的脑袋都坏了吧-光-02c658b5.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "说实在的我都觉得滑稽，有的光通信研究员研究的脑袋都坏了吧，光存芯是一根绳上的蚂蚱，一起迭代， …",
+      "url": "https://xueqiu.com/7977283243/403965727",
+      "published_at": "2026-08-06 14:58:30",
+      "sha256": "5888fea55660aa4fbb40228b63a27c46500f46de77b1ad8fd6d47e2763dde82c"
+    },
+    {
+      "article_id": "A-f21b12e186db",
+      "path": "sources/2026-08-07/xueqiu-淡淡的相思林-说白了hbm就是那火车站的站台宽度-每过一代就更宽-你的光互-f21b12e1.md",
+      "source": "雪球",
+      "author": "淡淡的相思林",
+      "title": "说白了hbm就是那火车站的站台宽度，每过一代就更宽，你的光互联是铁轨，每过一代也更宽，讲的就是…",
+      "url": "https://xueqiu.com/7977283243/403963326",
+      "published_at": "2026-08-06 14:47:59",
+      "sha256": "4d9d51ffb8f9cc3fcd22fffd3889627878e4262ce75d47f6942d38039ce986b6"
+    },
+    {
+      "article_id": "A-aaa7c9d48e8d",
+      "path": "sources/2026-08-07/xueqiu-睿知睿见-科技股内讧-资金争夺战开启-aaa7c9d4.md",
+      "source": "雪球",
+      "author": "睿知睿见",
+      "title": "科技股内讧！资金争夺战开启",
+      "url": "https://xueqiu.com/1843761023/404047170",
+      "published_at": "2026-08-07 07:01:06",
+      "sha256": "29aa01cbc4010856a42698aaf5c5af7575de901f935bcf1c57e6a658daf63dc5"
+    },
+    {
+      "article_id": "A-f86d9c3025cf",
+      "path": "sources/2026-08-07/xueqiu-管我财-人家都說了寶寶馬達的保險公司已經開張-應該就是一邊賣put接-f86d9c30.md",
+      "source": "雪球",
+      "author": "管我财",
+      "title": "人家都說了寶寶馬達的保險公司已經開張，應該就是一邊賣put接到貨之後就sell covered…",
+      "url": "https://xueqiu.com/9650668145/403970789",
+      "published_at": "2026-08-06 15:21:04",
+      "sha256": "1480c41aa09f491cd520eec05cfd2ff709d57edccdeb154803ed931ee2231732"
+    },
+    {
+      "article_id": "A-fc096d37d829",
+      "path": "sources/2026-08-07/xueqiu-管我财-回复合集-2026-08-06-0ad0f42f.md",
+      "source": "雪球",
+      "author": "管我财",
+      "title": "管我财 回复合集 - 2026-08-06",
+      "url": "",
+      "published_at": "2026-08-06",
+      "sha256": "d7f8234e30e849446ca39f54552845080e636a2de2301e159ad781e87ac0278a"
+    },
+    {
+      "article_id": "A-608209cee128",
+      "path": "sources/2026-08-07/xueqiu-管我财-回复合集-2026-08-07-89c7b138.md",
+      "source": "雪球",
+      "author": "管我财",
+      "title": "管我财 回复合集 - 2026-08-07",
+      "url": "",
+      "published_at": "2026-08-07",
+      "sha256": "fc63a3c4821f67f3ce64ec3fdb3c02c93879d1c1ab86194156c25f178fcdd42a"
+    },
+    {
+      "article_id": "A-25b7e1f189af",
+      "path": "sources/2026-08-07/xueqiu-管我财-覺得-泡泡玛特-09992-https-xueqiu-com-25b7e1f1.md",
+      "source": "雪球",
+      "author": "管我财",
+      "title": "覺得[$泡泡玛特(09992)$](https://xueqiu.com/S/09992) 操…",
+      "url": "https://xueqiu.com/9650668145/404032589",
+      "published_at": "2026-08-06 23:22:05",
+      "sha256": "aeebe3f19248c519fd0b7225a303a1cf25a1455329b2b50b7c62d9b1fa8c9fd7"
+    },
+    {
+      "article_id": "A-5718d05cafb4",
+      "path": "sources/2026-08-07/xueqiu-管我财-诺亚控股-NOAH-https-xueqiu-com-S-N-5718d05c.md",
+      "source": "雪球",
+      "author": "管我财",
+      "title": "[$诺亚控股(NOAH)$](https://xueqiu.com/S/NOAH) 曾經非常熱…",
+      "url": "https://xueqiu.com/9650668145/404011396",
+      "published_at": "2026-08-06 20:25:38",
+      "sha256": "bf16cfded2cee98f209f5aacbd0899d03d67d4e9a6d5aeebad8374f6722e3b02"
+    },
+    {
+      "article_id": "A-c1a8c4550855",
+      "path": "sources/2026-08-07/xueqiu-行中衡-东睦小利好-单季盈利增加几千万元-网页链接-https-xu-c1a8c455.md",
+      "source": "雪球",
+      "author": "行中衡",
+      "title": "东睦小利好，单季盈利增加几千万元。 [网页链接](https://xueqiu.com/155…",
+      "url": "https://xueqiu.com/1553799558/404003442",
+      "published_at": "2026-08-06 19:09:20",
+      "sha256": "43ef580ed0488a51f15b3d7853f7e18ffc1a5a031fbe8d80c8d7cec6081092ea"
+    },
+    {
+      "article_id": "A-3d4d45495f1f",
+      "path": "sources/2026-08-07/xueqiu-行中衡-回复合集-2026-08-06-9f8c4865.md",
+      "source": "雪球",
+      "author": "行中衡",
+      "title": "行中衡 回复合集 - 2026-08-06",
+      "url": "",
+      "published_at": "2026-08-06",
+      "sha256": "7f01674fc6a1abfd727d8df78b4d1ab13d80d787c97bdc65c52111e5ee5753ea"
+    },
+    {
+      "article_id": "A-06ac0efcdd1e",
+      "path": "sources/2026-08-07/xueqiu-诸葛孔暗-回复合集-2026-08-06-ee604e4f.md",
+      "source": "雪球",
+      "author": "诸葛孔暗",
+      "title": "诸葛孔暗 回复合集 - 2026-08-06",
+      "url": "",
+      "published_at": "2026-08-06",
+      "sha256": "f01e65ecfa0856e9f5e7a338832c7795eb6b68a1d0a8ba4c16047e6098b8dd1b"
+    },
+    {
+      "article_id": "A-eaa34e5869b9",
+      "path": "sources/2026-08-07/xueqiu-诸葛孔暗-简单聊个午评-科技股后面越涨越卖-节奏是先海外链-然后国产链-eaa34e58.md",
+      "source": "雪球",
+      "author": "诸葛孔暗",
+      "title": "简单聊个午评： 科技股后面越涨越卖，节奏是先海外链，然后国产链，今天市场走的不如周初，注意这里…",
+      "url": "https://xueqiu.com/1071814723/403930322",
+      "published_at": "2026-08-06 11:33:42",
+      "sha256": "2d83b79952799771706d622e78724dd2499bafa769905da93d5153c7f11317c4"
+    },
+    {
+      "article_id": "A-aa6c28e49aaf",
+      "path": "sources/2026-08-07/xueqiu-诸葛孔暗-简单聊个开盘-第一波T我做完了-有色开盘卖的的部分我做了接回-aa6c28e4.md",
+      "source": "雪球",
+      "author": "诸葛孔暗",
+      "title": "简单聊个开盘： 第一波T我做完了，有色开盘卖的的部分我做了接回了，科技股手中还有持仓的部分是昨…",
+      "url": "https://xueqiu.com/1071814723/403897699",
+      "published_at": "2026-08-06 09:55:38",
+      "sha256": "c76d479e7a1b1901846489302b1f56777e7b815291e74254f580aad71b2ebbb3"
+    },
+    {
+      "article_id": "A-e14ec4890544",
+      "path": "sources/2026-08-07/xueqiu-诸葛孔暗-连阳继续-明日关注周线-e14ec489.md",
+      "source": "雪球",
+      "author": "诸葛孔暗",
+      "title": "连阳继续，明日关注周线。",
+      "url": "https://xueqiu.com/1071814723/403973461",
+      "published_at": "2026-08-06 15:36:03",
+      "sha256": "4265c29f552c83377dde1edf4912bc1cd277673ce3ce1425ed0ff64ec0e4a51b"
+    },
+    {
+      "article_id": "A-00a43ecc5b6b",
+      "path": "sources/2026-08-07/xueqiu-陆家嘴幽灵-对FCC光模块事件的解读与思考-00a43ecc.md",
+      "source": "雪球",
+      "author": "陆家嘴幽灵",
+      "title": "对FCC光模块事件的解读与思考",
+      "url": "https://xueqiu.com/5332385101/403882547",
+      "published_at": "2026-08-06 09:04:50",
+      "sha256": "d67424410010c19acbd0eb33198bb66414fdcddcc7418ab0651696743b0133ca"
+    },
+    {
+      "article_id": "A-1b2bbc407adb",
+      "path": "sources/2026-08-07/xueqiu-陈达美股投资-即使涨价后-DeepSeek的年化收入撑死了10-20亿美元-1b2bbc40.md",
+      "source": "雪球",
+      "author": "陈达美股投资",
+      "title": "即使涨价后，DeepSeek的年化收入撑死了10-20亿美元，与Anthropic 预期今年能…",
+      "url": "https://xueqiu.com/9598793634/404005258",
+      "published_at": "2026-08-06 19:26:22",
+      "sha256": "ac5549a7038711030da99335d66ab2f6764b31dfde4a79bf029c75d6958d2186"
+    },
+    {
+      "article_id": "A-56d1310984c9",
+      "path": "sources/2026-08-07/xueqiu-陈达美股投资-回复合集-2026-08-06-2bc265d8.md",
+      "source": "雪球",
+      "author": "陈达美股投资",
+      "title": "陈达美股投资 回复合集 - 2026-08-06",
+      "url": "",
+      "published_at": "2026-08-06",
+      "sha256": "e63b0a49eb26393eece6c2a76a00be27ed129ffa79fdc2ebdb246efddb102fc9"
+    },
+    {
+      "article_id": "A-7c155ac62762",
+      "path": "sources/2026-08-07/xueqiu-陈达美股投资-开源模型-从今往后-A厂O厂都会给你们降价-不是因为他们良心-7c155ac6.md",
+      "source": "雪球",
+      "author": "陈达美股投资",
+      "title": "开源模型：从今往后，A厂O厂都会给你们降价。不是因为他们良心发现，而是因为我来了。",
+      "url": "https://xueqiu.com/9598793634/403914739",
+      "published_at": "2026-08-06 10:42:22",
+      "sha256": "458805531b660e1b9656709ed370b91dfdb8246af822d7bbaebe1ef8ae9d9fc7"
+    },
+    {
+      "article_id": "A-3f949f6a78f5",
+      "path": "sources/2026-08-07/xueqiu-陈达美股投资-恒生科技指数-HKHSTECH-https-xueqiu-c-3f949f6a.md",
+      "source": "雪球",
+      "author": "陈达美股投资",
+      "title": "[$恒生科技指数(HKHSTECH)$](https://xueqiu.com/S/HKHST…",
+      "url": "https://xueqiu.com/9598793634/403956017",
+      "published_at": "2026-08-06 14:14:36",
+      "sha256": "a6a62c1598f0d0d13330cdbc876fc3e2ab90f8e2ed52b10cad71a782390b8957"
+    },
+    {
+      "article_id": "A-5988c2a702e7",
+      "path": "sources/2026-08-07/xueqiu-陈达美股投资-恒生科技指数-HKHSTECH-https-xueqiu-c-5988c2a7.md",
+      "source": "雪球",
+      "author": "陈达美股投资",
+      "title": "[$恒生科技指数(HKHSTECH)$](https://xueqiu.com/S/HKHST…",
+      "url": "https://xueqiu.com/9598793634/403902334",
+      "published_at": "2026-08-06 10:08:17",
+      "sha256": "d1e3b519012f57b2fce3664e4d265fa22313b07fea14bf430e9beeb735151154"
+    },
+    {
+      "article_id": "A-033b8bf5fe4b",
+      "path": "sources/2026-08-07/xueqiu-陈达美股投资-现代传媒对女性-整体其实挺残忍的-以前小芳或者阿珠-竞争对手-033b8bf5.md",
+      "source": "雪球",
+      "author": "陈达美股投资",
+      "title": "现代传媒对女性，整体其实挺残忍的。以前小芳或者阿珠，竞争对手不多，如果是个村花，那十里八乡追求…",
+      "url": "https://xueqiu.com/9598793634/404027125",
+      "published_at": "2026-08-06 22:29:40",
+      "sha256": "ea007017a28d533c39428dd9965e217ff08cca5224f1b4aecac377400c7217e8"
+    },
+    {
+      "article_id": "A-44c5f34eab8f",
+      "path": "sources/2026-08-07/xueqiu-陈达美股投资-迪子这个战犯-美股AI硬件-发一个财报-杀一个股票-闪迪-S-44c5f34e.md",
+      "source": "雪球",
+      "author": "陈达美股投资",
+      "title": "迪子这个战犯。 美股AI硬件，发一个财报，杀一个股票。[$闪迪(SNDK)$](https:/…",
+      "url": "https://xueqiu.com/9598793634/403888950",
+      "published_at": "2026-08-06 09:31:55",
+      "sha256": "30bdfd2ebcb5292e95afe8227c5e69ef5085cc6d1487296a6c6ee311fbab606c"
+    }
+  ],
+  "coverage": [
+    {
+      "source": "雪球",
+      "authors_total": 13,
+      "articles_total": 52,
+      "authors": [
+        "九洲仙人",
+        "买股票的老木匠",
+        "大橘养基桶",
+        "小豆小瓜_",
+        "我不会选股2019",
+        "泡沫艺术家",
+        "淡淡的相思林",
+        "睿知睿见",
+        "管我财",
+        "行中衡",
+        "诸葛孔暗",
+        "陆家嘴幽灵",
+        "陈达美股投资"
+      ],
+      "expected_authors": 21,
+      "missing_authors": [
+        "DAVID自由之路",
+        "古董鱼",
+        "suoluos",
+        "门捷列夫学徒",
+        "柯中",
+        "躺红利摊转债",
+        "润哥",
+        "冰冰小美"
+      ]
+    },
+    {
+      "source": "微信公众号",
+      "authors_total": 4,
+      "articles_total": 4,
+      "authors": [
+        "三岁小怪兽",
+        "柯中投研笔记",
+        "热点投研",
+        "猫笔刀"
+      ],
+      "expected_authors": 5,
+      "missing_authors": [
+        "ETF领航员"
+      ]
+    },
+    {
+      "source": "微博",
+      "authors_total": 5,
+      "articles_total": 27,
+      "authors": [
+        "Value_at_Risk",
+        "wu2198",
+        "唐史主任司马迁",
+        "挖地瓜的超级鹿鼎公",
+        "谢佩德骨头"
+      ],
+      "expected_authors": 5,
+      "missing_authors": []
+    }
+  ],
+  "window": {
+    "start": "2026-08-06T08:45:00+08:00",
+    "end": "2026-08-07T08:55:00+08:00",
+    "label": "2026-08-06 08:45 ~ 2026-08-07 08:55"
+  },
+  "previous_report_date": "2026-08-06",
+  "active_hypotheses": [
+    {
+      "id": "H-20260806-001",
+      "created_date": "2026-08-06",
+      "claim": "B浪修复突破创业板3590点和上证3886点后进入轮动上行阶段",
+      "subject": {
+        "type": "market",
+        "name": "A_SHARE",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "wu2198、诸葛孔暗",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "两市成交约2.65万亿元、3706只上涨，重大利空下承接强。"
+        }
+      ],
+      "deadline": "2026-08-13",
+      "verification_mode": "quantitative",
+      "conditions": [
+        {
+          "type": "price_threshold",
+          "entity": "399006.SZ",
+          "operator": ">",
+          "value": 3590.0,
+          "unit": "point",
+          "required_days": 1,
+          "field": "close"
+        },
+        {
+          "type": "price_threshold",
+          "entity": "000001.SH",
+          "operator": ">",
+          "value": 3886.0,
+          "unit": "point",
+          "required_days": 1,
+          "field": "close"
+        },
+        {
+          "type": "turnover_threshold",
+          "entity": "A_SHARE",
+          "operator": ">=",
+          "value": 22000.0,
+          "unit": "亿元",
+          "required_days": 1,
+          "field": "turnover"
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "type": "price_threshold",
+          "entity": "399006.SZ",
+          "operator": "<",
+          "value": 3486.0,
+          "unit": "point",
+          "required_days": 1,
+          "field": "close"
+        },
+        {
+          "type": "turnover_threshold",
+          "entity": "A_SHARE",
+          "operator": "<",
+          "value": 22000.0,
+          "unit": "亿元",
+          "required_days": 1,
+          "field": "turnover"
+        }
+      ],
+      "status": "pending",
+      "history": []
+    },
+    {
+      "id": "H-20260806-002",
+      "created_date": "2026-08-06",
+      "claim": "光模块政策折价继续存在，但产业订单在未来一个月保持稳定",
+      "subject": {
+        "type": "theme",
+        "name": "光模块政策与订单",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "猫笔刀、九洲仙人",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "北美短期难替代中国供应，窗口内尚无正式规则和订单取消。"
+        }
+      ],
+      "deadline": "2026-09-06",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "status": "pending",
+      "manual_reason": "需要FCC等正式政策文件、海外工厂适用范围、公司公告或云厂商订单披露，不能用股价代替。",
+      "history": []
+    },
+    {
+      "id": "H-20260806-003",
+      "created_date": "2026-08-06",
+      "claim": "碳酸锂去库主要由真实需求驱动，电池材料在未来两周形成波段修复",
+      "subject": {
+        "type": "theme",
+        "name": "碳酸锂与电池材料",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "柯中投研笔记、wu2198",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "样本库存周减7280吨、产线检修、矿端延期及板块温和放量。"
+        }
+      ],
+      "deadline": "2026-08-20",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "status": "pending",
+      "manual_reason": "需要后续库存、排产、隐藏库存、期现价格和板块表现联合验证，股票行情不能替代产业库存事实。",
+      "history": []
+    },
+    {
+      "id": "H-20260806-004",
+      "created_date": "2026-08-06",
+      "claim": "存储行业处于公司分化阶段，而不是全行业景气见顶",
+      "subject": {
+        "type": "theme",
+        "name": "存储行业景气",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "淡淡的相思林",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "A股存储上涨、长鑫议价增强，个别海外公司弱指引未带动全行业同步下跌。"
+        }
+      ],
+      "deadline": "2026-08-20",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "status": "pending",
+      "manual_reason": "需要美光、海力士、三星价格与资本开支、DRAM现货价格和月度营收数据联合验证。",
+      "history": []
+    },
+    {
+      "id": "H-20260806-005",
+      "created_date": "2026-08-06",
+      "claim": "AI估值锚在本轮财报季继续从收入增速迁移到自由现金流和投资回报率",
+      "subject": {
+        "type": "theme",
+        "name": "AI资本开支与估值锚",
+        "thscode": ""
+      },
+      "sources": [
+        {
+          "author": "陆家嘴幽灵、谢佩德骨头",
+          "article_id": "legacy-report-2026-08-06",
+          "url": "reports/2026-08-06/daily-brief.md",
+          "quote": "高收入增长但资本开支和现金流承压的公司正在受到更严格的估值审视。"
+        }
+      ],
+      "deadline": "2026-09-30",
+      "verification_mode": "manual",
+      "conditions": [],
+      "falsification_conditions": [],
+      "status": "pending",
+      "manual_reason": "需要跨公司财报、自由现金流、资本开支和估值反应比较，由人工判断叙事是否发生迁移。",
+      "history": []
+    }
+  ],
+  "required_evidence": [
+    {
+      "hypothesis_id": "H-20260806-001",
+      "role": "support",
+      "rule_type": "price_threshold",
+      "entity": "399006.SZ",
+      "field": "close",
+      "unit": "point",
+      "deadline": "2026-08-13",
+      "recommended_provider": "hithink-finance"
+    },
+    {
+      "hypothesis_id": "H-20260806-001",
+      "role": "support",
+      "rule_type": "price_threshold",
+      "entity": "000001.SH",
+      "field": "close",
+      "unit": "point",
+      "deadline": "2026-08-13",
+      "recommended_provider": "hithink-finance"
+    },
+    {
+      "hypothesis_id": "H-20260806-001",
+      "role": "support",
+      "rule_type": "turnover_threshold",
+      "entity": "A_SHARE",
+      "field": "turnover",
+      "unit": "亿元",
+      "deadline": "2026-08-13",
+      "recommended_provider": "hithink-finance"
+    },
+    {
+      "hypothesis_id": "H-20260806-001",
+      "role": "falsification",
+      "rule_type": "price_threshold",
+      "entity": "399006.SZ",
+      "field": "close",
+      "unit": "point",
+      "deadline": "2026-08-13",
+      "recommended_provider": "hithink-finance"
+    },
+    {
+      "hypothesis_id": "H-20260806-001",
+      "role": "falsification",
+      "rule_type": "turnover_threshold",
+      "entity": "A_SHARE",
+      "field": "turnover",
+      "unit": "亿元",
+      "deadline": "2026-08-13",
+      "recommended_provider": "hithink-finance"
+    },
+    {
+      "hypothesis_id": "H-20260806-002",
+      "role": "manual",
+      "rule_type": "hybrid",
+      "deadline": "2026-09-06",
+      "required_evidence": "需要FCC等正式政策文件、海外工厂适用范围、公司公告或云厂商订单披露，不能用股价代替。",
+      "recommended_provider": "official-source-search"
+    },
+    {
+      "hypothesis_id": "H-20260806-003",
+      "role": "manual",
+      "rule_type": "hybrid",
+      "deadline": "2026-08-20",
+      "required_evidence": "需要后续库存、排产、隐藏库存、期现价格和板块表现联合验证，股票行情不能替代产业库存事实。",
+      "recommended_provider": "official-source-search"
+    },
+    {
+      "hypothesis_id": "H-20260806-004",
+      "role": "manual",
+      "rule_type": "hybrid",
+      "deadline": "2026-08-20",
+      "required_evidence": "需要美光、海力士、三星价格与资本开支、DRAM现货价格和月度营收数据联合验证。",
+      "recommended_provider": "official-source-search"
+    },
+    {
+      "hypothesis_id": "H-20260806-005",
+      "role": "manual",
+      "rule_type": "manual",
+      "deadline": "2026-09-30",
+      "required_evidence": "需要跨公司财报、自由现金流、资本开支和估值反应比较，由人工判断叙事是否发生迁移。",
+      "recommended_provider": "official-source-search"
+    }
+  ],
+  "generated_at": "2026-08-07T09:07:18+08:00"
+}

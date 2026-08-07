@@ -17,16 +17,23 @@ from ..datetime_utils import parse_datetime
 _WEREAD_BASE = "https://weread.qq.com"
 _WEREAD_ARTICLES = _WEREAD_BASE + "/web/mp/articles"
 _WEREAD_CONTENT = _WEREAD_BASE + "/web/mp/content"
-_WEREAD_HEADERS = {
+_WEREAD_READER_BASE = _WEREAD_BASE + "/web/mp/reader"
+
+_WEREAD_HEADERS_BASE = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/150.0.0.0 Safari/537.36"
     ),
     "Accept": "application/json, text/plain, */*",
-    "Referer": "https://weread.qq.com/",
     "Host": "weread.qq.com",
 }
+
+# WeRead 服务端校验 Referer 必须来自 reader 页面，否则会触发 session 失效
+def _weread_headers(book_id: str) -> dict:
+    return {**_WEREAD_HEADERS_BASE, "Referer": f"{_WEREAD_READER_BASE}/{book_id}"}
+
+_MAX_CONTENT_PER_ACCOUNT = 5
 
 
 def collect_wechat(
@@ -117,15 +124,24 @@ def collect_wechat_weread(
 ) -> list[CollectedItem]:
     """通过微信读书 Web API 获取公众号文章。需设置 WEREAD_COOKIE 环境变量。"""
     raise_if_cancelled()
-    cookie = os.getenv("WEREAD_COOKIE", "")
     client = HttpClient(cookie_env="WEREAD_COOKIE")
+    headers = _weread_headers(book_id)
     items: list[CollectedItem] = []
     offset = 0
+    content_fetched = 0
+
+    # session probe：先验证 cookie 是否有效，避免用失效 session 跑整个采集
+    probe = client.get_json(f"{_WEREAD_ARTICLES}?bookId={book_id}&offset=0", headers=headers)
+    err = probe.get("errCode", 0)
+    if err == -2010:
+        raise RuntimeError("WEREAD_COOKIE 已失效（-2010），请重新运行 auth-login --platform weread")
+    if err == -2041:
+        raise RuntimeError(f"公众号 {account.name} 未同步到账号（-2041），请在 WeRead App 里打开一篇文章")
 
     while len(items) < limit:
         raise_if_cancelled()
         url = f"{_WEREAD_ARTICLES}?bookId={book_id}&offset={offset}"
-        data = client.get_json(url, headers=_WEREAD_HEADERS)
+        data = client.get_json(url, headers=headers)
 
         articles = data.get("reviews") or data.get("articles") or []
         if not articles:
@@ -173,14 +189,15 @@ def collect_wechat_weread(
             if published_at is None and not include_undated:
                 continue
 
-            # 拉取正文：/web/mp/content 返回 HTML 页面
+            # 拉取正文：/web/mp/content 返回 HTML 页面，限制每账号最多拉取数量避免触发反爬
             content = ""
-            if review_id:
+            if review_id and content_fetched < _MAX_CONTENT_PER_ACCOUNT:
                 try:
                     content_url = f"{_WEREAD_CONTENT}?reviewId={review_id}"
-                    content_html_page = client.get_text(content_url, headers=_WEREAD_HEADERS)
+                    content_html_page = client.get_text(content_url, headers=headers)
                     raw_html = extract_wechat_content_html(content_html_page)
                     content = strip_html(raw_html) if raw_html else ""
+                    content_fetched += 1
                 except Exception as exc:
                     log.add_warning(f"微信公众号 / {account.name}: 正文获取失败 {review_id}: {exc}")
 

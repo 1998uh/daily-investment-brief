@@ -151,15 +151,15 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 # 1. 采集文章
 daily-brief collect --date 2026-08-07
 
-# 2. 整理当日文章和全部活跃假设
+# 2. 生成精简上下文、到期证据任务和去重文章包
 daily-brief prepare --date 2026-08-07
 
-# 3. Codex 根据 codex-context.json 调用金融 MCP，写入 evidence.json
+# 3. Codex 只读取 evidence-tasks.json，先完成金融/公告取证并写 evidence.json
 
 # 4. 程序根据证据执行确定性验证
 daily-brief verify --date 2026-08-07
 
-# 5. Codex 写入 daily-brief.md 和 hypotheses.json
+# 5. Codex 最后读取 article-pack.md，写入 daily-brief.md 和 hypotheses.json
 
 # 6. 严格检查产物一致性，并生成 HTML 与运行清单
 daily-brief validate --date 2026-08-07 --strict
@@ -170,7 +170,10 @@ daily-brief validate --date 2026-08-07 --strict
 新增产物：
 
 ```text
-reports/<date>/codex-context.json   # 当日文章目录、覆盖率和活跃假设
+reports/<date>/codex-context.json   # 精简运行上下文和活跃假设摘要
+reports/<date>/evidence-tasks.json  # 本期到复查时间的证据任务
+reports/<date>/article-pack.md      # 去掉重复 front matter 的模型文章包
+reports/<date>/article-index.jsonl  # 可按文章 ID 查询的 URL、路径和哈希
 reports/<date>/evidence.json        # 行情、公告和政策证据
 reports/<date>/verification.json    # 确定性验证结果
 reports/<date>/hypotheses.json      # 当日新增结构化假设
@@ -188,7 +191,7 @@ reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 daily-brief collect --date 2026-08-06
 
 # 只采集指定平台
-daily-brief collect --date 2026-08-06 --platform wechat   # 微信公众号
+daily-brief collect --date 2026-08-07 --platform wechat   # 微信公众号
 daily-brief collect --date 2 026-08-03 --platform xueqiu   # 雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 微博
 
@@ -323,7 +326,7 @@ journal/YYYY/MM/YYYY-MM-DD.md        # 个人判断模板（generate 后自动�
 日报现在默认包含三个训练模块：
 
 - **今日三句话**：压缩当天真正重要的变化、影响和纪律。
-- **待验证假设**：把观点写成可观察、可证伪、可复盘的假设。
+- **待验证假设**：每期只保留 2-4 条，把核心观点写成可观察、可证伪、可复盘的假设。
 - **我的判断区**：留空给本人填写，AI 不代填。
 
 常用脚本：

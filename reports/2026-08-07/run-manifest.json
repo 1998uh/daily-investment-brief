@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-07",
+  "workflow": "codex-native-hypothesis-tracking",
+  "providers": [
+    "Alphabet",
+    "Federal Communications Commission",
+    "Meta Platforms",
+    "Micron Technology",
+    "Mysteel（上海钢联）",
+    "SK海力士",
+    "hithink-finance",
+    "hithink-finance（上证综指与深证综指成交额合计）"
+  ],
+  "request_ids": [
+    "0b47a187f1f74de4b7eaa424d76673b4",
+    "0b47a187f1f74de4b7eaa424d76673b4,47a81857ffdd4aa7aa186f1b910136a9",
+    "7e4b33ab5c0340c8a9a2e7f4ddaeeb81"
+  ],
+  "warnings": [],
+  "files": [
+    {
+      "name": "codex-context.json",
+      "sha256": "5c45813dc4985d0289b65284c3756253272f2787687c3d55c77763b0a49dcb83",
+      "size": 55426
+    },
+    {
+      "name": "evidence.json",
+      "sha256": "44e69222bbb076b055c65bf4b6a96d72cd2bff1fbb11c9526ac1000c63efcc00",
+      "size": 6240
+    },
+    {
+      "name": "verification.json",
+      "sha256": "29605a71f186a4a6aafb2653c3ae48a0c042d2cdb6ead6f1b22c091c7e402675",
+      "size": 6485
+    },
+    {
+      "name": "hypotheses.json",
+      "sha256": "42f56bb79d259c8908756cd807d411a8e3036aec150ceb01c4e9723b43fb7cb8",
+      "size": 6846
+    },
+    {
+      "name": "daily-brief.md",
+      "sha256": "fc321a7e19abcb66ead394cc1fe31eba2ea105082e8e4b5799bd169051306dfc",
+      "size": 25798
+    },
+    {
+      "name": "daily-brief.html",
+      "sha256": "4693decc39d5ed864c19e340ffee49e063979bde11489b1245697cbbd8a0ddc9",
+      "size": 34179
+    }
+  ],
+  "validated_at": "2026-08-07T09:24:30+08:00"
+}
