@@ -21,17 +21,31 @@ _WEREAD_READER_BASE = _WEREAD_BASE + "/web/mp/reader"
 
 _WEREAD_HEADERS_BASE = {
     "User-Agent": (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/150.0.0.0 Safari/537.36"
     ),
     "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "zh-CN,zh;q=0.9,ja;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "sec-ch-ua": '"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
     "Host": "weread.qq.com",
 }
 
-# WeRead 服务端校验 Referer 必须来自 reader 页面，否则会触发 session 失效
+def _encode_id(book_id: str) -> str:
+    """WeRead encodeId = 固定前缀 + hex(book_id) + 固定后缀，用于构造 reader 页面 Referer。"""
+    return "64642d922" + book_id.encode().hex() + "247"
+
+# WeRead 服务端校验 Referer 必须来自 reader 页面（带 encodeId），否则触发 session 失效
 def _weread_headers(book_id: str) -> dict:
-    return {**_WEREAD_HEADERS_BASE, "Referer": f"{_WEREAD_READER_BASE}/{book_id}"}
+    return {**_WEREAD_HEADERS_BASE, "Referer": f"{_WEREAD_READER_BASE}/{_encode_id(book_id)}"}
 
 _MAX_CONTENT_PER_ACCOUNT = 5
 
