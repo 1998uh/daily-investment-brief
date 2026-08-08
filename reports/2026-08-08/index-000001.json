@@ -1,0 +1,82 @@
+{
+  "ok": true,
+  "command": "index.history",
+  "data": {
+    "item": [
+      {
+        "date_ms": 1785340800000,
+        "volume": 59229892000,
+        "turnover": 1106477270000,
+        "open_price": 3812.11,
+        "high_price": 3839.34,
+        "low_price": 3767.5,
+        "close_price": 3804.69
+      },
+      {
+        "date_ms": 1785427200000,
+        "volume": 59752943000,
+        "turnover": 1187681550000,
+        "open_price": 3833.54,
+        "high_price": 3847.09,
+        "low_price": 3822.37,
+        "close_price": 3832.26
+      },
+      {
+        "date_ms": 1785686400000,
+        "volume": 52451696000,
+        "turnover": 952256890000,
+        "open_price": 3812.61,
+        "high_price": 3827.64,
+        "low_price": 3797.64,
+        "close_price": 3809.66
+      },
+      {
+        "date_ms": 1785772800000,
+        "volume": 54032492000,
+        "turnover": 1008382540000,
+        "open_price": 3816.37,
+        "high_price": 3831.94,
+        "low_price": 3799.52,
+        "close_price": 3822.28
+      },
+      {
+        "date_ms": 1785859200000,
+        "volume": 59215512000,
+        "turnover": 1208723020000,
+        "open_price": 3815.12,
+        "high_price": 3884.4,
+        "low_price": 3815.12,
+        "close_price": 3878.43
+      },
+      {
+        "date_ms": 1785945600000,
+        "volume": 58855528000,
+        "turnover": 1166818680000,
+        "open_price": 3864.27,
+        "high_price": 3902.05,
+        "low_price": 3864.27,
+        "close_price": 3900.35
+      },
+      {
+        "date_ms": 1786032000000,
+        "volume": 56498858000,
+        "turnover": 1209543570000,
+        "open_price": 3896.49,
+        "high_price": 3940.93,
+        "low_price": 3885.62,
+        "close_price": 3940.04
+      }
+    ],
+    "timestamp": 1786032000000,
+    "thscode": "000001.SH",
+    "interval": "1d",
+    "adjust": null
+  },
+  "meta": {
+    "source": "remote",
+    "request_id": "cfd0e571766e4fca947c6de9591c2158",
+    "count": 7,
+    "truncated": false,
+    "schema_version": "1"
+  }
+}

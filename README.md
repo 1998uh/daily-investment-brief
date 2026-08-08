@@ -191,8 +191,8 @@ reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 daily-brief collect --date 2026-08-06
 
 # 只采集指定平台
-daily-brief collect --date 2026-08-07 --platform wechat   # 微信公众号
-daily-brief collect --date 2 026-08-03 --platform xueqiu   # 雪球
+daily-brief collect --date 2026-08-08 --platform wechat   # 微信公众号
+daily-brief collect --date 2026-08-03 --platform xueqiu   # 雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 微博
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）

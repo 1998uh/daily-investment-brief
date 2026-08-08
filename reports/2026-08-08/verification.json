@@ -1,0 +1,433 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-08",
+  "results": [
+    {
+      "hypothesis_id": "H-20260806-001",
+      "previous_status": "partially_confirmed",
+      "status": "partially_confirmed",
+      "conditions": [
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "399006.SZ",
+            "operator": ">",
+            "value": 3590.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3515.56,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 3563.117,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-001",
+            "E-20260808-001"
+          ],
+          "reason": "0 of 2 observed days matched > 3590 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "000001.SH",
+            "operator": ">",
+            "value": 3886.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": true,
+          "partial": false,
+          "observed": {
+            "matching_days": 2,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3900.35,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 3940.04,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-002",
+            "E-20260808-002"
+          ],
+          "reason": "2 of 2 observed days matched > 3886 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "turnover_threshold",
+            "entity": "A_SHARE",
+            "operator": ">=",
+            "value": 22000.0,
+            "unit": "亿元",
+            "required_days": 1,
+            "field": "turnover"
+          },
+          "available": true,
+          "passed": true,
+          "partial": false,
+          "observed": {
+            "matching_days": 2,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 25287.8148,
+                "unit": "亿元"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 26644.1977,
+                "unit": "亿元"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-003",
+            "E-20260808-003"
+          ],
+          "reason": "2 of 2 observed days matched >= 22000 亿元; requires 1 day(s)."
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "399006.SZ",
+            "operator": "<",
+            "value": 3486.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3515.56,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 3563.117,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-001",
+            "E-20260808-001"
+          ],
+          "reason": "0 of 2 observed days matched < 3486 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "turnover_threshold",
+            "entity": "A_SHARE",
+            "operator": "<",
+            "value": 22000.0,
+            "unit": "亿元",
+            "required_days": 1,
+            "field": "turnover"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 25287.8148,
+                "unit": "亿元"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 26644.1977,
+                "unit": "亿元"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-003",
+            "E-20260808-003"
+          ],
+          "reason": "0 of 2 observed days matched < 22000 亿元; requires 1 day(s)."
+        }
+      ],
+      "reason": "Some support conditions were met, but the full confirmation rule was not satisfied.",
+      "deterministic": true,
+      "evidence_ids": [
+        "E-20260807-001",
+        "E-20260807-002",
+        "E-20260807-003",
+        "E-20260808-001",
+        "E-20260808-002",
+        "E-20260808-003"
+      ],
+      "evaluated_at": "2026-08-08T09:14:25+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-001",
+      "previous_status": "pending",
+      "status": "falsified",
+      "conditions": [
+        {
+          "condition": {
+            "type": "relative_return",
+            "entity": "000688.SH",
+            "operator": "<=",
+            "value": -2.0,
+            "unit": "percentage_point",
+            "required_days": 1,
+            "benchmark": "000300.SH",
+            "window_trading_days": 5
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "common_observations": 6,
+            "required_observations": 6,
+            "dates": [
+              "2026-07-31",
+              "2026-08-03",
+              "2026-08-04",
+              "2026-08-05",
+              "2026-08-06",
+              "2026-08-07"
+            ],
+            "subject_return_pct": 6.605296,
+            "benchmark_return_pct": 2.315505,
+            "excess_return_percentage_point": 4.289791
+          },
+          "evidence_ids": [
+            "E-20260808-004",
+            "E-20260808-005",
+            "E-20260808-006",
+            "E-20260808-007",
+            "E-20260808-008",
+            "E-20260808-009",
+            "E-20260808-010",
+            "E-20260808-011",
+            "E-20260808-012",
+            "E-20260808-013",
+            "E-20260808-014",
+            "E-20260808-015"
+          ],
+          "reason": "excess return 4.29 percentage points; requires <= -2 over 5 trading days"
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "condition": {
+            "type": "relative_return",
+            "entity": "000688.SH",
+            "operator": ">=",
+            "value": 3.0,
+            "unit": "percentage_point",
+            "required_days": 1,
+            "benchmark": "000300.SH",
+            "window_trading_days": 5
+          },
+          "available": true,
+          "passed": true,
+          "partial": false,
+          "observed": {
+            "common_observations": 6,
+            "required_observations": 6,
+            "dates": [
+              "2026-07-31",
+              "2026-08-03",
+              "2026-08-04",
+              "2026-08-05",
+              "2026-08-06",
+              "2026-08-07"
+            ],
+            "subject_return_pct": 6.605296,
+            "benchmark_return_pct": 2.315505,
+            "excess_return_percentage_point": 4.289791
+          },
+          "evidence_ids": [
+            "E-20260808-004",
+            "E-20260808-005",
+            "E-20260808-006",
+            "E-20260808-007",
+            "E-20260808-008",
+            "E-20260808-009",
+            "E-20260808-010",
+            "E-20260808-011",
+            "E-20260808-012",
+            "E-20260808-013",
+            "E-20260808-014",
+            "E-20260808-015"
+          ],
+          "reason": "excess return 4.29 percentage points; requires >= 3 over 5 trading days"
+        }
+      ],
+      "reason": "At least one predefined falsification condition was met.",
+      "deterministic": true,
+      "evidence_ids": [
+        "E-20260808-004",
+        "E-20260808-005",
+        "E-20260808-006",
+        "E-20260808-007",
+        "E-20260808-008",
+        "E-20260808-009",
+        "E-20260808-010",
+        "E-20260808-011",
+        "E-20260808-012",
+        "E-20260808-013",
+        "E-20260808-014",
+        "E-20260808-015"
+      ],
+      "evaluated_at": "2026-08-08T09:14:25+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-002",
+      "previous_status": "pending",
+      "status": "confirmed",
+      "conditions": [
+        {
+          "condition": {
+            "type": "relative_return",
+            "entity": "512400.SH",
+            "operator": ">=",
+            "value": 2.0,
+            "unit": "percentage_point",
+            "required_days": 1,
+            "benchmark": "000300.SH",
+            "window_trading_days": 5
+          },
+          "available": true,
+          "passed": true,
+          "partial": false,
+          "observed": {
+            "common_observations": 6,
+            "required_observations": 6,
+            "dates": [
+              "2026-07-31",
+              "2026-08-03",
+              "2026-08-04",
+              "2026-08-05",
+              "2026-08-06",
+              "2026-08-07"
+            ],
+            "subject_return_pct": 10.770089,
+            "benchmark_return_pct": 2.315505,
+            "excess_return_percentage_point": 8.454584
+          },
+          "evidence_ids": [
+            "E-20260808-016",
+            "E-20260808-017",
+            "E-20260808-018",
+            "E-20260808-019",
+            "E-20260808-020",
+            "E-20260808-021",
+            "E-20260808-022",
+            "E-20260808-023",
+            "E-20260808-024",
+            "E-20260808-025",
+            "E-20260808-026",
+            "E-20260808-027"
+          ],
+          "reason": "excess return 8.45 percentage points; requires >= 2 over 5 trading days"
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "condition": {
+            "type": "relative_return",
+            "entity": "512400.SH",
+            "operator": "<=",
+            "value": -3.0,
+            "unit": "percentage_point",
+            "required_days": 1,
+            "benchmark": "000300.SH",
+            "window_trading_days": 5
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "common_observations": 6,
+            "required_observations": 6,
+            "dates": [
+              "2026-07-31",
+              "2026-08-03",
+              "2026-08-04",
+              "2026-08-05",
+              "2026-08-06",
+              "2026-08-07"
+            ],
+            "subject_return_pct": 10.770089,
+            "benchmark_return_pct": 2.315505,
+            "excess_return_percentage_point": 8.454584
+          },
+          "evidence_ids": [
+            "E-20260808-016",
+            "E-20260808-017",
+            "E-20260808-018",
+            "E-20260808-019",
+            "E-20260808-020",
+            "E-20260808-021",
+            "E-20260808-022",
+            "E-20260808-023",
+            "E-20260808-024",
+            "E-20260808-025",
+            "E-20260808-026",
+            "E-20260808-027"
+          ],
+          "reason": "excess return 8.45 percentage points; requires <= -3 over 5 trading days"
+        }
+      ],
+      "reason": "All predefined support conditions were met.",
+      "deterministic": true,
+      "evidence_ids": [
+        "E-20260808-016",
+        "E-20260808-017",
+        "E-20260808-018",
+        "E-20260808-019",
+        "E-20260808-020",
+        "E-20260808-021",
+        "E-20260808-022",
+        "E-20260808-023",
+        "E-20260808-024",
+        "E-20260808-025",
+        "E-20260808-026",
+        "E-20260808-027"
+      ],
+      "evaluated_at": "2026-08-08T09:14:25+08:00"
+    }
+  ]
+}

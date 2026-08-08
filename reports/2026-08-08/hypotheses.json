@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-08",
+  "hypotheses": [
+    {
+      "id": "H-20260808-001",
+      "created_date": "2026-08-08",
+      "claim": "A股反弹将在未来两周由科技单线虹吸转向医药、有色与中小盘共同承接，市场上涨家数和大小盘同步性改善",
+      "subject": {"type":"market","name":"A股反弹内部结构","thscode":""},
+      "sources": [
+        {"author":"诸葛孔暗","article_id":"A-aa82a9174232","url":"","quote":"科技早盘上来就虹吸，市场直接就跪；双创杀跌，市场立刻反弹，跷跷板效应极其明显。"},
+        {"author":"诸葛孔暗","article_id":"A-6afd5485c8cc","url":"","quote":"原则上这应该是一个科技和中小微一起上涨的良性结构，只是在上涨家数上还没有完全体现出来。"}
+      ],
+      "deadline":"2026-08-21",
+      "verification_mode":"hybrid",
+      "conditions":[],
+      "falsification_conditions":[],
+      "manual_reason":"需要连续交易日的上涨家数、大小盘相对表现、医药和有色成交额及板块扩散度联合判断，单日指数收盘不能证明内部结构改善。",
+      "review_policy":"weekly",
+      "status":"pending"
+    },
+    {
+      "id": "H-20260808-002",
+      "created_date": "2026-08-08",
+      "claim": "软件板块反弹将继续呈现业绩分化，未来两周业绩或现金流有支撑的软件标的相对缺乏业绩锚的标的保持优势",
+      "subject": {"type":"theme","name":"软件板块业绩分化","thscode":""},
+      "sources": [
+        {"author":"九洲仙人","article_id":"A-e46b77c375e5","url":"","quote":"A股理应借鉴美股‘业绩为王’的逻辑——业绩优者溢价，业绩差者出清。"},
+        {"author":"Value_at_Risk","article_id":"A-0a714121cd0a","url":"","quote":"现在市场把创新药当做前沿科技看了。"}
+      ],
+      "deadline":"2026-08-22",
+      "verification_mode":"hybrid",
+      "conditions":[],
+      "falsification_conditions":[],
+      "manual_reason":"需要软件公司公告、业绩预告或财报与板块相对收益配合验证；不能用单一股票涨跌替代行业盈利分化证据。",
+      "review_policy":"weekly",
+      "status":"pending"
+    },
+    {
+      "id": "H-20260808-003",
+      "created_date": "2026-08-08",
+      "claim": "交易所拟完善LOF退出机制将推动16开头LOF在2027年底前持续收缩场内交易与折溢价套利空间",
+      "subject": {"type":"policy","name":"LOF退出机制","thscode":""},
+      "sources": [
+        {"author":"猫笔刀","article_id":"A-cfabd9987c42","url":"","quote":"交易所拟完善LOF退出机制，商品期货LOF、QDII LOF最晚2027年底终止上市。"}
+      ],
+      "deadline":"2027-12-31",
+      "verification_mode":"hybrid",
+      "conditions":[],
+      "falsification_conditions":[],
+      "manual_reason":"需要交易所正式规则、基金公告、终止上市时间表及场内规模和折溢价数据；自媒体转述不能单独视为规则生效。",
+      "review_policy":"event_triggered",
+      "trigger_terms":["终止上市","LOF退出机制","交易所规则"],
+      "status":"pending"
+    },
+    {
+      "id": "H-20260808-004",
+      "created_date": "2026-08-08",
+      "claim": "稀土、锗、锑等稀缺金属的供给约束与价格重估在未来一个月继续成为有色板块的主要催化剂",
+      "subject": {"type":"theme","name":"稀缺金属供给与定价","thscode":""},
+      "sources": [
+        {"author":"柯中投研笔记","article_id":"A-04e7d582cb97","url":"","quote":"未来稀缺金属就这么多，我们掌握了核心的冶炼能力，怎么定价都不为过。"},
+        {"author":"诸葛孔暗","article_id":"A-21ebd3378cd7","url":"","quote":"大非农数据超级反转，9月加息概率基本打掉了……下周有色请继续。"}
+      ],
+      "deadline":"2026-09-08",
+      "verification_mode":"hybrid",
+      "conditions":[],
+      "falsification_conditions":[],
+      "manual_reason":"需要稀土、锗、锑等行业价格、库存、产量或正式政策资料与有色板块表现共同验证；作者观点和个股价格不能替代供给事实。",
+      "review_policy":"weekly",
+      "status":"pending"
+    }
+  ]
+}

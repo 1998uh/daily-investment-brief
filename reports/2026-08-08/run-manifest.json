@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-08",
+  "workflow": "codex-native-hypothesis-tracking",
+  "providers": [
+    "hithink-finance",
+    "hithink-finance（上证综指与深证综指成交额合计）"
+  ],
+  "request_ids": [
+    "5b9f0265185f404b880dca6bf5bb783b",
+    "bf188066bdd949c6897d4ed955b75778",
+    "c374ad1e252f41019edfbf73babe891a",
+    "cfd0e571766e4fca947c6de9591c2158",
+    "cfd0e571766e4fca947c6de9591c2158,80381a1c1f284337a0652de49c0460e1",
+    "fa07a967bf8141a8b97dfcb022d5601a"
+  ],
+  "warnings": [],
+  "files": [
+    {
+      "name": "codex-context.json",
+      "sha256": "116b0e5709b34af1b321b8b1146620bfde5ec6ac0b4de5740517d7cd90c7335e",
+      "size": 4182
+    },
+    {
+      "name": "article-pack.md",
+      "sha256": "c817ed11925a745e28137894943b72f09a8860a5a17d419c1a77b839f64ed270",
+      "size": 117107
+    },
+    {
+      "name": "article-index.jsonl",
+      "sha256": "3ab10ef57429bd358e641dc9ce33bcab588636e93bf646ade9aa8eea6a5b030c",
+      "size": 25047
+    },
+    {
+      "name": "evidence-tasks.json",
+      "sha256": "5afe47abfb293f88b25fde58263806568d82a5733ea78a87206e7ebcb3fdcc84",
+      "size": 1872
+    },
+    {
+      "name": "evidence.json",
+      "sha256": "050d30cbe4ad4cdbfd6ca6414150054d4bfbcf1b9bd65be6057186c4ad4eb1fb",
+      "size": 10259
+    },
+    {
+      "name": "verification.json",
+      "sha256": "e7644b5c9e2711eb966df07ccfab2b15a1e7b3300d7cd57738869485718b7624",
+      "size": 12828
+    },
+    {
+      "name": "hypotheses.json",
+      "sha256": "6cafba4d795783d6f229cfc3a68933ffb0973a855b46c50394e45849247cfe79",
+      "size": 4265
+    },
+    {
+      "name": "daily-brief.md",
+      "sha256": "fd728cd3a9e8f86156b357ca9bd402d66ce0aad01be5d050c3e85ce4249f0494",
+      "size": 15338
+    },
+    {
+      "name": "daily-brief.html",
+      "sha256": "e49197421475a465ec0d8f38e31ac83f89bc6adda5ba76a1a9c7c4a923e75651",
+      "size": 20906
+    }
+  ],
+  "validated_at": "2026-08-08T09:21:46+08:00"
+}

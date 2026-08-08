@@ -280,6 +280,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def collect_command(args: argparse.Namespace) -> int:
+    from .collectors.browser import inject_browser_cookies
+    inject_browser_cookies()
+
     # --start-date / --end-date 范围采集
     if args.start_date:
         if not args.end_date:

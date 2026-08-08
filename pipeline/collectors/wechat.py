@@ -27,7 +27,6 @@ _WEREAD_HEADERS_BASE = {
     ),
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "zh-CN,zh;q=0.9,ja;q=0.8",
-    "Accept-Encoding": "gzip, deflate, br, zstd",
     "Cache-Control": "no-cache",
     "Pragma": "no-cache",
     "sec-ch-ua": '"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"',
@@ -145,7 +144,10 @@ def collect_wechat_weread(
     content_fetched = 0
 
     # session probe：先验证 cookie 是否有效，避免用失效 session 跑整个采集
-    probe = client.get_json(f"{_WEREAD_ARTICLES}?bookId={book_id}&offset=0", headers=headers)
+    try:
+        probe = client.get_json(f"{_WEREAD_ARTICLES}?bookId={book_id}&offset=0", headers=headers)
+    except Exception:
+        raise RuntimeError("WEREAD_COOKIE 未设置或无效（响应非 JSON），请运行 auth-login --platform weread")
     err = probe.get("errCode", 0)
     if err == -2010:
         raise RuntimeError("WEREAD_COOKIE 已失效（-2010），请重新运行 auth-login --platform weread")
