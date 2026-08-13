@@ -8,8 +8,11 @@
 1. `prepare` 后只读 `codex-context.json` 和 `evidence-tasks.json`。
 2. 按任务取证并写 `evidence.json`。
 3. 运行 `verify`，以 `verification.json` 为唯一历史状态来源。
-4. 完成所有工具调用后才读 `article-pack.md` 和日报模板。
-5. 写 `daily-brief.md`、`hypotheses.json`，运行严格校验。
+4. 完成所有工具调用后才读 `article-pack.md` 和日报模板，先独立确定当日主题与候选假设。
+5. 最后读取 `hypothesis-dedup-index.json`，只删除重复候选，不得新增正文主题。
+6. 写 `daily-brief.md`、`hypotheses.json`，运行严格校验。
+
+历史假设只用于到期验证和新假设去重，不得用于决定本期正文主题；上一期 `daily-brief.md` 不得作为输入。
 
 ## 证据
 
@@ -38,7 +41,7 @@
 {"schema_version":"1.0","report_date":"YYYY-MM-DD","hypotheses":[]}
 ```
 
-每期 2–4 条。每条必填：
+每期 0–4 条，宁缺毋滥，不得为了满足数量创建低价值或同义假设。每条必填：
 
 - `id`：`H-YYYYMMDD-NNN`，日期与 `created_date` 一致。
 - `claim`、`subject{type,name,thscode}`。

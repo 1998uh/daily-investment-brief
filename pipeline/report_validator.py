@@ -22,7 +22,6 @@ from .hypothesis_models import (
 )
 
 
-MIN_NEW_HYPOTHESES = 2
 MAX_NEW_HYPOTHESES = 4
 
 
@@ -53,6 +52,7 @@ def validate_report_bundle(
     article_pack_path = out_dir / "article-pack.md"
     article_index_path = out_dir / "article-index.jsonl"
     evidence_tasks_path = out_dir / "evidence-tasks.json"
+    hypothesis_dedup_index_path = out_dir / "hypothesis-dedup-index.json"
     evidence_path = out_dir / "evidence.json"
     verification_path = out_dir / "verification.json"
     context_payload: dict[str, Any] = {}
@@ -77,6 +77,7 @@ def validate_report_bundle(
                 ("article_pack", article_pack_path),
                 ("article_index", article_index_path),
                 ("evidence_tasks", evidence_tasks_path),
+                ("hypothesis_dedup_index", hypothesis_dedup_index_path),
             ):
                 if context_payload.get(key) and not path.exists():
                     errors.append(f"missing context artifact: {path}")
@@ -92,9 +93,9 @@ def validate_report_bundle(
             document_date, hypotheses = parse_hypotheses_document(hypotheses_payload)
             if document_date != report_date:
                 errors.append("hypotheses report_date does not match requested date")
-            if not MIN_NEW_HYPOTHESES <= len(hypotheses) <= MAX_NEW_HYPOTHESES:
+            if len(hypotheses) > MAX_NEW_HYPOTHESES:
                 errors.append(
-                    "hypotheses.json must contain 2-4 new hypotheses; "
+                    "hypotheses.json must contain 0-4 new hypotheses; "
                     f"found {len(hypotheses)}"
                 )
             if context_payload.get("article_pack"):
@@ -192,6 +193,7 @@ def _build_manifest(
         "article-pack.md",
         "article-index.jsonl",
         "evidence-tasks.json",
+        "hypothesis-dedup-index.json",
         "evidence.json",
         "verification.json",
         "hypotheses.json",

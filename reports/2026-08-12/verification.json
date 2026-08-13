@@ -1,0 +1,245 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-12",
+  "results": [
+    {
+      "hypothesis_id": "H-20260806-001",
+      "previous_status": "partially_confirmed",
+      "status": "partially_confirmed",
+      "conditions": [
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "399006.SZ",
+            "operator": ">",
+            "value": 3590.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3515.56,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 3563.117,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-11",
+                "value": 3549.164,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-001",
+            "E-20260808-001",
+            "E-20260812-001"
+          ],
+          "reason": "0 of 3 observed days matched > 3590 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "000001.SH",
+            "operator": ">",
+            "value": 3886.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": true,
+          "partial": false,
+          "observed": {
+            "matching_days": 3,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3900.35,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 3940.04,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-11",
+                "value": 3934.09,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-002",
+            "E-20260808-002",
+            "E-20260812-002"
+          ],
+          "reason": "3 of 3 observed days matched > 3886 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "turnover_threshold",
+            "entity": "A_SHARE",
+            "operator": ">=",
+            "value": 22000.0,
+            "unit": "亿元",
+            "required_days": 1,
+            "field": "turnover"
+          },
+          "available": true,
+          "passed": true,
+          "partial": false,
+          "observed": {
+            "matching_days": 3,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 25287.8148,
+                "unit": "亿元"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 26644.1977,
+                "unit": "亿元"
+              },
+              {
+                "date": "2026-08-11",
+                "value": 23209.8592,
+                "unit": "亿元"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-003",
+            "E-20260808-003",
+            "E-20260812-003"
+          ],
+          "reason": "3 of 3 observed days matched >= 22000 亿元; requires 1 day(s)."
+        }
+      ],
+      "falsification_conditions": [
+        {
+          "condition": {
+            "type": "price_threshold",
+            "entity": "399006.SZ",
+            "operator": "<",
+            "value": 3486.0,
+            "unit": "point",
+            "required_days": 1,
+            "field": "close"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 3515.56,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 3563.117,
+                "unit": "point"
+              },
+              {
+                "date": "2026-08-11",
+                "value": 3549.164,
+                "unit": "point"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-001",
+            "E-20260808-001",
+            "E-20260812-001"
+          ],
+          "reason": "0 of 3 observed days matched < 3486 point; requires 1 day(s)."
+        },
+        {
+          "condition": {
+            "type": "turnover_threshold",
+            "entity": "A_SHARE",
+            "operator": "<",
+            "value": 22000.0,
+            "unit": "亿元",
+            "required_days": 1,
+            "field": "turnover"
+          },
+          "available": true,
+          "passed": false,
+          "partial": false,
+          "observed": {
+            "matching_days": 0,
+            "required_days": 1,
+            "values": [
+              {
+                "date": "2026-08-06",
+                "value": 25287.8148,
+                "unit": "亿元"
+              },
+              {
+                "date": "2026-08-07",
+                "value": 26644.1977,
+                "unit": "亿元"
+              },
+              {
+                "date": "2026-08-11",
+                "value": 23209.8592,
+                "unit": "亿元"
+              }
+            ]
+          },
+          "evidence_ids": [
+            "E-20260807-003",
+            "E-20260808-003",
+            "E-20260812-003"
+          ],
+          "reason": "0 of 3 observed days matched < 22000 亿元; requires 1 day(s)."
+        }
+      ],
+      "reason": "Some support conditions were met, but the full confirmation rule was not satisfied.",
+      "deterministic": true,
+      "evidence_ids": [
+        "E-20260807-001",
+        "E-20260807-002",
+        "E-20260807-003",
+        "E-20260808-001",
+        "E-20260808-002",
+        "E-20260808-003",
+        "E-20260812-001",
+        "E-20260812-002",
+        "E-20260812-003"
+      ],
+      "evaluated_at": "2026-08-12T09:05:02+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260810-001",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要交易所首日收盘价、换手率和实际流通盘数据验证，不能用盘前报价替代正式成交。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-12T09:05:02+08:00"
+    }
+  ]
+}

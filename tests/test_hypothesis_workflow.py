@@ -82,13 +82,26 @@ def test_prepare_builds_codex_context_with_active_hypotheses(tmp_path):
     payload = json.loads(path.read_text(encoding="utf-8"))
 
     assert payload["article_count"] == 1
-    assert payload["previous_report_date"] == "2026-08-06"
-    assert payload["active_hypotheses"][0]["id"] == "H-20260806-001"
+    assert "previous_report_date" not in payload
+    assert payload["due_hypotheses"][0]["id"] == "H-20260806-001"
+    assert payload["active_hypothesis_count"] == 1
+    assert payload["content_source_policy"] == {
+        "current_articles_only": True,
+        "previous_daily_brief_allowed": False,
+        "historical_hypotheses_use": "deduplication_only",
+    }
     assert "articles" not in payload
     assert "required_evidence" not in payload
     assert payload["article_pack"].endswith("article-pack.md")
     assert payload["article_index"].endswith("article-index.jsonl")
     assert payload["evidence_tasks"].endswith("evidence-tasks.json")
+    assert payload["hypothesis_dedup_index"].endswith("hypothesis-dedup-index.json")
+
+    dedup = json.loads(
+        (out_dir / "hypothesis-dedup-index.json").read_text(encoding="utf-8")
+    )
+    assert dedup["purpose"] == "deduplication_only"
+    assert dedup["hypotheses"][0]["id"] == "H-20260806-001"
 
     tasks = json.loads((out_dir / "evidence-tasks.json").read_text(encoding="utf-8"))
     assert tasks["scheduled_hypothesis_ids"] == ["H-20260806-001"]
@@ -187,10 +200,17 @@ def test_prepare_skips_deadline_only_hypothesis_until_due(tmp_path):
     tasks = json.loads((out_dir / "evidence-tasks.json").read_text(encoding="utf-8"))
 
     assert tasks["scheduled_hypothesis_ids"] == ["H-20260806-001"]
-    summaries = {item["id"]: item for item in context["active_hypotheses"]}
-    assert summaries["H-20260806-002"]["review_due"] is False
-    assert summaries["H-20260806-002"]["review_policy"] == "deadline_only"
-    assert summaries["H-20260806-003"]["review_due"] is False
+    due_ids = {item["id"] for item in context["due_hypotheses"]}
+    assert due_ids == {"H-20260806-001"}
+    dedup = json.loads(
+        (out_dir / "hypothesis-dedup-index.json").read_text(encoding="utf-8")
+    )
+    indexed_ids = {item["id"] for item in dedup["hypotheses"]}
+    assert indexed_ids == {
+        "H-20260806-001",
+        "H-20260806-002",
+        "H-20260806-003",
+    }
 
 
 def test_verify_only_evaluates_scheduled_hypotheses(tmp_path):
@@ -330,7 +350,30 @@ def test_validate_rejects_more_than_four_new_hypotheses(tmp_path):
     )
 
     assert not report.ok
-    assert "hypotheses.json must contain 2-4 new hypotheses; found 5" in report.errors
+    assert "hypotheses.json must contain 0-4 new hypotheses; found 5" in report.errors
+
+
+def test_validate_allows_no_new_hypotheses(tmp_path):
+    reports_root = tmp_path / "reports"
+    out_dir = reports_root / "2026-08-07"
+    out_dir.mkdir(parents=True)
+    (out_dir / "daily-brief.md").write_text("# 日报\n", encoding="utf-8")
+    write_json(
+        out_dir / "hypotheses.json",
+        {
+            "schema_version": "1.0",
+            "report_date": "2026-08-07",
+            "hypotheses": [],
+        },
+    )
+
+    report = validate_report_bundle(
+        report_date=date(2026, 8, 7),
+        out_dir=out_dir,
+        reports_root=reports_root,
+    )
+
+    assert report.ok
 
 
 def test_validate_requires_review_policy_for_token_efficient_runtime(tmp_path):

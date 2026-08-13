@@ -102,7 +102,7 @@ def load_hypothesis_ledger(
                 continue
 
         hypotheses_path = report_dir / "hypotheses.json"
-        if hypotheses_path.exists():
+        if hypotheses_path.exists() and _hypothesis_rollover_allowed(report_dir):
             document_date, hypotheses = parse_hypotheses_document(read_json(hypotheses_path))
             if document_date != report_date:
                 raise ContractError(
@@ -141,6 +141,21 @@ def load_hypothesis_ledger(
                     }
                 )
     return ledger
+
+
+def _hypothesis_rollover_allowed(report_dir: Path) -> bool:
+    control_path = report_dir / "quality-control.json"
+    if not control_path.exists():
+        return True
+    payload = read_json(control_path)
+    if not isinstance(payload, dict):
+        raise ContractError(f"quality control must contain an object: {control_path}")
+    value = payload.get("hypothesis_rollover", True)
+    if not isinstance(value, bool):
+        raise ContractError(
+            f"quality-control hypothesis_rollover must be boolean: {control_path}"
+        )
+    return value
 
 
 def active_hypotheses(

@@ -58,6 +58,7 @@ python -m pipeline.cli prepare --date YYYY-MM-DD
 - `reports/YYYY-MM-DD/evidence-tasks.json`
 
 不要读取原始 `sources/`，也不要提前读取 `article-pack.md` 或整份 `article-index.jsonl`。
+不得读取上一期 `daily-brief.md` 作为本期内容、选题、结构或措辞参考；历史正文不进入生成上下文。
 
 ### 2. 先完成取证和验证
 
@@ -77,10 +78,13 @@ python -m pipeline.cli verify --date YYYY-MM-DD
 - `templates/direct_brief_prompt.md`
 - `reports/YYYY-MM-DD/article-pack.md`
 
+先完全基于当日文章确定正文主题和候选新假设，再读取
+`reports/YYYY-MM-DD/hypothesis-dedup-index.json`，且只用于删除与历史重复的候选假设；不得据此增加正文主题。
+
 按模板生成 `daily-brief.md` 和 `hypotheses.json`。要求：
 
-- 上期验证只使用 `verification.json`，不从旧 Markdown 猜测。
-- 每期只新增 2–4 条高价值、可跟踪、可证伪假设。
+- 历史验证只使用 `verification.json`，不得读取上一期 `daily-brief.md` 作为内容或结构参考。
+- 每期只新增 0–4 条高价值、可跟踪、可证伪假设；宁缺毋滥，不得为凑数创建假设。
 - 日报“下期关注”与 `hypotheses.json` 一一对应并展示完整假设 ID。
 - 新假设包含来源、期限、反证条件和复查策略。
 
@@ -109,6 +113,7 @@ python -m pipeline.cli validate --date YYYY-MM-DD --strict
 ```text
 reports/YYYY-MM-DD/codex-context.json   精简运行上下文
 reports/YYYY-MM-DD/evidence-tasks.json  本期到期证据任务
+reports/YYYY-MM-DD/hypothesis-dedup-index.json 历史假设去重索引（不得用于选题）
 reports/YYYY-MM-DD/article-pack.md       去重后的模型文章包
 reports/YYYY-MM-DD/article-index.jsonl   URL、路径、时间和哈希索引
 reports/YYYY-MM-DD/evidence.json         Codex 获取的证据

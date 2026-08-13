@@ -182,6 +182,20 @@ class SummarizeBatchesTests(unittest.TestCase):
 
 
 class GenerateWithLlmTests(unittest.TestCase):
+    def test_direct_prompt_does_not_read_previous_daily_brief(self) -> None:
+        articles = [make_article(1)]
+        settings = make_settings(concurrency=1)
+
+        prompt = generator.build_direct_prompt(
+            articles,
+            build_coverage(articles),
+            date(2026, 6, 11),
+            settings,
+        )
+
+        self.assertNotIn("prev_watch_list", prompt)
+        self.assertNotIn("上一期日报正文", prompt)
+
     def test_final_brief_does_not_inherit_summary_token_cap(self) -> None:
         articles = [make_article(i) for i in range(2)]
         settings = make_settings(concurrency=1)

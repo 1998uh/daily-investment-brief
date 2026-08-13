@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-13",
+  "workflow": "codex-native-hypothesis-tracking",
+  "providers": [
+    "hithink-finance"
+  ],
+  "request_ids": [],
+  "warnings": [],
+  "files": [
+    {
+      "name": "codex-context.json",
+      "sha256": "87850e47c9c47ae889d09fdcf00491579aff922408aae1eb057500d6b5415800",
+      "size": 2115
+    },
+    {
+      "name": "article-pack.md",
+      "sha256": "9575d7f986cdb6b8dd1d97cff167fee9a9cb138d6482c7044d22d1e5cb888f20",
+      "size": 124282
+    },
+    {
+      "name": "article-index.jsonl",
+      "sha256": "ec5d38f0abdfac943b68d8a2e3e2e6042091542568dd017ec03f419a5626c4d8",
+      "size": 24853
+    },
+    {
+      "name": "evidence-tasks.json",
+      "sha256": "ffa190061ebe8dc232b44fff1a0449a99bca795d2ea38b567c9e7c31a2a90395",
+      "size": 1334
+    },
+    {
+      "name": "hypothesis-dedup-index.json",
+      "sha256": "8c22e145cc2cc17b83a71949bfc69c94b85df7f919ad3e84f2fd86184cf1d586",
+      "size": 3559
+    },
+    {
+      "name": "evidence.json",
+      "sha256": "603c1316088b927bd8e49b41820fa95c175b455f482e54db87ac1ff71fc4f5ed",
+      "size": 1323
+    },
+    {
+      "name": "verification.json",
+      "sha256": "2c88a665cb105ce5fe5a80109e44fa6e39bc6c03f0e23450c2df5ff393b2b428",
+      "size": 8011
+    },
+    {
+      "name": "hypotheses.json",
+      "sha256": "20de9985618cd07a38b5cf7928430e8cbcca3c60929d0bde064faec707b66488",
+      "size": 1174
+    },
+    {
+      "name": "daily-brief.md",
+      "sha256": "04d9aaa1898eac1da49a0becba6937aaf4459a1f3cfac3354c083910ba65f44c",
+      "size": 15882
+    },
+    {
+      "name": "daily-brief.html",
+      "sha256": "c414bb6fd48bcd0845624cfd355c2e424e658c9e229c9d349222018d8fad981e",
+      "size": 20658
+    }
+  ],
+  "validated_at": "2026-08-13T09:45:03+08:00"
+}

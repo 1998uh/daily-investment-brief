@@ -149,7 +149,7 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 
 ```powershell
 # 1. 采集文章
-daily-brief collect --date 2026-08-07
+daily-brief collect --date 2026-08-12
 
 # 2. 生成精简上下文、到期证据任务和去重文章包
 daily-brief prepare --date 2026-08-07
@@ -188,10 +188,10 @@ reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-08-06
+daily-brief collect --date 2026-08-13
 
 # 只采集指定平台
-daily-brief collect --date 2026-08-08 --platform wechat   # 微信公众号
+daily-brief collect --date 2026-08-13 --platform wechat   # 微信公众号
 daily-brief collect --date 2026-08-03 --platform xueqiu   # 雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 微博
 
@@ -326,7 +326,7 @@ journal/YYYY/MM/YYYY-MM-DD.md        # 个人判断模板（generate 后自动�
 日报现在默认包含三个训练模块：
 
 - **今日三句话**：压缩当天真正重要的变化、影响和纪律。
-- **待验证假设**：每期只保留 2-4 条，把核心观点写成可观察、可证伪、可复盘的假设。
+- **待验证假设**：每期只保留 0-4 条；宁缺毋滥，把核心观点写成可观察、可证伪、可复盘的假设。
 - **我的判断区**：留空给本人填写，AI 不代填。
 
 常用脚本：

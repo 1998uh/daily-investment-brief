@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import replace
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 import json
 import re
@@ -19,23 +19,6 @@ from .models import Article, CoverageRow, GenerationResult
 
 WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 REPORT_SOURCE_ORDER = ["雪球", "微博", "微信公众号"]
-
-
-def extract_prev_watch_list(brief_date: date) -> str:
-    """从上一期 daily-brief.md 中提取「下期关注」章节内容。"""
-    prev_date = brief_date - timedelta(days=1)
-    prev_path = ROOT / "reports" / prev_date.strftime("%Y-%m-%d") / "daily-brief.md"
-    if not prev_path.exists():
-        return ""
-    text = prev_path.read_text(encoding="utf-8")
-    match = re.search(
-        r"(?:##[^#\n]*下期关注[^\n]*\n)(.*?)(?=\n##|\Z)",
-        text,
-        re.DOTALL,
-    )
-    if not match:
-        return ""
-    return match.group(1).strip()
 
 
 def build_direct_prompt(
@@ -64,7 +47,7 @@ def build_direct_prompt(
         session=_session_label(window_end),
         coverage_json=coverage_json,
         articles_text=articles_text,
-        prev_watch_list=extract_prev_watch_list(brief_date),
+        verification_results="",
     )
 
 
@@ -93,7 +76,7 @@ def synthesize_from_batches(
         coverage_json=coverage_json,
         batch_summaries_json=summaries_json,
         session=_session_label(window_end),
-        prev_watch_list=extract_prev_watch_list(brief_date),
+        verification_results="",
     )
 
     print(f"[info] LLM final brief: {len(summaries)} batch summaries", flush=True)

@@ -12,7 +12,6 @@ from .hypothesis_io import (
     article_id,
     file_sha256,
     load_all_evidence,
-    previous_report_date,
     read_json,
     write_compact_json,
     write_json,
@@ -30,6 +29,7 @@ from .models import Article
 ARTICLE_PACK_NAME = "article-pack.md"
 ARTICLE_INDEX_NAME = "article-index.jsonl"
 EVIDENCE_TASKS_NAME = "evidence-tasks.json"
+HYPOTHESIS_DEDUP_INDEX_NAME = "hypothesis-dedup-index.json"
 
 
 def prepare_hypothesis_context(
@@ -63,7 +63,6 @@ def prepare_hypothesis_context(
         start_time=settings.window_start,
         end_time=settings.window_end,
     )
-    previous = previous_report_date(reports_root, report_date)
     article_index_path = _write_article_index(
         out_dir / ARTICLE_INDEX_NAME,
         articles=articles,
@@ -77,7 +76,22 @@ def prepare_hypothesis_context(
         out_dir / EVIDENCE_TASKS_NAME,
         _evidence_tasks_payload(report_date=report_date, scheduled=scheduled),
     )
-    scheduled_ids = {tracked.hypothesis.id for tracked in scheduled}
+    dedup_index_path = write_compact_json(
+        out_dir / HYPOTHESIS_DEDUP_INDEX_NAME,
+        {
+            "schema_version": SCHEMA_VERSION,
+            "report_date": report_date.isoformat(),
+            "purpose": "deduplication_only",
+            "hypotheses": [
+                {
+                    "id": tracked.hypothesis.id,
+                    "subject": tracked.hypothesis.subject.name,
+                    "claim": tracked.hypothesis.claim,
+                }
+                for tracked in active
+            ],
+        },
+    )
     payload = {
         "schema_version": SCHEMA_VERSION,
         "report_date": report_date.isoformat(),
@@ -86,6 +100,7 @@ def prepare_hypothesis_context(
         "article_pack": _display_path(article_pack_path),
         "article_index": _display_path(article_index_path),
         "evidence_tasks": _display_path(evidence_tasks_path),
+        "hypothesis_dedup_index": _display_path(dedup_index_path),
         "coverage": [
             {
                 "source": row.source,
@@ -102,14 +117,16 @@ def prepare_hypothesis_context(
             "end": window_end.isoformat(),
             "label": format_window_cn(window_start, window_end),
         },
-        "previous_report_date": previous.isoformat() if previous else None,
-        "active_hypotheses": [
-            _hypothesis_summary(
-                tracked,
-                review_due=tracked.hypothesis.id in scheduled_ids,
-            )
-            for tracked in active
+        "due_hypotheses": [
+            _hypothesis_summary(tracked, review_due=True)
+            for tracked in scheduled
         ],
+        "active_hypothesis_count": len(active),
+        "content_source_policy": {
+            "current_articles_only": True,
+            "previous_daily_brief_allowed": False,
+            "historical_hypotheses_use": "deduplication_only",
+        },
         "generated_at": _now_iso(),
     }
     return write_compact_json(out_dir / "codex-context.json", payload)

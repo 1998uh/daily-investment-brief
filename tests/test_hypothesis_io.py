@@ -75,3 +75,21 @@ def test_active_hypotheses_keep_nonterminal_statuses(tmp_path):
     active = active_hypotheses(reports_root, report_date=date(2026, 8, 10))
 
     assert [item.hypothesis.id for item in active] == ["H-20260806-001"]
+
+
+def test_quality_control_can_quarantine_hypotheses_from_rollover(tmp_path):
+    reports_root = tmp_path / "reports"
+    report_dir = _write_hypotheses(reports_root)
+    write_json(
+        report_dir / "quality-control.json",
+        {
+            "schema_version": "1.0",
+            "report_date": "2026-08-06",
+            "hypothesis_rollover": False,
+            "reason": "low quality source day",
+        },
+    )
+
+    active = active_hypotheses(reports_root, report_date=date(2026, 8, 10))
+
+    assert active == []

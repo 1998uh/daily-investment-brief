@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-13",
+  "hypotheses": [
+    {
+      "id": "H-20260813-001",
+      "created_date": "2026-08-13",
+      "claim": "AI服务器需求上量将使ABF膜在2026年四季度前维持配额或交期紧张，并推动至少一家国产厂商出现终端验证、小批量供货或新增订单的可核验进展。",
+      "subject": {"type": "industry", "name": "ABF膜供需与国产替代", "thscode": ""},
+      "sources": [
+        {"author": "热点投研", "article_id": "A-0908ae66579f", "url": "", "quote": "味之素已达产能极限，开始配额制；国内厂商体感上的减产反映ABF膜紧缺。"}
+      ],
+      "deadline": "2026-10-31",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "每周复核味之素及下游载板厂的正式供给、交期和扩产信息，以及华正新材、莲花控股、激智科技等公司的公告或投资者关系记录；若配额取消、交期明显缩短且国产验证或订单没有进展，则该判断被反证。",
+      "review_policy": "weekly",
+      "status": "pending"
+    }
+  ]
+}

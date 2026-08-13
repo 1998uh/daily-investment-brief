@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-11",
+  "hypotheses": [
+    {
+      "id": "H-20260811-001",
+      "created_date": "2026-08-11",
+      "claim": "津巴布韦锂精矿到货至投产仍有滞后，8月下旬前的实际供应增量不足以扭转碳酸锂周度去库。",
+      "subject": {"type": "commodity", "name": "碳酸锂供需", "thscode": ""},
+      "sources": [
+        {"author": "柯中投研笔记", "article_id": "A-b27a895de20a", "url": "", "quote": "真正这些量要投入市场，至少要等到8月底、9月初；在表需增加下，去库依然可能高达6-7k。"}
+      ],
+      "deadline": "2026-08-31",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "以SMM、Mysteel等公开周度库存、锂精矿到港与排产数据复核；若8月中下旬供应增量显著超预期并转为累库，则该判断不成立。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260811-002",
+      "created_date": "2026-08-11",
+      "claim": "霍尔木兹海峡相关供给扰动未必立即推升全球油价，若主要进口方继续明显削减原油进口，短期冲击将被需求侧调节部分吸收。",
+      "subject": {"type": "macro", "name": "原油供需冲击", "thscode": ""},
+      "sources": [
+        {"author": "陈达美股投资", "article_id": "A-1fa4d0c41c07", "url": "", "quote": "本次霍尔木兹海峡掐掉全球供应最保守估计12-14%，但美国汽油价格未明显上涨、通胀仍在降温。"},
+        {"author": "陈达美股投资", "article_id": "A-53705a3d0cd0", "url": "", "quote": "其认为最大进口方迅速、大幅减少原油进口是平滑瞬时冲击的重要因素。"}
+      ],
+      "deadline": "2026-09-07",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "复核IEA或主要海关的原油供需与库存数据、布伦特油价和美国汽油价格；若供应缺口持续而需求侧未收缩并带来价格快速上行，则该判断被反证。",
+      "review_policy": "weekly",
+      "status": "pending"
+    }
+  ]
+}

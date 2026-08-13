@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-11",
+  "hypothesis_rollover": false,
+  "reason": "用户确认当日数据质量不足；保留历史报告，但禁止当日新假设进入后续日报上下文和验证账本。"
+}

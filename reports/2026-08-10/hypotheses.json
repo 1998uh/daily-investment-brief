@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-10",
+  "hypotheses": [
+    {
+      "id": "H-20260810-001",
+      "created_date": "2026-08-10",
+      "claim": "宇树科技首日收盘市值大概率守住约610亿元发行市值，但波动显著放大",
+      "subject": {"type": "event", "name": "宇树科技IPO首日", "thscode": ""},
+      "sources": [
+        {
+          "author": "陆家嘴幽灵",
+          "article_id": "A-82184b394e64",
+          "url": "https://xueqiu.com/5332385101/404281174",
+          "quote": "文章指出发行价150.80元、发行市值约610亿元，首日实际流通市值约45亿元。"
+        }
+      ],
+      "deadline": "2026-08-14",
+      "verification_mode": "event",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要交易所首日收盘价、换手率和实际流通盘数据验证，不能用盘前报价替代正式成交。",
+      "review_policy": "daily",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260810-002",
+      "created_date": "2026-08-10",
+      "claim": "AAOI扩产与FCC限制预期将压制国产光模块情绪，资金继续向PCB等替代链条迁移",
+      "subject": {"type": "theme", "name": "光模块与PCB链条分化", "thscode": ""},
+      "sources": [
+        {
+          "author": "小豆小瓜_",
+          "article_id": "A-2259d00559b2",
+          "url": "",
+          "quote": "文章提到AAOI扩产消息后国产光模块情绪承压，并观察到PCB资金迁移。"
+        },
+        {
+          "author": "唐史主任司马迁",
+          "article_id": "A-8592208069a4",
+          "url": "https://weibo.com/2014433131/RcHEMo2i1",
+          "quote": "文章称大光受FCC压制，反弹资金脚投票到PCB。"
+        }
+      ],
+      "deadline": "2026-08-24",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要AAOI及相关公司扩产、FCC正式规则、订单和板块成交额/相对收益的联合验证，单一股票涨跌不足以定论。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260810-003",
+      "created_date": "2026-08-10",
+      "claim": "科技股情绪反弹若缺乏基本面新叙事，未来一周将出现成交额放大后回落的分化",
+      "subject": {"type": "theme", "name": "科技股情绪与成交额", "thscode": ""},
+      "sources": [
+        {
+          "author": "小豆小瓜_",
+          "article_id": "A-2259d00559b2",
+          "url": "",
+          "quote": "文章把本轮科技股反弹归因于短期赚钱效应和信心回升，并类比2015年反弹后的风险。"
+        }
+      ],
+      "deadline": "2026-08-17",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要连续交易日的科技板块成交额、涨跌家数、融资或情绪指标与基本面公告共同验证，不能由单日指数收盘推断。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260810-004",
+      "created_date": "2026-08-10",
+      "claim": "FCC逆变器新规将使美国光伏与储能新项目的设备认证和并网节奏出现分化",
+      "subject": {"type": "policy", "name": "FCC逆变器政策影响", "thscode": ""},
+      "sources": [
+        {
+          "author": "九洲仙人",
+          "article_id": "A-56b740aa8dba",
+          "url": "https://xueqiu.com/1583821491/404285993",
+          "quote": "文章称FCC自2026年7月28日起将境外生产且具远程通信功能的逆变器纳入受管制清单。"
+        }
+      ],
+      "deadline": "2026-09-10",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "需要FCC最终规则、项目认证状态、开发商公告和订单/并网进度验证政策的实际影响，不能用市场传闻替代。",
+      "review_policy": "weekly",
+      "status": "pending"
+    }
+  ]
+}

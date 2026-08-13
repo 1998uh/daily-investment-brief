@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-12",
+  "hypotheses": [
+    {
+      "id": "H-20260812-001",
+      "created_date": "2026-08-12",
+      "claim": "未来两周医药生物的机构调研热度仍将高于电子行业，创新药与生物制品相对科技硬件维持更强的资金承接。",
+      "subject": {"type": "sector", "name": "医药生物机构关注与相对强度", "thscode": ""},
+      "sources": [
+        {"author": "Value_at_Risk", "article_id": "A-f66e488f447e", "url": "", "quote": "上周医药生物行业的调研热度超越电子行业，获公募机构调研104次。"},
+        {"author": "买股票的老木匠", "article_id": "A-f1e38a200858", "url": "", "quote": "公募资金调仓迹象逐步显现，医药生物成为重点关注方向。"}
+      ],
+      "deadline": "2026-08-26",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "每周复核公募机构行业调研次数、主动基金行业配置线索及医药相对电子的板块表现；若医药调研热度重新低于电子且相对表现同步转弱，则该判断被反证。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260812-002",
+      "created_date": "2026-08-12",
+      "claim": "尽管市场上调远期扩产预期，磷化铟衬底在2026年三季度仍将受材料、设备和良率约束，现货紧张或提价至少出现一次可核验信号。",
+      "subject": {"type": "industry", "name": "磷化铟衬底供需", "thscode": ""},
+      "sources": [
+        {"author": "热点投研", "article_id": "A-b2296b731e13", "url": "", "quote": "供给跟不上，扩不快的原因包括炉子调试、良率爬坡、产业工人培训及海外高端设备紧张。"},
+        {"author": "淡淡的相思林", "article_id": "A-26938ff55010", "url": "", "quote": "市场预计JXAM到FY29末扩产20至30倍，明显高于管理层维持的7至10倍计划。"}
+      ],
+      "deadline": "2026-09-30",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "每周复核JX Advanced Metals、住友电工、通美等公司的正式指引、客户交期与报价；若三季度供给充裕、交期缩短且报价回落，则该判断被反证。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260812-003",
+      "created_date": "2026-08-12",
+      "claim": "恒生科技指数将在2026年末前落实扩容与新科技主题覆盖调整，但新增成分对指数权重的初期影响保持有限。",
+      "subject": {"type": "index", "name": "恒生科技指数编制调整", "thscode": ""},
+      "sources": [
+        {"author": "三岁小怪兽", "article_id": "A-8cb8c2276220", "url": "", "quote": "成分股数量从30只增加到50只，并扩大科技主题覆盖范围。"},
+        {"author": "小豆小瓜_", "article_id": "A-9d223bbd22d4", "url": "", "quote": "新调入的成份股占的权重不大，只有10%左右，对指数整体影响不会很大。"}
+      ],
+      "deadline": "2026-12-31",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "复核恒生指数公司正式咨询结论、方法论文件和实施后的成分权重；若扩容方案未落地，或新增成分初始合计权重显著高于材料所述约10%，则相应部分被反证。",
+      "review_policy": "weekly",
+      "status": "pending"
+    }
+  ]
+}
