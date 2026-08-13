@@ -49,4 +49,6 @@ def normalize_source(value: str) -> str:
         return "微信公众号"
     if lower in {"weibo", "微博"}:
         return "微博"
+    if lower in {"douyin", "抖音", "tiktok"}:
+        return "抖音"
     return value

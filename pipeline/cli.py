@@ -113,8 +113,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     collect.add_argument(
         "--platform",
-        choices=["xueqiu", "wechat", "weibo"],
-        help="Only collect from the specified platform (xueqiu, wechat, or weibo).",
+        choices=["xueqiu", "wechat", "weibo", "douyin"],
+        help="Only collect from the specified platform (xueqiu, wechat, weibo, or douyin).",
     )
 
     generate = subparsers.add_parser("generate", help="Generate Markdown and HTML brief.")
@@ -186,7 +186,7 @@ def build_parser() -> argparse.ArgumentParser:
     auth.add_argument(
         "--platform",
         required=True,
-        choices=["weibo", "xueqiu", "weread"],
+        choices=["weibo", "xueqiu", "weread", "douyin"],
         help="Platform to log in to.",
     )
     auth.add_argument("--profile", help="Override browser profile directory.")
@@ -363,7 +363,7 @@ def _collect_date_range(args: argparse.Namespace) -> int:
         day_out_dir = Path(args.out_dir) if args.out_dir else ROOT / "sources" / date_str
 
         print(f"\n{'─'*40}")
-        print(f"📅 {date_str} ({(current - start).days + 1}/{total_days})")
+        print(f"[{date_str}] ({(current - start).days + 1}/{total_days})")
         print(f"{'─'*40}")
 
         try:
@@ -478,7 +478,7 @@ def _collect_one_date_range(args: argparse.Namespace) -> int:
         day_out_dir = Path(args.out_dir) if args.out_dir else ROOT / "sources" / date_str
 
         print(f"\n{'─'*40}")
-        print(f"📅 {date_str} ({(current - start).days + 1}/{total_days})")
+        print(f"[{date_str}] ({(current - start).days + 1}/{total_days})")
         print(f"{'─'*40}")
 
         try:

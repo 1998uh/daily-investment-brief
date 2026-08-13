@@ -365,6 +365,7 @@ def login_persistent_profile(platform: str, *, profile_dir: Path | None = None) 
         "weibo": "https://weibo.com/",
         "xueqiu": "https://xueqiu.com/",
         "weread": "https://weread.qq.com/",
+        "douyin": "https://www.douyin.com/",
     }
     if platform not in urls:
         raise ValueError(f"unsupported platform: {platform}")

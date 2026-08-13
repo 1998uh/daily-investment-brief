@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .accounts import Account, load_accounts
 from .base import CollectedItem, CollectionLog
+from .douyin import collect_douyin
 from .weibo import collect_weibo
 from .wechat import collect_wechat, collect_wechat_manual_urls
 from .writer import write_items
@@ -24,11 +25,13 @@ PLATFORM_CONCURRENCY: dict[str, int] = {
     "雪球": 3,
     "微博": 2,
     "微信公众号": 4,
+    "抖音": 2,
 }
 PLATFORM_DELAY: dict[str, tuple[float, float]] = {
     "雪球": (2.0, 5.0),
     "微博": (1.0, 3.0),
     "微信公众号": (0.5, 1.0),
+    "抖音": (3.0, 6.0),  # 抖音反爬较严格，延时更长
 }
 DEFAULT_CONCURRENCY = 2
 DEFAULT_DELAY = (1.0, 3.0)
@@ -334,6 +337,16 @@ def collect_account(
             include_undated=include_undated,
             log=log,
         )
+    if account.source == "抖音":
+        return collect_douyin(
+            account,
+            window_start=window_start,
+            window_end=window_end,
+            settings=settings,
+            limit=limit,
+            include_undated=include_undated,
+            log=log,
+        )
     log.add_warning(f"{account.source} / {account.name}: 不支持的平台")
     return []
 
@@ -344,6 +357,8 @@ def validate_accounts(accounts: list[Account], log: CollectionLog) -> None:
             log.add_warning(f"{account.source} / {account.name}: 需要补 uid 或主页 url")
         if account.source == "微信公众号" and not (account.urls or account.rss_url):
             log.add_warning(f"{account.source} / {account.name}: 需要补 urls 或 rss_url")
+        if account.source == "抖音" and not (account.uid or account.url):
+            log.add_warning(f"{account.source} / {account.name}: 需要补 uid(sec_user_id) 或主页 url")
 
 
 def collect_single_account(
