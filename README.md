@@ -1,6 +1,6 @@
 # Daily Investment Brief
 
-A/H 股投资简报生成工具：从雪球、微信公众号、微博采集观点，使用 LLM 生成每日简报。
+A/H 股投资简报生成工具：从雪球、微信公众号、微博、抖音采集观点，使用 LLM 生成每日简报。
 
 ---
 
@@ -31,7 +31,7 @@ BRIEF_BASE_URL=https://api.deepseek.com/v1
 BRIEF_MODEL=deepseek-chat
 BRIEF_API_KEY=sk-...
 
-# 可选：雪球/微博/微信 Cookie
+# 可选：雪球/微博/微信 Cookie（抖音通过浏览器 profile 登录，无需 Cookie 环境变量）
 XUEQIU_COOKIE=
 WEIBO_COOKIE=
 WECHAT_COOKIE=
@@ -103,6 +103,9 @@ python -m pipeline.cli auth-login --platform weibo
 
 # 雪球
 python -m pipeline.cli auth-login --platform xueqiu
+
+# 抖音
+python -m pipeline.cli auth-login --platform douyin
 ```
   
 运行后会弹出浏览器窗口，完成登录、等页面完全加载后，回到终端按 Enter 保存 session。
@@ -209,7 +212,7 @@ daily-brief collect --date 2026-07-20 --and-generate
 |------|------|
 | `--date` | 单日采集，与 `--start-date` 互斥 |
 | `--start-date` + `--end-date` | 日期范围采集（含首尾），与 `--date` 互斥 |
-| `--platform` | 只采集指定平台，可选值：`xueqiu`（雪球）、`wechat`（微信公众号）、`weibo`（微博）。不指定则采集所有平台 |
+| `--platform` | 只采集指定平台，可选值：`xueqiu`（雪球）、`wechat`（微信公众号）、`weibo`（微博）、`douyin`（抖音）。不指定则采集所有平台 |
 | `--sequential` | 串行模式（调试用，默认并行） |
 | `--limit N` | 每账号最多 N 条，默认 20 |
 | `--include-undated` | 保留无法解析发布时间的条目 |
@@ -299,6 +302,7 @@ daily-brief collect --date 2026-07-20 --and-generate
 daily-brief collect --date 2026-08-03 --platform wechat   # 只采集微信公众号
 daily-brief collect --date 2026-08-03 --platform xueqiu   # 只采集雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 只采集微博
+daily-brief collect --date 2026-08-03 --platform douyin   # 只采集抖音
 
 # 工作流 3：补采某个博主
 daily-brief collect-one --name "三岁小怪兽" --date 2026-08-03
@@ -368,6 +372,9 @@ Copy-Item config/accounts.example.json config/accounts.json
   ],
   "wechat": [
     {"name": "中金宏观", "urls": ["https://mp.weixin.qq.com/s/文章ID"], "enabled": true}
+  ],
+  "douyin": [
+    {"name": "超级辉", "url": "https://www.douyin.com/user/MS4wLjABAAAA...", "enabled": true}
   ]
 }
 ```
@@ -378,7 +385,7 @@ Copy-Item config/accounts.example.json config/accounts.json
 
 ```text
 pipeline/                   简报生成流水线
-  collectors/               各平台采集器（雪球、微博、微信）
+  collectors/               各平台采集器（雪球、微博、微信、抖音）
   cli.py                    命令行入口
 config/                     账号清单
 sources/                    原始文章（按日期，不提交）
