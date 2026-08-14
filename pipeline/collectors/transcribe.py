@@ -1,10 +1,9 @@
 """抖音视频音频转文字模块
 
-使用 yt-dlp 下载音频 + faster-whisper 本地转录。
+优先使用 API 返回的音频 URL 直接下载，如果失败则回退到 yt-dlp。
 """
 import logging
 import os
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -17,10 +16,10 @@ except ImportError:
     HAS_WHISPER = False
 
 try:
-    import yt_dlp
-    HAS_YTDLP = True
+    import requests
+    HAS_REQUESTS = True
 except ImportError:
-    HAS_YTDLP = False
+    HAS_REQUESTS = False
 
 
 # 全局模型缓存，避免每次转录都重新加载
@@ -38,8 +37,65 @@ def _get_whisper_model():
     return _whisper_model
 
 
+def transcribe_audio_from_url(audio_url: str) -> str:
+    """从音频 URL 下载并转录
+
+    Args:
+        audio_url: 音频文件 URL
+
+    Returns:
+        转录的文字内容，失败返回空字符串
+    """
+    if not HAS_WHISPER:
+        log.warning("faster-whisper 未安装，跳过音频转录")
+        return ""
+
+    if not HAS_REQUESTS:
+        log.warning("requests 未安装，跳过音频转录")
+        return ""
+
+    audio_path = None
+    try:
+        # 创建临时文件用于存储音频
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+            audio_path = tmp.name
+
+        # 下载音频文件
+        log.debug(f"下载音频: {audio_url}")
+        response = requests.get(audio_url, timeout=30, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        })
+        response.raise_for_status()
+
+        with open(audio_path, "wb") as f:
+            f.write(response.content)
+
+        # 转录音频
+        log.debug(f"转录音频: {audio_path}")
+        model = _get_whisper_model()
+        segments, info = model.transcribe(audio_path, language="zh", beam_size=5)
+
+        # 拼接所有片段
+        text = " ".join(seg.text.strip() for seg in segments)
+        log.debug(f"转录完成，共 {len(text)} 字符")
+
+        return text
+
+    except Exception as exc:
+        log.warning(f"音频转录失败: {exc}")
+        return ""
+
+    finally:
+        # 清理临时文件
+        if audio_path and Path(audio_path).exists():
+            try:
+                os.remove(audio_path)
+            except Exception:
+                pass
+
+
 def transcribe_douyin_video(video_url: str, *, cookie_file: Path | None = None) -> str:
-    """下载抖音视频音频并转录为文字
+    """下载抖音视频音频并转录为文字（回退方案，使用 yt-dlp）
 
     Args:
         video_url: 抖音视频 URL
@@ -52,7 +108,9 @@ def transcribe_douyin_video(video_url: str, *, cookie_file: Path | None = None) 
         log.warning("faster-whisper 未安装，跳过音频转录")
         return ""
 
-    if not HAS_YTDLP:
+    try:
+        import yt_dlp
+    except ImportError:
         log.warning("yt-dlp 未安装，跳过音频转录")
         return ""
 
@@ -63,7 +121,7 @@ def transcribe_douyin_video(video_url: str, *, cookie_file: Path | None = None) 
             audio_path = tmp.name
 
         # 使用 yt-dlp 下载音频
-        log.debug(f"下载音频: {video_url}")
+        log.debug(f"下载音频 (yt-dlp): {video_url}")
         ydl_opts = {
             "format": "bestaudio/best",
             "outtmpl": audio_path,

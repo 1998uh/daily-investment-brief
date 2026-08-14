@@ -277,8 +277,8 @@ def _parse_aweme(
     if chapter_content:
         content_parts.append("\n" + chapter_content)
     else:
-        # 没有章节信息时，尝试音频转录
-        transcript = _transcribe_video_if_enabled(url)
+        # 没有章节信息时，尝试音频转录（传入完整 aweme 数据用于提取音频 URL）
+        transcript = _transcribe_video_if_enabled(url, aweme_data=aweme)
         if transcript:
             content_parts.append("\n## 音频转录")
             content_parts.append(transcript)
@@ -379,20 +379,44 @@ def extract_sec_user_id(url: str) -> str:
     return ""
 
 
-def _transcribe_video_if_enabled(video_url: str) -> str:
+def _transcribe_video_if_enabled(video_url: str, aweme_data: dict | None = None) -> str:
     """如果启用了转录功能，转录视频音频为文字
 
     通过环境变量 DOUYIN_ENABLE_TRANSCRIBE=1 启用
+
+    Args:
+        video_url: 抖音视频 URL
+        aweme_data: 视频的完整 API 响应数据（用于提取音频 URL）
+
+    Returns:
+        转录的文字内容，失败返回空字符串
     """
     if not os.getenv("DOUYIN_ENABLE_TRANSCRIBE", "").strip() == "1":
         return ""
 
     try:
-        from .transcribe import transcribe_douyin_video, export_cookies_from_profile
+        from .transcribe import transcribe_audio_from_url, transcribe_douyin_video, export_cookies_from_profile
         from pathlib import Path
         import tempfile
 
-        # 导出 Cookie 供 yt-dlp 使用
+        # 优先方案：直接从 API 响应中提取音频 URL
+        audio_url = None
+        if aweme_data:
+            music = aweme_data.get("music") or {}
+            play_url = music.get("play_url") or {}
+            url_list = play_url.get("url_list") or []
+            if url_list:
+                audio_url = url_list[0]
+                log.debug(f"使用 API 音频 URL: {audio_url}")
+
+        # 如果有音频 URL，直接下载转录
+        if audio_url:
+            transcript = transcribe_audio_from_url(audio_url)
+            if transcript:
+                return transcript
+            log.debug("API 音频转录失败，回退到 yt-dlp")
+
+        # 回退方案：使用 yt-dlp 从视频中提取音频
         profile_dir = default_profile_dir("douyin")
         cookie_file = None
 

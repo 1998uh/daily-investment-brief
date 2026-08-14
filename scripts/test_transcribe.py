@@ -9,14 +9,52 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # 启用转录功能
 os.environ["DOUYIN_ENABLE_TRANSCRIBE"] = "1"
 
-from pipeline.collectors.transcribe import transcribe_douyin_video, export_cookies_from_profile
+from pipeline.collectors.transcribe import transcribe_audio_from_url, transcribe_douyin_video, export_cookies_from_profile
 from pipeline.collectors.browser import default_profile_dir
+
+
+def test_direct_audio_transcribe():
+    """测试直接从音频 URL 转录"""
+    print("=" * 60)
+    print("Test 1: Direct Audio URL Transcription")
+    print("=" * 60)
+
+    # 使用示例音频 URL（从 API 响应中提取）
+    audio_url = "https://sf11-cdn-tos.douyinstatic.com/obj/ies-music/7673530475079895854.mp3"
+
+    print(f"Audio URL: {audio_url}")
+    print("Downloading and transcribing...")
+    print("(This may take 30-60 seconds depending on audio length)")
+    print()
+
+    try:
+        transcript = transcribe_audio_from_url(audio_url)
+
+        if transcript:
+            print(f"[OK] Transcription successful")
+            print(f"Length: {len(transcript)} characters")
+            print("\nTranscript preview (first 500 chars):")
+            print("-" * 60)
+            print(transcript[:500])
+            if len(transcript) > 500:
+                print("...")
+            print("-" * 60)
+            return True
+        else:
+            print("[FAIL] Transcription returned empty result")
+            return False
+
+    except Exception as exc:
+        print(f"[FAIL] Transcription failed: {exc}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def test_cookie_export():
     """测试 Cookie 导出"""
-    print("=" * 60)
-    print("Test 1: Export Cookies from Playwright Profile")
+    print("\n" + "=" * 60)
+    print("Test 2: Export Cookies from Playwright Profile")
     print("=" * 60)
 
     profile_dir = default_profile_dir("douyin")
@@ -45,17 +83,17 @@ def test_cookie_export():
         return False
 
 
-def test_transcribe():
-    """测试视频转录"""
+def test_ytdlp_transcribe():
+    """测试 yt-dlp 方案转录（回退方案）"""
     print("\n" + "=" * 60)
-    print("Test 2: Transcribe Douyin Video")
+    print("Test 3: Transcribe via yt-dlp (Fallback)")
     print("=" * 60)
 
     # 使用超级辉的一个视频（短视频，快速测试）
     video_url = "https://www.douyin.com/video/7505641163321134387"
 
     print(f"Video URL: {video_url}")
-    print("Downloading audio and transcribing...")
+    print("Downloading audio via yt-dlp and transcribing...")
     print("(This may take 30-60 seconds depending on video length)")
     print()
 
@@ -117,18 +155,19 @@ def main():
         return
 
     try:
-        import yt_dlp
-        print("[OK] yt-dlp is installed")
+        import requests
+        print("[OK] requests is installed")
     except ImportError:
-        print("[FAIL] yt-dlp not installed")
-        print("Run: pip install yt-dlp")
+        print("[FAIL] requests not installed")
+        print("Run: pip install requests")
         return
 
     print()
 
     # Run tests
+    test_direct_audio_transcribe()
     test_cookie_export()
-    test_transcribe()
+    # test_ytdlp_transcribe()  # 可选：测试回退方案
 
 
 if __name__ == "__main__":
