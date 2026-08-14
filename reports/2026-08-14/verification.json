@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-14",
+  "results": [
+    {
+      "hypothesis_id": "H-20260806-002",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要FCC等正式政策文件、海外工厂适用范围、公司公告或云厂商订单披露，不能用股价代替。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-14T09:08:11+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260806-003",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要后续库存、排产、隐藏库存、期现价格和板块表现联合验证，股票行情不能替代产业库存事实。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-14T09:08:11+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260806-004",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要美光、海力士、三星价格与资本开支、DRAM现货价格和月度营收数据联合验证。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-14T09:08:11+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-003",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要交易所上市公告、首日收盘价、绿鞋执行情况和实际流通盘数据；链上挂钩品种价格不能替代正式上市交易价格。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-14T09:08:11+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-004",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要税务机关正式文件、CRS执行口径以及友邦、保诚等险企的新业务价值或渠道新单披露；单日股价不能独立证明保费需求变化。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-14T09:08:11+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-005",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要模型官方发布、云厂商API调用与收入披露、招标公告或供应商订单公告；模型热度和股价上涨不能替代订单证据。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-14T09:08:11+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260810-001",
+      "previous_status": "pending",
+      "status": "unavailable",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "The deadline was reached without the required evidence.",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-14T09:08:11+08:00"
+    }
+  ]
+}

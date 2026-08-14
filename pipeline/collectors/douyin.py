@@ -276,6 +276,12 @@ def _parse_aweme(
     chapter_content = _extract_chapter_info(aweme)
     if chapter_content:
         content_parts.append("\n" + chapter_content)
+    else:
+        # 没有章节信息时，尝试音频转录
+        transcript = _transcribe_video_if_enabled(url)
+        if transcript:
+            content_parts.append("\n## 音频转录")
+            content_parts.append(transcript)
 
     content = "\n\n".join(content_parts)
 
@@ -371,6 +377,50 @@ def extract_sec_user_id(url: str) -> str:
         return match.group(1)
 
     return ""
+
+
+def _transcribe_video_if_enabled(video_url: str) -> str:
+    """如果启用了转录功能，转录视频音频为文字
+
+    通过环境变量 DOUYIN_ENABLE_TRANSCRIBE=1 启用
+    """
+    if not os.getenv("DOUYIN_ENABLE_TRANSCRIBE", "").strip() == "1":
+        return ""
+
+    try:
+        from .transcribe import transcribe_douyin_video, export_cookies_from_profile
+        from pathlib import Path
+        import tempfile
+
+        # 导出 Cookie 供 yt-dlp 使用
+        profile_dir = default_profile_dir("douyin")
+        cookie_file = None
+
+        if profile_dir.exists():
+            cookie_file = Path(tempfile.gettempdir()) / "douyin_cookies.txt"
+            if export_cookies_from_profile(profile_dir, cookie_file):
+                log.debug(f"Cookie 已导出到: {cookie_file}")
+            else:
+                cookie_file = None
+
+        # 转录音频
+        transcript = transcribe_douyin_video(video_url, cookie_file=cookie_file)
+
+        # 清理临时 Cookie 文件
+        if cookie_file and cookie_file.exists():
+            try:
+                cookie_file.unlink()
+            except Exception:
+                pass
+
+        return transcript
+
+    except ImportError:
+        log.debug("音频转录模块未安装，跳过转录")
+        return ""
+    except Exception as exc:
+        log.debug(f"音频转录失败: {exc}")
+        return ""
 
 
 def login_douyin_profile() -> None:

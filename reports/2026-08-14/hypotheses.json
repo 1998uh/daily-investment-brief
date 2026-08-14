@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-14",
+  "hypotheses": [
+    {
+      "id": "H-20260814-001",
+      "created_date": "2026-08-14",
+      "claim": "存储大厂回购注销逻辑将抬升A股存储板块估值",
+      "subject": {"type": "theme", "name": "存储板块估值", "thscode": ""},
+      "sources": [
+        {"author": "淡淡的相思林", "article_id": "A-9e8f2a52135d", "url": "", "quote": "闪迪管理层表示将把超额现金返还股东并讨论回购注销逻辑。"}
+      ],
+      "deadline": "2026-08-21",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "核验美光、海力士、三星是否跟进回购公告，以及A股存储板块是否出现高开低走和估值回落。",
+      "review_policy": "event_triggered",
+      "trigger_terms": ["回购", "注销", "存储"]
+    },
+    {
+      "id": "H-20260814-002",
+      "created_date": "2026-08-14",
+      "claim": "医药/CRO确认为8月新主线并持续走强",
+      "subject": {"type": "theme", "name": "医药/CRO", "thscode": ""},
+      "sources": [
+        {"author": "大橘养基桶", "article_id": "A-6d6f43cb81d8", "url": "", "quote": "新主线今天出来了，指向CRO/医药。"}
+      ],
+      "deadline": "2026-08-21",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪医药成交额、涨停家数、相对科技板块表现和药ETF申赎，判断是否持续走强。",
+      "review_policy": "weekly"
+    },
+    {
+      "id": "H-20260814-003",
+      "created_date": "2026-08-14",
+      "claim": "科技板块30%以上普跌及中际旭创跌至700元的预判将在两周内兑现",
+      "subject": {"type": "theme", "name": "科技板块", "thscode": ""},
+      "sources": [
+        {"author": "行中衡", "article_id": "A-23bba0f350fb", "url": "", "quote": "预判科技板块一波普跌30%以上，中际旭创跌到700元。"}
+      ],
+      "deadline": "2026-08-28",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪科技指数和中际旭创相对高点回撤幅度，并记录是否出现连续护盘。",
+      "review_policy": "weekly"
+    },
+    {
+      "id": "H-20260814-004",
+      "created_date": "2026-08-14",
+      "claim": "美联储降息预期已打满并存在反身性风险",
+      "subject": {"type": "macro", "name": "美联储降息预期", "thscode": ""},
+      "sources": [
+        {"author": "买股票的老木匠", "article_id": "A-b9b85007", "url": "", "quote": "降息落地时预期可能已经打满。"}
+      ],
+      "deadline": "2026-08-29",
+      "verification_mode": "event",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪Jackson Hole会议及其前后美债10Y、USDJPY变化，判断是否出现明确鸽派信号。",
+      "review_policy": "event_triggered",
+      "trigger_terms": ["Jacksonhole", "降息", "美联储"]
+    }
+  ]
+}
