@@ -31,6 +31,8 @@ def main(argv: list[str] | None = None) -> int:
                 return collect_one_command(args)
             if args.command == "source-health":
                 return source_health_command(args)
+            if args.command == "dashboard":
+                return dashboard_command(args)
             if args.command == "auth-login":
                 return auth_login_command(args)
             if args.command == "prepare":
@@ -180,6 +182,47 @@ def build_parser() -> argparse.ArgumentParser:
     health.add_argument(
         "--db",
         help="SQLite database path. Defaults to data/articles.sqlite.",
+    )
+
+    dashboard = subparsers.add_parser(
+        "dashboard",
+        help="Build or serve the local read-only investment dashboard.",
+    )
+    dashboard_actions = dashboard.add_subparsers(dest="dashboard_action", required=True)
+    dashboard_build = dashboard_actions.add_parser(
+        "build",
+        help="Build a self-contained HTML dashboard from report artifacts.",
+    )
+    dashboard_build.add_argument(
+        "--reports-root",
+        help="Historical reports root. Defaults to reports/.",
+    )
+    dashboard_build.add_argument(
+        "--output-dir",
+        help="Dashboard output directory. Defaults to reports/dashboard/.",
+    )
+    dashboard_build.add_argument(
+        "--journal-root",
+        help="Journal root. Defaults to journal/ next to reports/.",
+    )
+    dashboard_build.add_argument(
+        "--as-of",
+        help="Use artifacts up to this date, e.g. 2026-08-14. Defaults to latest report.",
+    )
+    dashboard_serve = dashboard_actions.add_parser(
+        "serve",
+        help="Serve an existing dashboard over localhost.",
+    )
+    dashboard_serve.add_argument(
+        "--directory",
+        help="Dashboard directory. Defaults to reports/dashboard/.",
+    )
+    dashboard_serve.add_argument("--host", default="127.0.0.1")
+    dashboard_serve.add_argument("--port", type=int, default=8765)
+    dashboard_serve.add_argument(
+        "--open",
+        action="store_true",
+        help="Open the dashboard in the default browser.",
     )
 
     auth = subparsers.add_parser("auth-login", help="Open a persistent browser login session.")
@@ -705,6 +748,48 @@ def source_health_command(args: argparse.Namespace) -> int:
             f"- {status:4} {row['source']} / {row['author']} "
             f"count={row['count']} checked_at={row['checked_at']}{message}"
         )
+    return 0
+
+
+def dashboard_command(args: argparse.Namespace) -> int:
+    from .dashboard import build_dashboard, serve_dashboard
+
+    if args.dashboard_action == "serve":
+        directory = Path(args.directory) if args.directory else ROOT / "reports" / "dashboard"
+        try:
+            serve_dashboard(
+                directory,
+                host=args.host,
+                port=args.port,
+                open_browser=args.open,
+            )
+        except (OSError, ValueError) as exc:
+            print(f"Dashboard server failed: {exc}", file=sys.stderr)
+            return 2
+        return 0
+
+    reports_root = Path(args.reports_root) if args.reports_root else ROOT / "reports"
+    output_dir = Path(args.output_dir) if args.output_dir else reports_root / "dashboard"
+    journal_root = Path(args.journal_root) if args.journal_root else reports_root.parent / "journal"
+    as_of = date.fromisoformat(args.as_of) if args.as_of else None
+    try:
+        result = build_dashboard(
+            reports_root,
+            output_dir,
+            journal_root=journal_root,
+            as_of=as_of,
+        )
+    except (OSError, ValueError) as exc:
+        print(f"Dashboard build failed: {exc}", file=sys.stderr)
+        return 2
+    print(f"Generated dashboard: {result.html_path}")
+    print(f"Generated dashboard snapshot: {result.snapshot_path}")
+    print(
+        f"As of {result.snapshot['as_of']} | Reports: {result.snapshot['report_count']} | "
+        f"Hypotheses: {len(result.snapshot['hypotheses'])}"
+    )
+    for warning in result.snapshot.get("warnings", []):
+        print(f"[warn] {warning}")
     return 0
 
 

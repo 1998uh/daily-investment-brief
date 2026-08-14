@@ -12,6 +12,7 @@ config/accounts*.json
 sources/
 data/
 private-reports/
+reports/dashboard/
 .browser-profiles/
 config/wechat_urls/
 

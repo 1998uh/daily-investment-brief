@@ -325,6 +325,31 @@ reports/<date>/prompt-for-external.md # 外部模型 prompt（--no-batches）
 journal/YYYY/MM/YYYY-MM-DD.md        # 个人判断模板（generate 后自动创建）
 ```
 
+### 只读复盘看板
+
+看板从 `reports/`、`journal/` 中读取已有产物，展示假设账本、验证历史、数据源覆盖和日报节奏；它不会采集数据、调用模型或修改任何文件。
+
+```powershell
+# 生成离线自包含页面和 JSON 快照
+daily-brief dashboard build
+
+# 在本机打开看板（先执行 build）
+daily-brief dashboard serve --open
+```
+
+默认输出：
+
+```text
+reports/dashboard/index.html     # 可离线打开的只读页面
+reports/dashboard/snapshot.json  # 看板数据快照，便于审查或二次处理
+```
+
+也可以指定历史截止日期生成复盘快照：
+
+```powershell
+daily-brief dashboard build --as-of 2026-08-14
+```
+
 ## 个人投研工作台
 
 日报现在默认包含三个训练模块：
