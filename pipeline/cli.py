@@ -282,7 +282,18 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument(
         "--strict",
         action="store_true",
-        help="Require all workflow artifacts and fail on missing context/evidence/verification.",
+        help="Backward-compatible alias for --tracking.",
+    )
+    validate_mode = validate.add_mutually_exclusive_group()
+    validate_mode.add_argument(
+        "--report-only",
+        action="store_true",
+        help="Validate the daily brief without requiring hypothesis/evidence artifacts.",
+    )
+    validate_mode.add_argument(
+        "--tracking",
+        action="store_true",
+        help="Validate the complete optional hypothesis/evidence workflow.",
     )
 
 
@@ -865,6 +876,13 @@ def validate_command(args: argparse.Namespace) -> int:
         out_dir=out_dir,
         reports_root=reports_root,
         strict=args.strict,
+        mode=(
+            "report"
+            if args.report_only
+            else "tracking"
+            if args.tracking or args.strict
+            else None
+        ),
     )
     for warning in report.warnings:
         print(f"[warn] {warning}")

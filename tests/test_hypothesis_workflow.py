@@ -376,6 +376,62 @@ def test_validate_allows_no_new_hypotheses(tmp_path):
     assert report.ok
 
 
+def test_validate_report_only_allows_brief_without_tracking_artifacts(tmp_path):
+    reports_root = tmp_path / "reports"
+    out_dir = reports_root / "2026-08-07"
+    out_dir.mkdir(parents=True)
+    (out_dir / "daily-brief.md").write_text(
+        "# 日报\n\n## 今日观点\n\n作者认为存储需求仍然强劲。\n",
+        encoding="utf-8",
+    )
+
+    report = validate_report_bundle(
+        report_date=date(2026, 8, 7),
+        out_dir=out_dir,
+        reports_root=reports_root,
+        mode="report",
+    )
+
+    assert report.ok
+    assert report.html_path and report.html_path.exists()
+    manifest = json.loads((out_dir / "run-manifest.json").read_text(encoding="utf-8"))
+    assert manifest["workflow"] == "codex-native-daily-brief"
+
+
+def test_validate_report_only_does_not_parse_optional_tracking_files(tmp_path):
+    reports_root = tmp_path / "reports"
+    out_dir = reports_root / "2026-08-07"
+    out_dir.mkdir(parents=True)
+    (out_dir / "daily-brief.md").write_text("# 日报\n", encoding="utf-8")
+    (out_dir / "hypotheses.json").write_text("not tracking output", encoding="utf-8")
+
+    report = validate_report_bundle(
+        report_date=date(2026, 8, 7),
+        out_dir=out_dir,
+        reports_root=reports_root,
+        mode="report",
+    )
+
+    assert report.ok
+
+
+def test_validate_tracking_requires_hypothesis_artifacts(tmp_path):
+    reports_root = tmp_path / "reports"
+    out_dir = reports_root / "2026-08-07"
+    out_dir.mkdir(parents=True)
+    (out_dir / "daily-brief.md").write_text("# 日报\n", encoding="utf-8")
+
+    report = validate_report_bundle(
+        report_date=date(2026, 8, 7),
+        out_dir=out_dir,
+        reports_root=reports_root,
+        mode="tracking",
+    )
+
+    assert not report.ok
+    assert any("missing hypotheses file" in error for error in report.errors)
+
+
 def test_validate_requires_review_policy_for_token_efficient_runtime(tmp_path):
     reports_root = tmp_path / "reports"
     out_dir = reports_root / "2026-08-07"

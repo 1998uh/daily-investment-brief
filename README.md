@@ -146,44 +146,54 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 
 ### Codex 原生日报与假设验证
 
-当前推荐工作流由 Codex 完成语义理解、金融取数和日报写作，Python 负责历史账本、确定性验证和一致性校验。
+当前推荐工作流把“生成日报”和“假设验证”拆成两个阶段：日报是每日主任务，假设验证只在需要跟踪观点时执行。Codex 负责语义理解、金融取数和日报写作，Python 负责历史账本、确定性验证和一致性校验。
 
-内部执行顺序：
+#### A. 每日主流程：先生成日报
 
 ```powershell
 # 1. 采集文章
-daily-brief collect --date 2026-08-14
+daily-brief collect --date 2026-08-15
 
-# 2. 生成精简上下文、到期证据任务和去重文章包
-daily-brief prepare --date 2026-08-07
+# 2. 生成日报文章包，供 Codex 写作
+daily-brief prepare --date 2026-08-15
 
-# 3. Codex 只读取 evidence-tasks.json，先完成金融/公告取证并写 evidence.json
+# 由 Codex 读取 article-pack.md，生成 daily-brief.md
 
-# 4. 程序根据证据执行确定性验证
-daily-brief verify --date 2026-08-07
-
-# 5. Codex 最后读取 article-pack.md，写入 daily-brief.md 和 hypotheses.json
-
-# 6. 严格检查产物一致性，并生成 HTML 与运行清单
-daily-brief validate --date 2026-08-07 --strict
+# 3. 只校验日报本身，不要求假设和证据文件
+daily-brief validate --date 2026-08-15 --report-only
 ```
 
-普通使用时只需在项目目录中要求 Codex“生成今天的日报”。项目 Skill 会自动执行上述步骤。
+#### B. 可选流程：需要时再验证假设
+
+```powershell
+# 1. 从当日日报和文章包准备待复核假设与证据任务
+daily-brief prepare --date 2026-08-15
+
+# 2. Codex 完成 evidence.json 后执行确定性验证
+daily-brief verify --date 2026-08-15
+
+# 3. 严格检查完整跟踪产物
+daily-brief validate --date 2026-08-15 --tracking
+```
+
+验证阶段只更新假设状态或独立验证附录，不得删改日报中的作者观点。`--strict` 仍保留，等价于 `--tracking`。
+
+普通使用时只需在项目目录中要求 Codex“生成今天的日报”。项目 Skill 默认执行日报主流程；用户明确要求“验证假设”或“跟踪上期观点”时，才执行可选流程。
 
 新增产物：
 
 ```text
 reports/<date>/codex-context.json   # 精简运行上下文和活跃假设摘要
-reports/<date>/evidence-tasks.json  # 本期到复查时间的证据任务
+reports/<date>/evidence-tasks.json  # 可选：本期到复查时间的证据任务
 reports/<date>/article-pack.md      # 去掉重复 front matter 的模型文章包
 reports/<date>/article-index.jsonl  # 可按文章 ID 查询的 URL、路径和哈希
-reports/<date>/evidence.json        # 行情、公告和政策证据
-reports/<date>/verification.json    # 确定性验证结果
-reports/<date>/hypotheses.json      # 当日新增结构化假设
+reports/<date>/evidence.json        # 可选：行情、公告和政策证据
+reports/<date>/verification.json    # 可选：确定性验证结果
+reports/<date>/hypotheses.json      # 可选：当日新增结构化假设
 reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 ```
 
-`generate` 命令继续保留，适用于明确需要项目内部 LLM 生成器的旧工作流。
+配置可用 LLM 时，`generate` 可以替代文章包和手写步骤；未配置 LLM 时不要依赖其 fallback 生成正式日报。`prepare`、`verify` 和 `validate --tracking` 属于可选的假设跟踪工作流。
 
 ### collect — 全量采集
 
@@ -191,11 +201,11 @@ reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-08-13
+daily-brief collect --date 2026-08-15
 
 # 只采集指定平台
 daily-brief collect --date 2026-08-13 --platform wechat   # 微信公众号
-daily-brief collect --date 2026-08-03 --platform xueqiu   # 雪球
+daily-brief collect --date 2026-08-15 --platform xueqiu   # 雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 微博
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）

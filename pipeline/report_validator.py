@@ -23,6 +23,7 @@ from .hypothesis_models import (
 
 
 MAX_NEW_HYPOTHESES = 4
+VALIDATION_MODES = {"legacy", "report", "tracking"}
 
 
 @dataclass(frozen=True)
@@ -43,7 +44,23 @@ def validate_report_bundle(
     out_dir: Path,
     reports_root: Path,
     strict: bool = False,
+    mode: str | None = None,
 ) -> ValidationReport:
+    """Validate a report bundle without making tracking a report prerequisite.
+
+    ``legacy`` preserves the original behavior. ``report`` validates the daily
+    brief as a standalone artifact, while ``tracking`` requires the complete
+    hypothesis/evidence workflow. ``--strict`` remains an alias for tracking.
+    """
+    if mode is None:
+        mode = "tracking" if strict else "legacy"
+    if mode not in VALIDATION_MODES:
+        raise ValueError(f"unsupported validation mode: {mode!r}")
+    if strict and mode != "tracking":
+        raise ValueError("strict validation is only compatible with tracking mode")
+    tracking_mode = mode == "tracking"
+    report_mode = mode == "report"
+
     errors: list[str] = []
     warnings: list[str] = []
     md_path = out_dir / "daily-brief.md"
@@ -59,16 +76,18 @@ def validate_report_bundle(
 
     if not md_path.exists():
         errors.append(f"missing daily brief: {md_path}")
-    if not hypotheses_path.exists():
+    if not hypotheses_path.exists() and not report_mode:
         errors.append(f"missing hypotheses file: {hypotheses_path}")
 
     optional_paths = (context_path, evidence_path, verification_path)
     for path in optional_paths:
         if not path.exists():
             message = f"missing workflow artifact: {path}"
-            (errors if strict else warnings).append(message)
+            if report_mode:
+                continue
+            (errors if tracking_mode else warnings).append(message)
 
-    if context_path.exists():
+    if not report_mode and context_path.exists():
         try:
             context_payload = read_json(context_path)
             if not isinstance(context_payload, dict):
@@ -87,7 +106,7 @@ def validate_report_bundle(
     hypotheses = []
     verification_results: list[dict[str, Any]] = []
     evidence_items: list[dict[str, Any]] = []
-    if hypotheses_path.exists():
+    if not report_mode and hypotheses_path.exists():
         try:
             hypotheses_payload = read_json(hypotheses_path)
             document_date, hypotheses = parse_hypotheses_document(hypotheses_payload)
@@ -107,14 +126,14 @@ def validate_report_bundle(
                         )
         except ContractError as exc:
             errors.append(str(exc))
-    if evidence_path.exists():
+    if not report_mode and evidence_path.exists():
         try:
             document_date, evidence_items = parse_evidence_document(read_json(evidence_path))
             if document_date != report_date:
                 errors.append("evidence report_date does not match requested date")
         except ContractError as exc:
             errors.append(str(exc))
-    if verification_path.exists():
+    if not report_mode and verification_path.exists():
         try:
             document_date, verification_results = parse_verification_document(
                 read_json(verification_path)
@@ -124,29 +143,33 @@ def validate_report_bundle(
         except ContractError as exc:
             errors.append(str(exc))
 
-    try:
-        previous_ledger = load_hypothesis_ledger(reports_root, before_date=report_date)
-        for hypothesis in hypotheses:
-            if hypothesis.id in previous_ledger:
-                errors.append(f"hypothesis id already exists in history: {hypothesis.id}")
-    except ContractError as exc:
-        errors.append(str(exc))
+    if not report_mode and hypotheses:
+        try:
+            previous_ledger = load_hypothesis_ledger(reports_root, before_date=report_date)
+            for hypothesis in hypotheses:
+                if hypothesis.id in previous_ledger:
+                    errors.append(f"hypothesis id already exists in history: {hypothesis.id}")
+        except ContractError as exc:
+            errors.append(str(exc))
 
     markdown = md_path.read_text(encoding="utf-8") if md_path.exists() else ""
-    for hypothesis in hypotheses:
-        if hypothesis.id not in markdown:
-            errors.append(f"daily brief does not reference new hypothesis {hypothesis.id}")
-    for result in verification_results:
-        if result["hypothesis_id"] not in markdown:
-            errors.append(
-                f"daily brief does not reference verification {result['hypothesis_id']}"
-            )
+    if not report_mode:
+        for hypothesis in hypotheses:
+            if hypothesis.id not in markdown:
+                errors.append(f"daily brief does not reference new hypothesis {hypothesis.id}")
+        for result in verification_results:
+            if result["hypothesis_id"] not in markdown:
+                errors.append(
+                    f"daily brief does not reference verification {result['hypothesis_id']}"
+                )
 
-    try:
-        all_evidence = load_all_evidence(reports_root, through_date=report_date)
-    except ContractError as exc:
-        errors.append(str(exc))
-        all_evidence = []
+    all_evidence = []
+    if not report_mode and (verification_results or tracking_mode):
+        try:
+            all_evidence = load_all_evidence(reports_root, through_date=report_date)
+        except ContractError as exc:
+            errors.append(str(exc))
+            all_evidence = []
     evidence_ids = {item["evidence_id"] for item in all_evidence}
     evidence_ids.update(item["evidence_id"] for item in evidence_items)
     for result in verification_results:
@@ -174,6 +197,7 @@ def validate_report_bundle(
         out_dir=out_dir,
         evidence_items=evidence_items,
         warnings=warnings,
+        mode=mode,
     )
     write_json(manifest_path, manifest)
     return ValidationReport(
@@ -187,6 +211,7 @@ def _build_manifest(
     out_dir: Path,
     evidence_items: list[dict[str, Any]],
     warnings: list[str],
+    mode: str,
 ) -> dict[str, Any]:
     names = [
         "codex-context.json",
@@ -214,7 +239,11 @@ def _build_manifest(
     return {
         "schema_version": SCHEMA_VERSION,
         "report_date": report_date.isoformat(),
-        "workflow": "codex-native-hypothesis-tracking",
+        "workflow": (
+            "codex-native-daily-brief"
+            if mode == "report"
+            else "codex-native-hypothesis-tracking"
+        ),
         "providers": sorted(
             {
                 str(item.get("provider") or item.get("publisher") or "").strip()
