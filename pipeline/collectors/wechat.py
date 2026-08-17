@@ -5,6 +5,7 @@ import email.utils
 import os
 from pathlib import Path
 import re
+import subprocess
 import xml.etree.ElementTree as ET
 
 from .accounts import Account
@@ -38,13 +39,43 @@ _WEREAD_HEADERS_BASE = {
     "Host": "weread.qq.com",
 }
 
+_SIGN_SCRIPT = Path(__file__).parent / "weread_sign.js"
+
+
 def _encode_id(book_id: str) -> str:
-    """WeRead encodeId = 固定前缀 + hex(book_id) + 固定后缀，用于构造 reader 页面 Referer。"""
     return "64642d922" + book_id.encode().hex() + "247"
 
-# WeRead 服务端校验 Referer 必须来自 reader 页面（带 encodeId），否则触发 session 失效
-def _weread_headers(book_id: str) -> dict:
-    return {**_WEREAD_HEADERS_BASE, "Referer": f"{_WEREAD_READER_BASE}/{_encode_id(book_id)}"}
+
+def _generate_wrpa_header(path: str, cookie: str, referer: str) -> str | None:
+    """Call weread_sign.js via Node.js to generate x-wrpa-0 header value."""
+    if not _SIGN_SCRIPT.exists():
+        return None
+    try:
+        result = subprocess.run(
+            ["node", str(_SIGN_SCRIPT), path, cookie, referer],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        # take last non-empty line (wpa.js may print init logs to stdout)
+        lines = [l.strip() for l in result.stdout.splitlines() if l.strip()]
+        value = lines[-1] if lines else ""
+        if value and "," in value:
+            return value
+    except Exception:
+        pass
+    return None
+
+
+def _weread_headers(book_id: str, *, path: str = "", cookie: str = "") -> dict:
+    referer = f"{_WEREAD_READER_BASE}/{_encode_id(book_id)}"
+    headers = {**_WEREAD_HEADERS_BASE, "Referer": referer}
+    if path and cookie:
+        wrpa = _generate_wrpa_header(path, cookie, referer)
+        if wrpa:
+            headers["x-wrpa-0"] = wrpa
+    return headers
+
 
 _MAX_CONTENT_PER_ACCOUNT = 5
 
@@ -138,14 +169,18 @@ def collect_wechat_weread(
     """通过微信读书 Web API 获取公众号文章。需设置 WEREAD_COOKIE 环境变量。"""
     raise_if_cancelled()
     client = HttpClient(cookie_env="WEREAD_COOKIE")
-    headers = _weread_headers(book_id)
+    cookie_str = os.getenv("WEREAD_COOKIE", "")
     items: list[CollectedItem] = []
     offset = 0
     content_fetched = 0
 
+    def _signed_headers(api_path: str) -> dict:
+        return _weread_headers(book_id, path=api_path, cookie=cookie_str)
+
+    probe_path = f"/web/mp/articles?bookId={book_id}&offset=0"
     # session probe：先验证 cookie 是否有效，避免用失效 session 跑整个采集
     try:
-        probe = client.get_json(f"{_WEREAD_ARTICLES}?bookId={book_id}&offset=0", headers=headers)
+        probe = client.get_json(f"{_WEREAD_ARTICLES}?bookId={book_id}&offset=0", headers=_signed_headers(probe_path))
     except Exception:
         raise RuntimeError("WEREAD_COOKIE 未设置或无效（响应非 JSON），请运行 auth-login --platform weread")
     err = probe.get("errCode", 0)
@@ -156,8 +191,9 @@ def collect_wechat_weread(
 
     while len(items) < limit:
         raise_if_cancelled()
-        url = f"{_WEREAD_ARTICLES}?bookId={book_id}&offset={offset}"
-        data = client.get_json(url, headers=headers)
+        api_path = f"/web/mp/articles?bookId={book_id}&offset={offset}"
+        url = _WEREAD_BASE + api_path
+        data = client.get_json(url, headers=_signed_headers(api_path))
 
         articles = data.get("reviews") or data.get("articles") or []
         if not articles:
@@ -210,7 +246,8 @@ def collect_wechat_weread(
             if review_id and content_fetched < _MAX_CONTENT_PER_ACCOUNT:
                 try:
                     content_url = f"{_WEREAD_CONTENT}?reviewId={review_id}"
-                    content_html_page = client.get_text(content_url, headers=headers)
+                    content_path = f"/web/mp/content?reviewId={review_id}"
+                    content_html_page = client.get_text(content_url, headers=_signed_headers(content_path))
                     raw_html = extract_wechat_content_html(content_html_page)
                     content = strip_html(raw_html) if raw_html else ""
                     content_fetched += 1

@@ -14,6 +14,11 @@ MARKDOWN_EXTENSIONS = [
     "sane_lists",
 ]
 
+MERMAID_BLOCK_RE = re.compile(
+    r"<pre><code class=\"language-mermaid\">(.*?)</code></pre>",
+    flags=re.DOTALL,
+)
+
 
 def render_inline(text: str) -> str:
     escaped = html.escape(text)
@@ -25,12 +30,27 @@ def render_inline(text: str) -> str:
 
 def markdown_to_html(markdown_text: str) -> str:
     if markdown_lib is not None:
-        return markdown_lib.markdown(
+        rendered = markdown_lib.markdown(
             markdown_text,
             extensions=MARKDOWN_EXTENSIONS,
             output_format="html5",
         )
-    return _fallback_markdown_to_html(markdown_text)
+    else:
+        rendered = _fallback_markdown_to_html(markdown_text)
+    return _replace_mermaid_blocks(rendered)
+
+
+def _replace_mermaid_blocks(rendered_html: str) -> str:
+    """Turn Mermaid fenced code into a diagram container for the browser."""
+
+    def replace(match: re.Match[str]) -> str:
+        # Markdown escapes Mermaid arrows and brackets in code blocks. Decode
+        # then re-escape as text so Mermaid receives the original source via
+        # textContent rather than seeing an HTML fragment.
+        source = html.unescape(match.group(1))
+        return f'<div class="mermaid">{html.escape(source, quote=False)}</div>'
+
+    return MERMAID_BLOCK_RE.sub(replace, rendered_html)
 
 
 def _fallback_markdown_to_html(markdown_text: str) -> str:
@@ -38,6 +58,7 @@ def _fallback_markdown_to_html(markdown_text: str) -> str:
     parts: list[str] = []
     paragraph: list[str] = []
     in_code = False
+    code_language = ""
     code_lines: list[str] = []
     i = 0
 
@@ -53,11 +74,18 @@ def _fallback_markdown_to_html(markdown_text: str) -> str:
         if stripped.startswith("```"):
             flush_paragraph()
             if in_code:
-                parts.append("<pre><code>" + html.escape("\n".join(code_lines)) + "</code></pre>")
+                code_class = ' class="language-mermaid"' if code_language == "mermaid" else ""
+                parts.append(
+                    f"<pre><code{code_class}>"
+                    + html.escape("\n".join(code_lines))
+                    + "</code></pre>"
+                )
                 code_lines.clear()
                 in_code = False
+                code_language = ""
             else:
                 in_code = True
+                code_language = stripped[3:].strip().lower()
             i += 1
             continue
 
@@ -132,6 +160,12 @@ def _fallback_markdown_to_html(markdown_text: str) -> str:
 
 def wrap_html(markdown: str, title: str) -> str:
     body = markdown_to_html(markdown)
+    mermaid_script = ""
+    if '<div class="mermaid">' in body:
+        mermaid_script = """
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, securityLevel: "strict" });</script>
+"""
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -188,6 +222,7 @@ def wrap_html(markdown: str, title: str) -> str:
   <article>
 {body}
   </article>
+{mermaid_script}
 </body>
 </html>
 """

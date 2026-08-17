@@ -152,7 +152,7 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 
 ```powershell
 # 1. 采集文章
-daily-brief collect --date 2026-08-15
+daily-brief collect --date 2026-08-17
 
 # 2. 生成日报文章包，供 Codex 写作
 daily-brief prepare --date 2026-08-15
