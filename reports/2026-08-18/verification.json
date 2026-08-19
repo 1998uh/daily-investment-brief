@@ -1,0 +1,123 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-18",
+  "results": [
+    {
+      "hypothesis_id": "H-20260808-001",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "截至2026-08-18，文章仅提供8月17日单日上涨家数与板块表现；该假设要求未来两周连续交易日的医药、有色、中小盘承接和大小盘同步性，期限为2026-08-21，今日无足够证据。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-001"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260808-002",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "截至2026-08-18，未取得满足规则的连续软件公司公告/财报与板块相对收益配对数据；期限为2026-08-22，今日无法确认业绩分化优势。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-002"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260808-004",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "截至2026-08-18，未取得稀土、锗、锑价格、库存、产量或正式政策的连续官方资料；期限为2026-09-08，当前不能判断供给约束是否持续成为主要催化剂。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-003"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260810-001",
+      "previous_status": "unavailable",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "宇树科技首日假设期限为2026-08-14；本次检索未取得交易所首日收盘价、换手率及实际流通盘的完整官方记录，不能以盘前或二手报价替代正式成交。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-004"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260810-002",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "SEC资料确认AAOI在2026年2月宣布建设21万平方英尺工厂并计划新增500个岗位，但未取得FCC限制最终规则及A股光模块/PCB资金迁移的联合数据；期限为2026-08-24，尚无定论。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-005"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260810-003",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "8月17日证券时报记录A股上午成交额超过1.5万亿元、逾3800股上涨，文章包记录全天2.4025万亿元与4335家上涨；这只覆盖单日，尚不足以验证未来一周放量后回落的分化条件。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-006"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260810-004",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "FCC检索结果未发现与该假设对应的2026年逆变器最终规则或项目认证/并网数据；期限为2026-09-10，当前不能判断政策实际影响。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-007"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260814-001",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "检索到美光历史回购授权资料，但未取得截至2026-08-18美光、海力士、三星新增回购公告及A股存储板块估值后续表现的完整联合证据；期限为2026-08-21。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-008"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260814-004",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "美联储官方日程可确认2026年常规FOMC会议安排，但Jackson Hole会议及其前后10年美债、USDJPY的事件窗口尚未完成；期限为2026-08-29，当前无定论。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260818-009"
+      ],
+      "evaluated_at": "2026-08-18T09:20:55+08:00"
+    }
+  ]
+}
