@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 import logging
 import os
@@ -16,21 +17,28 @@ from ..datetime_utils import parse_datetime
 
 log = logging.getLogger(__name__)
 
+
+@dataclass(frozen=True)
+class XueqiuCookieHealth:
+    ok: bool
+    message: str
+    status_count: int = 0
+    check_completed: bool = True
+
+
+def _cookie_value(cookie: str, name: str) -> str:
+    for part in cookie.split(";"):
+        key, separator, value = part.strip().partition("=")
+        if separator and key == name:
+            return value.strip()
+    return ""
+
 # ---------------------------------------------------------------------------
 # 雪球专用请求头 —— 模拟前端 XHR，减少反爬触发
 # ---------------------------------------------------------------------------
 
 def _xueqiu_headers(uid: str = "") -> dict[str, str]:
     """返回雪球 API 请求需要的完整 headers。"""
-    cookie = os.getenv("XUEQIU_COOKIE", "")
-    # 从 cookie 中提取 xq_a_token（雪球的核心鉴权 token）
-    xq_a_token = ""
-    for part in cookie.split(";"):
-        part = part.strip()
-        if part.startswith("xq_a_token="):
-            xq_a_token = part.split("=", 1)[1]
-            break
-
     return {
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
@@ -38,6 +46,49 @@ def _xueqiu_headers(uid: str = "") -> dict[str, str]:
         "X-Requested-With": "XMLHttpRequest",
         "Origin": "https://xueqiu.com",
     }
+
+
+def check_xueqiu_cookie(
+    uid: str,
+    *,
+    client: HttpClient | None = None,
+) -> XueqiuCookieHealth:
+    """Validate the auth token and probe the first timeline page."""
+    cookie = os.getenv("XUEQIU_COOKIE", "")
+    if not _cookie_value(cookie, "xq_a_token"):
+        return XueqiuCookieHealth(False, "XUEQIU_COOKIE 缺少 xq_a_token")
+    if not uid:
+        return XueqiuCookieHealth(
+            False,
+            "未找到可用于探测的雪球账号 uid",
+            check_completed=False,
+        )
+
+    probe_client = client or HttpClient(cookie_env="XUEQIU_COOKIE", timeout=15)
+    api_url = (
+        "https://xueqiu.com/statuses/user_timeline.json"
+        f"?user_id={uid}&page=1&count=1"
+    )
+    try:
+        payload = probe_client.get_json(api_url, headers=_xueqiu_headers(uid))
+    except Exception as exc:
+        return XueqiuCookieHealth(False, f"第 1 页请求失败: {exc}")
+
+    if not isinstance(payload, dict):
+        return XueqiuCookieHealth(False, "第 1 页响应不是 JSON 对象")
+    if payload.get("error_code"):
+        description = str(payload.get("error_description") or "未知错误")
+        return XueqiuCookieHealth(
+            False,
+            f"API 错误 {payload['error_code']}: {description}",
+        )
+
+    statuses = payload.get("statuses")
+    if statuses is None:
+        statuses = payload.get("list")
+    if not isinstance(statuses, list):
+        return XueqiuCookieHealth(False, "第 1 页响应缺少 statuses/list")
+    return XueqiuCookieHealth(True, "第 1 页请求成功", len(statuses))
 
 
 # ---------------------------------------------------------------------------
@@ -74,7 +125,7 @@ def collect_xueqiu(
         clog.add_warning(f"雪球 / {account.name}: 缺少 url 或 uid，已跳过")
         return []
 
-    client = HttpClient(cookie_env="XUEQIU_COOKIE")
+    client = HttpClient(cookie_env="XUEQIU_COOKIE", timeout=30)
     headers = _xueqiu_headers(uid)
 
     # 从 user_timeline 采集（type=2 帖子自带全文，type=3 专栏由 Playwright 补全）
@@ -133,6 +184,7 @@ def _fetch_timeline(
             break
 
         page_timestamps: list[datetime | None] = []
+        valid_items_in_page = 0  # 记录本页有效解析的数量
         for status in statuses:
             raise_if_cancelled()
             sid = str(status.get("id") or "")
@@ -142,6 +194,7 @@ def _fetch_timeline(
             item = _parse_status(status, account, uid, window_end, settings, client, clog, fetch_full=False)
             if not item:
                 continue
+            valid_items_in_page += 1
             if sid:
                 seen_ids.add(sid)
             page_timestamps.append(item.published_at)
@@ -157,6 +210,11 @@ def _fetch_timeline(
                 items.append(item)
             if len(items) >= limit:
                 break
+
+        # 如果本页返回了数据但没有一个有效解析，避免无限循环
+        if statuses and valid_items_in_page == 0:
+            clog.add_warning(f"雪球 / {account.name}: {label} 第 {page} 页返回 {len(statuses)} 条数据但无有效解析，停止翻页")
+            break
 
         dated = [t for t in page_timestamps if t is not None]
         if dated and all(t < window_start for t in dated):

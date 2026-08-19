@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
@@ -21,6 +22,7 @@ from .models import Article
 
 
 DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+AUTHOR_SEPARATOR_RE = re.compile(r"[、,，;；]+")
 
 
 @dataclass
@@ -169,6 +171,57 @@ def active_hypotheses(
         for tracked in ledger.values()
         if tracked.status not in TERMINAL_STATUSES
     ]
+
+
+def build_author_reliability(
+    tracked_hypotheses: Iterable[TrackedHypothesis],
+) -> list[dict[str, object]]:
+    """Rank source authors by the final outcome of their attributed hypotheses.
+
+    Only confirmed and falsified hypotheses contribute to the win rate. A
+    co-authored source credits each named author once for that hypothesis.
+    """
+    outcomes: dict[str, Counter[str]] = {}
+    for tracked in tracked_hypotheses:
+        if tracked.status not in {"confirmed", "falsified"}:
+            continue
+        authors = {
+            author
+            for source in tracked.hypothesis.sources
+            for author in _split_source_authors(source.author)
+        }
+        for author in authors:
+            outcomes.setdefault(author, Counter())[tracked.status] += 1
+
+    rows = []
+    for author, counts in outcomes.items():
+        confirmed = counts["confirmed"]
+        falsified = counts["falsified"]
+        resolved = confirmed + falsified
+        rows.append(
+            {
+                "author": author,
+                "confirmed": confirmed,
+                "falsified": falsified,
+                "resolved": resolved,
+                "win_rate": confirmed / resolved,
+            }
+        )
+    rows.sort(
+        key=lambda item: (
+            -float(item["win_rate"]),
+            -int(item["resolved"]),
+            -int(item["confirmed"]),
+            str(item["author"]).casefold(),
+        )
+    )
+    for rank, row in enumerate(rows, start=1):
+        row["rank"] = rank
+    return rows
+
+
+def _split_source_authors(value: str) -> list[str]:
+    return [part.strip() for part in AUTHOR_SEPARATOR_RE.split(value) if part.strip()]
 
 
 def previous_report_date(reports_root: Path, report_date: date) -> date | None:

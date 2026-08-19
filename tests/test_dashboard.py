@@ -9,7 +9,7 @@ from pipeline.hypothesis_io import write_json
 from .test_hypothesis_models import hypothesis_payload
 
 
-def _write_report(root, day: str, *, with_hypothesis: bool = False, verification=None):
+def _write_report(root, day: str, *, with_hypothesis: bool = False, hypotheses=None, verification=None):
     report_dir = root / "reports" / day
     report_dir.mkdir(parents=True, exist_ok=True)
     write_json(
@@ -49,19 +49,20 @@ def _write_report(root, day: str, *, with_hypothesis: bool = False, verification
         {"schema_version": "1.0", "report_date": day, "warnings": []},
     )
     (report_dir / "daily-brief.md").write_text("# report", encoding="utf-8")
-    if with_hypothesis:
+    if with_hypothesis or hypotheses is not None:
         write_json(
             report_dir / "hypotheses.json",
             {
                 "schema_version": "1.0",
                 "report_date": day,
-                "hypotheses": [hypothesis_payload()],
+                "hypotheses": hypotheses if hypotheses is not None else [hypothesis_payload()],
             },
         )
     if verification is not None:
+        results = verification if isinstance(verification, list) else [verification]
         write_json(
             report_dir / "verification.json",
-            {"schema_version": "1.0", "report_date": day, "results": [verification]},
+            {"schema_version": "1.0", "report_date": day, "results": results},
         )
 
 
@@ -91,6 +92,7 @@ def test_dashboard_snapshot_rebuilds_status_and_due_state(tmp_path):
     assert snapshot["hypotheses"][0]["history"][0]["evidence_ids"] == []
     assert snapshot["latest"]["readiness"]["status"] == "ready"
     assert snapshot["reports"][-1]["article_count"] == 12
+    assert snapshot["sentiment"]["window_days"] == 7
 
 
 def test_dashboard_build_writes_snapshot_and_self_contained_html(tmp_path):
@@ -102,8 +104,52 @@ def test_dashboard_build_writes_snapshot_and_self_contained_html(tmp_path):
     assert result.snapshot_path == output_dir / "snapshot.json"
     assert result.html_path == output_dir / "index.html"
     payload = json.loads(result.snapshot_path.read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "1.0"
+    assert payload["schema_version"] == "1.2"
     html = result.html_path.read_text(encoding="utf-8")
     assert "window.__DASHBOARD_DATA__" in html
     assert "投资复盘看板" in html
     assert "dashboard.js" not in html
+
+
+def test_dashboard_snapshot_ranks_authors_from_final_hypothesis_outcomes(tmp_path):
+    hypotheses = [
+        hypothesis_payload(
+            sources=[
+                {"author": "甲", "article_id": "A-001", "url": "https://example.com/1", "quote": "甲"}
+            ]
+        ),
+        hypothesis_payload(
+            id="H-20260806-002",
+            sources=[
+                {"author": "甲、乙", "article_id": "A-002", "url": "https://example.com/2", "quote": "联合"}
+            ],
+        ),
+    ]
+    _write_report(tmp_path, "2026-08-06", hypotheses=hypotheses)
+    _write_report(
+        tmp_path,
+        "2026-08-07",
+        verification=[
+            {
+                "hypothesis_id": "H-20260806-001", "previous_status": "pending", "status": "confirmed",
+                "conditions": [], "falsification_conditions": [], "reason": "成立", "deterministic": True,
+                "evidence_ids": [], "evaluated_at": "2026-08-07T09:00:00+08:00",
+            },
+            {
+                "hypothesis_id": "H-20260806-002", "previous_status": "pending", "status": "falsified",
+                "conditions": [], "falsification_conditions": [], "reason": "不成立", "deterministic": True,
+                "evidence_ids": [], "evaluated_at": "2026-08-07T09:00:00+08:00",
+            },
+        ],
+    )
+
+    snapshot = build_dashboard_snapshot(tmp_path / "reports", as_of=date(2026, 8, 7))
+
+    assert snapshot["author_reliability"] == [
+        {"author": "甲", "confirmed": 1, "falsified": 1, "resolved": 2, "win_rate": 0.5, "rank": 1},
+        {"author": "乙", "confirmed": 0, "falsified": 1, "resolved": 1, "win_rate": 0.0, "rank": 2},
+    ]
+    assert snapshot["summary"]["rated_authors"] == 2
+    assert "作者可信度" in build_dashboard(tmp_path / "reports", tmp_path / "dashboard").html_path.read_text(
+        encoding="utf-8"
+    )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 import os
 import re
@@ -12,6 +13,61 @@ from .http import HttpClient, clean_text, compact_text
 from ..cancel import raise_if_cancelled
 from ..config import Settings
 from ..datetime_utils import parse_datetime
+
+
+@dataclass(frozen=True)
+class WeiboCookieHealth:
+    ok: bool
+    message: str
+    status_count: int = 0
+    check_completed: bool = True
+
+
+def _cookie_value(cookie: str, name: str) -> str:
+    for part in cookie.split(";"):
+        key, separator, value = part.strip().partition("=")
+        if separator and key == name:
+            return value.strip()
+    return ""
+
+
+def check_weibo_cookie(
+    uid: str,
+    *,
+    client: HttpClient | None = None,
+) -> WeiboCookieHealth:
+    """Validate the login cookie and probe the first web timeline page."""
+    cookie = os.getenv("WEIBO_COOKIE", "")
+    if not _cookie_value(cookie, "SUB"):
+        return WeiboCookieHealth(False, "WEIBO_COOKIE 缺少 SUB")
+    if not uid:
+        return WeiboCookieHealth(
+            False,
+            "未找到可用于探测的微博账号 uid",
+            check_completed=False,
+        )
+
+    probe_client = client or HttpClient(cookie_env="WEIBO_COOKIE", timeout=15)
+    api_url = "https://weibo.com/ajax/statuses/mymblog?" + parse.urlencode(
+        {"uid": uid, "page": 1, "feature": "0"}
+    )
+    try:
+        payload = probe_client.get_json(api_url, headers=weibo_web_headers(uid))
+    except Exception as exc:
+        return WeiboCookieHealth(False, f"第 1 页请求失败: {exc}")
+
+    if not isinstance(payload, dict):
+        return WeiboCookieHealth(False, "第 1 页响应不是 JSON 对象")
+    if payload.get("ok") not in (None, 1):
+        return WeiboCookieHealth(
+            False,
+            f"API 错误 {payload.get('ok')}: {payload.get('msg') or '未知错误'}",
+        )
+    data = payload.get("data")
+    statuses = data.get("list") if isinstance(data, dict) else None
+    if not isinstance(statuses, list):
+        return WeiboCookieHealth(False, "第 1 页响应缺少 data.list")
+    return WeiboCookieHealth(True, "第 1 页请求成功", len(statuses))
 
 
 def collect_weibo(
@@ -30,7 +86,7 @@ def collect_weibo(
         log.add_warning(f"微博 / {account.name}: 缺少 url 或 uid，已跳过")
         return []
 
-    client = HttpClient(cookie_env="WEIBO_COOKIE")
+    client = HttpClient(cookie_env="WEIBO_COOKIE", timeout=30)
     try:
         items = collect_weibo_web(
             client,
@@ -316,7 +372,12 @@ _INVESTMENT_KEYWORDS = re.compile(
     r"|上证|深证|创业板|科创板|北证|港通|沪深|市场|行业|底部|顶部|行情"
     r"|底|顶|横盘|拉升|砸盘|闪崩|高位|低位|超跌|强势|弱势"
     r"|做多|做空|多头|空头|主力|筹码|建仓|减仓|清仓|加仓|满仓|空仓"
-    r"|看多|看空|看涨|看跌|悲观|乐观|预期|机会|风险|信号",
+    r"|看多|看空|看涨|看跌|悲观|乐观|预期|机会|风险|信号"
+    # 英文财经关键词
+    r"|stock|fund|index|market|bull|bear|trading|investor|portfolio"
+    r"|S&P|Nasdaq|Dow|Jones|rally|crash|volatility|earnings|dividend"
+    r"|Fed|rate|inflation|GDP|recession|growth|valuation|PE ratio"
+    r"|buy|sell|long|short|gain|loss|profit|return|yield",
     re.IGNORECASE,
 )
 

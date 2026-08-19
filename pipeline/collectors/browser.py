@@ -51,7 +51,11 @@ def _cookie_cache_ttl() -> float:
         try:
             return max(0.0, float(raw))
         except ValueError:
-            pass
+            import sys
+            print(
+                f"警告: BROWSER_COOKIE_CACHE_TTL_SECONDS 值无效 '{raw}'，使用默认值 {_COOKIE_CACHE_TTL_SECONDS}",
+                file=sys.stderr
+            )
     return _COOKIE_CACHE_TTL_SECONDS
 
 
@@ -67,10 +71,30 @@ def _load_cookie_cache() -> dict[str, dict[str, Any]]:
 
 
 def _save_cookie_cache(cache: dict[str, dict[str, Any]]) -> None:
+    import tempfile
     path = _cookie_cache_path()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+        # 使用原子写入防止并发损坏：先写临时文件，再重命名
+        fd, tmp_path = tempfile.mkstemp(dir=path.parent, prefix=".cookie_cache_", suffix=".tmp")
+        try:
+            os.write(fd, json.dumps(cache, ensure_ascii=False).encode("utf-8"))
+            os.close(fd)
+            # Windows 需要先删除目标文件才能重命名
+            if path.exists():
+                path.unlink()
+            Path(tmp_path).rename(path)
+        except Exception:
+            # 清理临时文件
+            try:
+                os.close(fd)
+            except Exception:
+                pass
+            try:
+                Path(tmp_path).unlink()
+            except Exception:
+                pass
+            raise
     except OSError as exc:
         log.debug(f"写入 cookie 缓存失败: {exc}")
 
@@ -226,10 +250,16 @@ def _ensure_worker() -> None:
     """确保 Playwright worker 线程已启动。"""
     global _thread
     with _thread_lock:
-        if _thread is not None and _thread.is_alive():
-            return
-        _thread = threading.Thread(target=_pw_worker, daemon=True, name="playwright-worker")
-        _thread.start()
+        _ensure_worker_locked()
+
+
+def _ensure_worker_locked() -> None:
+    """确保 Playwright worker 线程已启动（需在持有 _thread_lock 时调用）。"""
+    global _thread
+    if _thread is not None and _thread.is_alive():
+        return
+    _thread = threading.Thread(target=_pw_worker, daemon=True, name="playwright-worker")
+    _thread.start()
 
 
 # ---------------------------------------------------------------------------
@@ -246,13 +276,17 @@ def fetch_json(api_url: str) -> dict | None:
     if not HAS_PLAYWRIGHT:
         return None
 
-    _ensure_worker()
+    # 使用锁保护 shutdown 检查和队列操作，防止竞态条件
+    with _thread_lock:
+        if _shutdown:
+            return None
+        _ensure_worker_locked()
 
-    event = threading.Event()
-    result_box: list[Any] = []
-    _request_q.put((api_url, event, result_box))
+        event = threading.Event()
+        result_box: list[Any] = []
+        _request_q.put((api_url, event, result_box))
+
     wait_event(event, timeout=30)  # 最多等 30 秒
-
     return result_box[0] if result_box else None
 
 
@@ -298,11 +332,27 @@ def fetch_json_with_profile(platform: str, api_url: str, *, home_url: str) -> di
 def close_browser() -> None:
     """关闭浏览器（进程退出时调用）。"""
     global _shutdown
-    _shutdown = True
-    if _thread is not None and _thread.is_alive():
+
+    # 使用锁确保 shutdown 标志和队列操作的原子性
+    with _thread_lock:
+        _shutdown = True
+        if _thread is None or not _thread.is_alive():
+            return
+
         event = threading.Event()
         _request_q.put(("__SHUTDOWN__", event, []))
-        event.wait(timeout=10)
+
+    # 在锁外等待，避免死锁
+    event.wait(timeout=10)
+
+    # 清空队列中剩余的等待请求，防止调用线程永久阻塞
+    while not _request_q.empty():
+        try:
+            _, evt, result_box = _request_q.get_nowait()
+            result_box.append(None)
+            evt.set()
+        except queue.Empty:
+            break
 
 
 def default_profile_dir(platform: str) -> Path:
@@ -458,12 +508,13 @@ def inject_weread_cookie() -> bool:
 def inject_browser_cookies() -> None:
     """从各平台 browser profile 提取最新 Cookie，覆盖注入到环境变量。
 
-    支持 weread / weibo / xueqiu，profile 不存在时静默跳过。
+    支持 weread / weibo / xueqiu / douyin，profile 不存在时静默跳过。
     """
     _PLATFORM_CONFIG: list[tuple[str, str, list[str]]] = [
         ("weread", "WEREAD_COOKIE", ["https://weread.qq.com", "https://qq.com"]),
         ("weibo",  "WEIBO_COOKIE",  ["https://weibo.com", "https://s.weibo.com"]),
         ("xueqiu", "XUEQIU_COOKIE", ["https://xueqiu.com"]),
+        ("douyin", "DOUYIN_COOKIE", ["https://douyin.com", "https://www.douyin.com"]),
     ]
     for platform, env_key, urls in _PLATFORM_CONFIG:
         cookie = extract_platform_cookie(platform, urls)

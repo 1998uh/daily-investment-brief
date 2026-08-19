@@ -61,12 +61,17 @@
     shell.append(metrics);
 
     const main = node("div", "main-grid");
-    main.append(renderAttention());
-    const side = node("div", "side-stack");
+    const primary = node("div", "primary-stack");
+    primary.append(renderAttention());
+    primary.append(renderLedger());
+    main.append(primary);
+
+    const side = node("aside", "side-stack");
     side.append(renderCoverage());
+    side.append(renderAuthorReliability());
+    side.append(renderSentiment());
     side.append(renderTrend());
     main.append(side);
-    main.append(renderLedger());
     shell.append(main);
 
     const footer = node("footer", "footer", "LOCAL READ-ONLY SNAPSHOT · schema " + String(data.schema_version || "—") + " · reports " + formatNumber(data.report_count));
@@ -172,6 +177,67 @@
       row.append(node("span", "coverage-count", formatNumber(item.article_count)));
       panel.append(row);
     });
+    return panel;
+  }
+
+  function renderSentiment() {
+    const panel = node("section", "panel sentiment");
+    const sentiment = data.sentiment || {};
+    panel.append(panelHead("每日情绪温度计", "最近 7 个报告日 · 看好 / 回避净情绪"));
+    const items = sentiment.top_directions || [];
+    if (!items.length) {
+      panel.append(node("p", "empty", "暂无可解析的作者方向信号。"));
+      return panel;
+    }
+    items.forEach((item) => {
+      const row = node("div", "sentiment-row");
+      const current = item.series && item.series.length ? item.series[item.series.length - 1] : {};
+      const score = Number(current.net_score || 0);
+      const scoreClass = score > 0 ? "bullish" : (score < 0 ? "bearish" : "neutral");
+      row.append(node("div", "sentiment-label", item.name));
+      const track = node("div", "sentiment-track " + scoreClass);
+      const fill = node("div", "sentiment-fill");
+      fill.style.width = Math.round(Math.abs(score) * 50) + "%";
+      fill.style.left = score >= 0 ? "50%" : (50 - Math.round(Math.abs(score) * 50)) + "%";
+      track.append(node("span", "sentiment-midline"), fill);
+      row.append(track);
+      row.append(node("div", "sentiment-score", (score > 0 ? "+" : "") + Math.round(score * 100) + "%"));
+      row.title = "近 7 日：看好 " + formatNumber(item.bullish) + " / 回避 " + formatNumber(item.bearish);
+      panel.append(row);
+    });
+    const note = node("p", "sentiment-note", "净分数 = (看好 - 回避) / (看好 + 回避)；按作者-日-方向去重");
+    panel.append(note);
+    return panel;
+  }
+
+  function renderAuthorReliability() {
+    const panel = node("section", "panel reliability");
+    panel.append(panelHead("作者可信度", "仅统计最终已确认 / 已证伪假设；联合署名分别归因"));
+    const items = data.author_reliability || [];
+    if (!items.length) {
+      panel.append(node("p", "empty", "尚无已确认或已证伪的作者假设。"));
+      return panel;
+    }
+    const table = document.createElement("table");
+    table.className = "reliability-table";
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    ["排名", "作者", "胜率", "确认 / 证伪"].forEach((label) => headRow.append(node("th", "", label)));
+    head.append(headRow);
+    table.append(head);
+    const body = document.createElement("tbody");
+    items.forEach((item) => {
+      const row = document.createElement("tr");
+      row.append(
+        node("td", "mono", "#" + formatNumber(item.rank)),
+        node("td", "reliability-author", item.author),
+        node("td", "mono", Math.round(Number(item.win_rate || 0) * 100) + "%"),
+        node("td", "mono reliability-outcomes", formatNumber(item.confirmed) + " / " + formatNumber(item.falsified))
+      );
+      body.append(row);
+    });
+    table.append(body);
+    panel.append(table);
     return panel;
   }
 

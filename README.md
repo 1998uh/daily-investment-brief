@@ -90,7 +90,7 @@ BRIEF_LLM_RETRIES=4
 BRIEF_LLM_RETRY_DELAY_SECONDS=2
 ```
 
-### 3. 平台登录（一次性）
+### 3. 平台登录与健康检测
 
 微信读书、微博、雪球的 Cookie 通过持久化浏览器 profile 自动管理，**每个平台只需登录一次**，之后 pipeline 启动时自动读取最新 Cookie，无需手动维护。
 
@@ -111,6 +111,33 @@ python -m pipeline.cli auth-login --platform douyin
 运行后会弹出浏览器窗口，完成登录、等页面完全加载后，回到终端按 Enter 保存 session。
 
 > session 通常有效 7-30 天。过期后重新运行对应命令扫码一次即可。
+
+#### Cookie 健康检测
+
+系统会在每次采集前自动检测 Cookie 有效性，失效时会显著提示并终止采集，避免生成不完整数据包。
+
+也可以手动检查所有平台的 Cookie 状态：
+
+```powershell
+# 查看所有平台 Cookie 健康状态
+daily-brief source-health
+```
+
+输出示例：
+
+```text
+[OK] 雪球 Cookie 有效（第 1 页返回 10 条）
+[WARN] 微博 Cookie 已过期，请运行 auth-login --platform weibo
+       检测详情: API 返回 -100: 请先登录
+[OK] 抖音 Cookie 有效（第 1 页返回 8 条）
+```
+
+如果检测到 Cookie 失效，按提示重新登录即可：
+
+```powershell
+# 例如微博 Cookie 过期
+python -m pipeline.cli auth-login --platform weibo
+```
 
 **重要：重新登录必须走 `auth-login` 命令，不要手动打开浏览器登录。**
 Cookie 提取带有 30 分钟文件缓存（`.browser-profiles/.cookie_cache.json`），避免每次运行命令都重新打开浏览器抢占 profile 文件锁。`auth-login` 命令登录成功后会自动清除对应平台的缓存；如果绕过这个命令手动登录，缓存不会失效，30 分钟内仍会读到登录前的旧 Cookie，表现为"浏览器里明明是登录状态，却依然采集不到数据"。
@@ -143,6 +170,33 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 ## Pipeline CLI
 
 系统提供采集、旧版内部生成、Codex 原生假设工作流、资金日报和数据源诊断命令。
+
+### 数据源健康检查
+
+```powershell
+# 检查所有平台 Cookie 状态和采集历史健康度
+daily-brief source-health
+```
+
+输出示例：
+
+```text
+[OK] 雪球 Cookie 有效（第 1 页返回 10 条）
+[OK] 微博 Cookie 有效（第 1 页返回 5 条）
+[WARN] 抖音 Cookie 已过期，请运行 auth-login --platform douyin
+       检测详情: API 错误 8: 登录失效
+
+Source health: D:\ai-project\daily-investment-brief\pipeline\health.sqlite
+  买股票的老木匠 | ok | last: 2026-08-18
+  睿知睿见 | ok | last: 2026-08-18
+  ...
+```
+
+该命令会：
+1. **实时检测** Cookie 有效性（发起真实 API 请求验证）
+2. **读取历史记录**，显示各账号最近一次成功采集的时间
+
+如果发现 Cookie 失效，按提示运行 `auth-login` 命令重新登录。
 
 ### Codex 原生日报与假设验证
 
@@ -198,6 +252,8 @@ reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 ### collect — 全量采集
 
 从所有启用的账号采集文章，存入 `sources/<date>/`。
+
+**采集前会自动进行 Cookie 健康检测**，如果检测到任何平台的 Cookie 失效，会显著提示并终止采集，避免生成不完整数据包。
 
 ```powershell
 # 单日采集（并行）
@@ -359,6 +415,28 @@ reports/dashboard/snapshot.json  # 看板数据快照，便于审查或二次处
 ```powershell
 daily-brief dashboard build --as-of 2026-08-14
 ```
+
+#### 看板功能
+
+复盘看板提供以下可视化面板：
+
+1. **假设账本** — 查看所有跟踪中的假设、验证历史和最终状态
+2. **数据源覆盖** — 检查雪球、微博、微信公众号等必需源的采集完整性
+3. **作者可信度** — 基于历史假设的确认/证伪结果，统计各作者观点胜率
+4. **每日情绪温度计** — 解析最近 7 天日报中的"博主看好方向汇总"表，展示各板块/标的的看多/看空净情绪趋势
+5. **日报节奏** — 查看最近 7 天的文章采集量和报告产出节奏
+
+**作者可信度统计规则**：
+- 只统计最终状态为"已确认"或"已证伪"的假设
+- 联合署名的假设会分别归因给每位作者
+- 胜率 = 确认数 / (确认数 + 证伪数)
+- 排除"待验证"、"无结论"、"已过期"等非终态假设
+
+**情绪温度计统计规则**：
+- 仅解析日报中的"博主看好方向汇总"结构化表格
+- 按 (日期, 作者, 方向, 多/空) 去重，保留同日多空冲突
+- 净情绪分数 = (看好数 - 回避数) / (看好数 + 回避数)
+- 展示最近 7 个报告日活跃度最高的 8 个方向
 
 ## 个人投研工作台
 

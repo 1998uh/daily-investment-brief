@@ -29,6 +29,8 @@ daily-brief collect --date 2026-07-16 --no-cache-fallback
 daily-brief source-health
 ```
 
+该命令会主动检查雪球、微博和抖音的关键 Cookie，并请求各平台第一页数据验证登录态。`collect` 和 `collect-one` 也会在实际采集前自动执行相同诊断；检测失败时终止采集，请按提示重新运行对应平台的 `auth-login`。
+
 ## 浏览器持久登录
 
 微博和雪球可以用持久浏览器 profile 保存登录态，减少手工维护 Cookie：

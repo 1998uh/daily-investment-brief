@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-19",
+  "results": [
+    {
+      "hypothesis_id": "H-20260812-001",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "截至2026-08-19，同花顺基金频道援引公募排排网称8月3日至9日医药生物获公募机构调研逾100次、位居首位，提供了医药调研热度上升的阶段性线索；但未取得与电子行业在同一窗口的完整可比调研次数、主动基金配置及相对收益配对数据，不能确认未来两周的持续相对强度。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260819-001"
+      ],
+      "evaluated_at": "2026-08-19T09:20:14+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260812-002",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "截至2026-08-19，JX Advanced Metals于2026-06-16公告拟四年投资最多1,200亿日元扩产InP基板，并称持续收到客户大幅增供请求、计划与客户讨论价格修订；该官方信号支持需求强劲和现有供给扩张压力，但尚未取得三季度材料、设备、良率约束的完整证据，亦未取得已发生的现货紧张或实际提价记录，不能确认或证伪。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260819-002"
+      ],
+      "evaluated_at": "2026-08-19T09:20:14+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260812-003",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "截至2026-08-19，恒生指数公司于2026-08-10启动恒生科技指数方法论潜在调整的市场咨询，咨询文件涉及扩大科技主题覆盖、优化成分选择和增加成分股数量；这证明调整程序已启动，但咨询尚未形成实施结论，也没有新增成分及初始权重的正式数据，不能确认年内落实及权重有限的判断。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260819-003"
+      ],
+      "evaluated_at": "2026-08-19T09:20:14+08:00"
+    }
+  ]
+}

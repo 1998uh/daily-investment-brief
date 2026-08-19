@@ -183,6 +183,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--db",
         help="SQLite database path. Defaults to data/articles.sqlite.",
     )
+    health.add_argument(
+        "--accounts",
+        help="Account config JSON used for the Xueqiu probe. Defaults to config/accounts.json.",
+    )
 
     dashboard = subparsers.add_parser(
         "dashboard",
@@ -353,6 +357,11 @@ def collect_command(args: argparse.Namespace) -> int:
     if not accounts_path.exists():
         print(f"Account config not found: {accounts_path}", file=sys.stderr)
         return 2
+    if not args.dry_run and not _collection_cookie_preflight(
+        accounts_path,
+        platform_filter=getattr(args, "platform", None),
+    ):
+        return 1
 
     written, log = collect_to_sources(
         accounts_path=accounts_path,
@@ -390,8 +399,14 @@ def collect_command(args: argparse.Namespace) -> int:
 
 def _collect_date_range(args: argparse.Namespace) -> int:
     """按日期范围逐日采集。"""
-    start = date.fromisoformat(args.start_date)
-    end = date.fromisoformat(args.end_date)
+    try:
+        start = date.fromisoformat(args.start_date)
+        end = date.fromisoformat(args.end_date)
+    except ValueError as e:
+        print(f"日期格式错误: {e}", file=sys.stderr)
+        print(f"请使用 YYYY-MM-DD 格式（例如：2026-08-19）", file=sys.stderr)
+        return 2
+
     if start > end:
         print(f"--start-date ({start}) must be <= --end-date ({end})", file=sys.stderr)
         return 2
@@ -402,6 +417,11 @@ def _collect_date_range(args: argparse.Namespace) -> int:
     if not accounts_path.exists():
         print(f"Account config not found: {accounts_path}", file=sys.stderr)
         return 2
+    if not args.dry_run and not _collection_cookie_preflight(
+        accounts_path,
+        platform_filter=getattr(args, "platform", None),
+    ):
+        return 1
 
     total_days = (end - start).days + 1
     total_written = 0
@@ -483,6 +503,8 @@ def collect_one_command(args: argparse.Namespace) -> int:
     if not accounts_path.exists():
         print(f"Account config not found: {accounts_path}", file=sys.stderr)
         return 2
+    if not _collection_cookie_preflight(accounts_path, account_name=args.name):
+        return 1
 
     written, log = collect_single_account(
         name=args.name,
@@ -517,6 +539,8 @@ def _collect_one_date_range(args: argparse.Namespace) -> int:
     if not accounts_path.exists():
         print(f"Account config not found: {accounts_path}", file=sys.stderr)
         return 2
+    if not _collection_cookie_preflight(accounts_path, account_name=args.name):
+        return 1
 
     total_days = (end - start).days + 1
     total_written = 0
@@ -743,8 +767,101 @@ def print_collection_log(log) -> None:
         print(f"[error] {message}", file=sys.stderr)
 
 
+def _cookie_health_checks(
+    accounts_path: Path,
+    *,
+    platform_filter: str | None = None,
+    account_name: str | None = None,
+):
+    from .collectors.accounts import load_accounts
+    from .collectors.douyin import check_douyin_cookie, extract_sec_user_id
+    from .collectors.weibo import check_weibo_cookie, extract_uid as extract_weibo_uid
+    from .collectors.xueqiu import check_xueqiu_cookie, extract_uid as extract_xueqiu_uid
+    from .collectors.accounts import normalize_source
+
+    selected_source = normalize_source(platform_filter) if platform_filter else None
+    probe_ids = {"雪球": "", "微博": "", "抖音": ""}
+    configured_sources: set[str] = set()
+    for account in load_accounts(accounts_path):
+        if not account.enabled or account.source not in probe_ids:
+            continue
+        if selected_source and account.source != selected_source:
+            continue
+        if account_name and account.name != account_name:
+            continue
+        configured_sources.add(account.source)
+        if probe_ids[account.source]:
+            continue
+        if account.source == "雪球":
+            probe_ids[account.source] = account.uid or extract_xueqiu_uid(account.url)
+        elif account.source == "微博":
+            probe_ids[account.source] = account.uid or extract_weibo_uid(account.url)
+        else:
+            probe_ids[account.source] = account.uid or extract_sec_user_id(account.url)
+
+    checks = []
+    if "雪球" in configured_sources:
+        checks.append(("雪球", "auth-login", check_xueqiu_cookie(probe_ids["雪球"])))
+    if "微博" in configured_sources:
+        checks.append(
+            ("微博", "auth-login --platform weibo", check_weibo_cookie(probe_ids["微博"]))
+        )
+    if "抖音" in configured_sources:
+        checks.append(
+            ("抖音", "auth-login --platform douyin", check_douyin_cookie(probe_ids["抖音"]))
+        )
+    return checks
+
+
+def _print_cookie_health(checks) -> bool:
+    all_ok = True
+    for platform, login_command, cookie_health in checks:
+        if cookie_health.ok:
+            print(f"[OK] {platform} Cookie 有效（第 1 页返回 {cookie_health.status_count} 条）")
+        elif cookie_health.check_completed:
+            all_ok = False
+            print(f"[WARN] {platform} Cookie 已过期，请运行 {login_command}")
+            print(f"       检测详情: {cookie_health.message}")
+        else:
+            all_ok = False
+            print(f"[WARN] {platform} Cookie 未完成检测：{cookie_health.message}")
+    return all_ok
+
+
+def _collection_cookie_preflight(
+    accounts_path: Path,
+    *,
+    platform_filter: str | None = None,
+    account_name: str | None = None,
+) -> bool:
+    print("[info] 采集前 Cookie 健康检测")
+    try:
+        checks = _cookie_health_checks(
+            accounts_path,
+            platform_filter=platform_filter,
+            account_name=account_name,
+        )
+    except (OSError, ValueError) as exc:
+        print(f"[error] Cookie 健康检测失败: {exc}", file=sys.stderr)
+        return False
+    if not _print_cookie_health(checks):
+        print("[error] Cookie 健康检测未通过，已终止采集，避免生成不完整数据包。", file=sys.stderr)
+        return False
+    return True
+
+
 def source_health_command(args: argparse.Namespace) -> int:
+    from .config import load_env
     from .storage import DEFAULT_DB_PATH, load_source_health
+
+    load_env()
+    accounts_path = Path(args.accounts) if getattr(args, "accounts", None) else default_accounts_path()
+    try:
+        checks = _cookie_health_checks(accounts_path)
+    except (OSError, ValueError) as exc:
+        print(f"[WARN] Cookie 健康检测未完成：{exc}")
+    else:
+        _print_cookie_health(checks)
 
     db_path = Path(args.db) if args.db else DEFAULT_DB_PATH
     rows = load_source_health(db_path)

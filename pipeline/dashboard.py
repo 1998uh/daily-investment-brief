@@ -16,6 +16,7 @@ from pathlib import Path
 import webbrowser
 
 from .hypothesis_io import (
+    build_author_reliability,
     dated_report_dirs,
     load_all_evidence,
     load_hypothesis_ledger,
@@ -23,9 +24,10 @@ from .hypothesis_io import (
     write_json,
 )
 from .hypothesis_models import ContractError, TERMINAL_STATUSES
+from .sentiment import build_sentiment_snapshot
 
 
-DASHBOARD_SCHEMA_VERSION = "1.0"
+DASHBOARD_SCHEMA_VERSION = "1.2"
 REQUIRED_SOURCES = ("雪球", "微博", "微信公众号")
 STATUS_LABELS = {
     "pending": "待验证",
@@ -56,14 +58,26 @@ def build_dashboard_snapshot(
     *,
     journal_root: Path | None = None,
     as_of: date | None = None,
+    max_days: int | None = 90,
 ) -> dict:
-    """Aggregate report artifacts into a stable, JSON-serializable snapshot."""
+    """Aggregate report artifacts into a stable, JSON-serializable snapshot.
+
+    Args:
+        reports_root: Root directory containing dated report folders
+        journal_root: Optional journal directory (defaults to reports_root/../journal)
+        as_of: Optional cutoff date (defaults to latest report date)
+        max_days: Maximum number of days to include (defaults to 90, None for unlimited)
+    """
     report_dirs = [
         item for item in dated_report_dirs(reports_root, before_or_equal=as_of)
         if _has_report_artifact(item[1])
     ]
     if not report_dirs:
         raise FileNotFoundError(f"no report artifacts found in {reports_root}")
+
+    # Limit to most recent max_days reports if specified
+    if max_days is not None and len(report_dirs) > max_days:
+        report_dirs = report_dirs[-max_days:]
 
     latest_date, latest_dir = report_dirs[-1]
     effective_date = as_of or latest_date
@@ -145,6 +159,8 @@ def build_dashboard_snapshot(
     mode_counts = Counter(item["verification_mode"] for item in hypotheses)
     subject_counts = Counter(item["subject"]["type"] for item in hypotheses)
     due = [item for item in hypotheses if item["due"]]
+    author_reliability = build_author_reliability(ledger.values())
+    sentiment = build_sentiment_snapshot(report_dirs)
 
     return {
         "schema_version": DASHBOARD_SCHEMA_VERSION,
@@ -162,6 +178,7 @@ def build_dashboard_snapshot(
             "confirmed_hypotheses": status_counts["confirmed"],
             "falsified_hypotheses": status_counts["falsified"],
             "partially_confirmed_hypotheses": status_counts["partially_confirmed"],
+            "rated_authors": len(author_reliability),
             "latest_article_count": latest_summary["article_count"],
         },
         "status_counts": dict(sorted(status_counts.items())),
@@ -180,6 +197,8 @@ def build_dashboard_snapshot(
         "reports": reports,
         "hypotheses": hypotheses,
         "events": events,
+        "author_reliability": author_reliability,
+        "sentiment": sentiment,
     }
 
 

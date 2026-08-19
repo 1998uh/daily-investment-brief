@@ -7,11 +7,12 @@
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 import logging
 import os
 import re
-from typing import Any
+from typing import Any, Callable
 
 from .accounts import Account
 from .base import CollectedItem, CollectionLog
@@ -19,7 +20,6 @@ from .browser import HAS_PLAYWRIGHT, browser_launch_kwargs, default_profile_dir
 from .http import clean_text, compact_text
 from ..cancel import raise_if_cancelled
 from ..config import Settings
-from ..datetime_utils import parse_datetime
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +29,63 @@ log = logging.getLogger(__name__)
 
 _DOUYIN_BASE = "https://www.douyin.com"
 _DOUYIN_USER_POST_API = _DOUYIN_BASE + "/aweme/v1/web/aweme/post/"
+
+
+@dataclass(frozen=True)
+class DouyinCookieHealth:
+    ok: bool
+    message: str
+    status_count: int = 0
+    check_completed: bool = True
+
+
+def _cookie_value(cookie: str, name: str) -> str:
+    for part in cookie.split(";"):
+        key, separator, value = part.strip().partition("=")
+        if separator and key == name:
+            return value.strip()
+    return ""
+
+
+def check_douyin_cookie(
+    sec_user_id: str,
+    *,
+    fetcher: Callable[[str, int], dict[str, Any] | None] | None = None,
+) -> DouyinCookieHealth:
+    """Validate the login cookie and probe the first user-post page."""
+    cookie = os.getenv("DOUYIN_COOKIE", "")
+    if not any(_cookie_value(cookie, name) for name in ("sessionid", "sessionid_ss")):
+        return DouyinCookieHealth(False, "DOUYIN_COOKIE 缺少 sessionid/sessionid_ss")
+    if not sec_user_id:
+        return DouyinCookieHealth(
+            False,
+            "未找到可用于探测的抖音账号 sec_user_id",
+            check_completed=False,
+        )
+    if not HAS_PLAYWRIGHT and fetcher is None:
+        return DouyinCookieHealth(
+            False,
+            "Playwright 未安装，无法请求抖音作品页",
+            check_completed=False,
+        )
+
+    try:
+        payload = (fetcher or _fetch_user_posts)(sec_user_id, 0)
+    except Exception as exc:
+        return DouyinCookieHealth(False, f"第 1 页请求失败: {exc}")
+
+    if not isinstance(payload, dict):
+        return DouyinCookieHealth(False, "第 1 页请求失败或响应不是 JSON 对象")
+    if payload.get("status_code") not in (None, 0):
+        return DouyinCookieHealth(
+            False,
+            f"API 错误 {payload.get('status_code')}: "
+            f"{payload.get('status_msg') or '未知错误'}",
+        )
+    aweme_list = payload.get("aweme_list")
+    if not isinstance(aweme_list, list):
+        return DouyinCookieHealth(False, "第 1 页响应缺少 aweme_list")
+    return DouyinCookieHealth(True, "第 1 页请求成功", len(aweme_list))
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +229,17 @@ def _fetch_user_posts(sec_user_id: str, max_cursor: int = 0) -> dict[str, Any] |
                 "Chrome/151.0.0.0 Safari/537.36"
             ),
         )
+
+        cookie = os.getenv("DOUYIN_COOKIE", "")
+        cookies = []
+        for part in cookie.split(";"):
+            key, separator, value = part.strip().partition("=")
+            if separator and key:
+                cookies.append(
+                    {"name": key, "value": value, "domain": ".douyin.com", "path": "/"}
+                )
+        if cookies:
+            context.add_cookies(cookies)
 
         try:
             page = context.pages[0] if context.pages else context.new_page()
@@ -399,45 +467,46 @@ def _transcribe_video_if_enabled(video_url: str, aweme_data: dict | None = None)
         from pathlib import Path
         import tempfile
 
-        # 优先方案：直接从 API 响应中提取音频 URL
-        audio_url = None
-        if aweme_data:
-            music = aweme_data.get("music") or {}
-            play_url = music.get("play_url") or {}
-            url_list = play_url.get("url_list") or []
-            if url_list:
-                audio_url = url_list[0]
-                log.debug(f"使用 API 音频 URL: {audio_url}")
-
-        # 如果有音频 URL，直接下载转录
-        if audio_url:
-            transcript = transcribe_audio_from_url(audio_url)
-            if transcript:
-                return transcript
-            log.debug("API 音频转录失败，回退到 yt-dlp")
-
-        # 回退方案：使用 yt-dlp 从视频中提取音频
-        profile_dir = default_profile_dir("douyin")
         cookie_file = None
+        try:
+            # 优先方案：直接从 API 响应中提取音频 URL
+            audio_url = None
+            if aweme_data:
+                music = aweme_data.get("music") or {}
+                play_url = music.get("play_url") or {}
+                url_list = play_url.get("url_list") or []
+                if url_list:
+                    audio_url = url_list[0]
+                    log.debug(f"使用 API 音频 URL: {audio_url}")
 
-        if profile_dir.exists():
-            cookie_file = Path(tempfile.gettempdir()) / "douyin_cookies.txt"
-            if export_cookies_from_profile(profile_dir, cookie_file):
-                log.debug(f"Cookie 已导出到: {cookie_file}")
-            else:
-                cookie_file = None
+            # 如果有音频 URL，直接下载转录
+            if audio_url:
+                transcript = transcribe_audio_from_url(audio_url)
+                if transcript:
+                    return transcript
+                log.debug("API 音频转录失败，回退到 yt-dlp")
 
-        # 转录音频
-        transcript = transcribe_douyin_video(video_url, cookie_file=cookie_file)
+            # 回退方案：使用 yt-dlp 从视频中提取音频
+            profile_dir = default_profile_dir("douyin")
 
-        # 清理临时 Cookie 文件
-        if cookie_file and cookie_file.exists():
-            try:
-                cookie_file.unlink()
-            except Exception:
-                pass
+            if profile_dir.exists():
+                cookie_file = Path(tempfile.gettempdir()) / "douyin_cookies.txt"
+                if export_cookies_from_profile(profile_dir, cookie_file):
+                    log.debug(f"Cookie 已导出到: {cookie_file}")
+                else:
+                    cookie_file = None
 
-        return transcript
+            # 转录音频
+            transcript = transcribe_douyin_video(video_url, cookie_file=cookie_file)
+            return transcript
+
+        finally:
+            # 确保清理临时 Cookie 文件
+            if cookie_file and cookie_file.exists():
+                try:
+                    cookie_file.unlink()
+                except Exception:
+                    pass
 
     except ImportError:
         log.debug("音频转录模块未安装，跳过转录")
