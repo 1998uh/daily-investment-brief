@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-21",
+  "workflow": "codex-native-hypothesis-tracking",
+  "providers": [
+    "Reuters（经行业媒体转述）",
+    "中国移动采购与招标网（由行业媒体转载）",
+    "国家税务总局辽宁省税务局（转新华社）",
+    "富途行情"
+  ],
+  "request_ids": [],
+  "warnings": [],
+  "files": [
+    {
+      "name": "codex-context.json",
+      "sha256": "b09b3ecfea517aee8a328b04a6f394cf92723342cf85f7711a162855ac91f4e6",
+      "size": 3324
+    },
+    {
+      "name": "article-pack.md",
+      "sha256": "4188524d8fb95d3f1dfa81ca0ac98f425fd2e722b8d983c8bdb7d7ab5083aeec",
+      "size": 135460
+    },
+    {
+      "name": "article-index.jsonl",
+      "sha256": "7bffbccff91b758f343febeb5261de4874082815c42c267997dcc1532cab4efc",
+      "size": 28912
+    },
+    {
+      "name": "evidence-tasks.json",
+      "sha256": "4e4710240fb07f963587c7b5079ddca994e68fe34f13038667d407aa161bf094",
+      "size": 3230
+    },
+    {
+      "name": "hypothesis-dedup-index.json",
+      "sha256": "64ca47c745f2bc19631c97f04adfb8254b8c5771bb5f2b89e35309f826085e25",
+      "size": 1378
+    },
+    {
+      "name": "evidence.json",
+      "sha256": "a4c4a19157ea79256ea1f675db90b56a0c78f25850a81edc26392cd7319611b3",
+      "size": 3540
+    },
+    {
+      "name": "verification.json",
+      "sha256": "03e1f15c9db617e865bc2d57f11ad2979d983f80881cefff3bdb5d8ab5450e9e",
+      "size": 3046
+    },
+    {
+      "name": "hypotheses.json",
+      "sha256": "41d1b53eae209ee1dc9d010276ee062071d11bcb59d296f3fcf6cec3de181972",
+      "size": 81
+    },
+    {
+      "name": "daily-brief.md",
+      "sha256": "3836b84dbd7050c95b828531459018f4d9132901f2ed1fe40af3838f0b67b2dd",
+      "size": 18282
+    },
+    {
+      "name": "daily-brief.html",
+      "sha256": "33f06cbd6c62929e064f34d57c3758f7de95cac64fdb82b81b830adc9d387b10",
+      "size": 23480
+    }
+  ],
+  "validated_at": "2026-08-21T09:27:42+08:00"
+}

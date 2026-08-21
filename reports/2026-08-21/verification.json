@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-21",
+  "results": [
+    {
+      "hypothesis_id": "H-20260806-002",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要FCC等正式政策文件、海外工厂适用范围、公司公告或云厂商订单披露，不能用股价代替。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-21T09:17:32+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-003",
+      "previous_status": "pending",
+      "status": "confirmed",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "上海证券交易所上市页面确认宇树科技于2026年8月19日上市、发行价150.80元；财联社报道首日收盘845元、较发行价上涨460.34%，满足不破发及上涨至少50%的条件。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260821-001"
+      ],
+      "evaluated_at": "2026-08-21T09:17:32+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-004",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要税务机关正式文件、CRS执行口径以及友邦、保诚等险企的新业务价值或渠道新单披露；单日股价不能独立证明保费需求变化。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-21T09:17:32+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-005",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要模型官方发布、云厂商API调用与收入披露、招标公告或供应商订单公告；模型热度和股价上涨不能替代订单证据。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-21T09:17:32+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260814-002",
+      "previous_status": "pending",
+      "status": "confirmed",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "截至8月20日，公开市场报道显示医药、创新药、CRO集体走强，出现20个20%涨停且几乎全为医药股；CRO板块盘中涨幅约8%、成交额约426.78亿元，支持医药/CRO成为8月新主线并持续走强。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260821-002"
+      ],
+      "evaluated_at": "2026-08-21T09:17:32+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260814-003",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "跟踪科技指数和中际旭创相对高点回撤幅度，并记录是否出现连续护盘。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-21T09:17:32+08:00"
+    }
+  ]
+}

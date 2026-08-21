@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-21",
+  "items": [
+    {
+      "evidence_id": "E-20260821-001",
+      "hypothesis_id": "H-20260807-003",
+      "evidence_type": "manual_resolution",
+      "resolved_status": "confirmed",
+      "note": "上海证券交易所上市页面确认宇树科技于2026年8月19日上市、发行价150.80元；财联社报道首日收盘845元、较发行价上涨460.34%，满足不破发及上涨至少50%的条件。",
+      "resolved_by": "Codex：交易所上市信息与主流财经媒体收盘数据交叉核验",
+      "fetched_at": "2026-08-21T09:20:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260821-002",
+      "hypothesis_id": "H-20260814-002",
+      "evidence_type": "manual_resolution",
+      "resolved_status": "confirmed",
+      "note": "截至8月20日，公开市场报道显示医药、创新药、CRO集体走强，出现20个20%涨停且几乎全为医药股；CRO板块盘中涨幅约8%、成交额约426.78亿元，支持医药/CRO成为8月新主线并持续走强。",
+      "resolved_by": "Codex：主流财经媒体与当期文章包行情数据交叉核验",
+      "fetched_at": "2026-08-21T09:20:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260821-003",
+      "hypothesis_id": "H-20260807-004",
+      "evidence_type": "event",
+      "title": "税务总局：对境外保险收益征税并非新政策",
+      "published_at": "2026-08-10",
+      "source_level": "official",
+      "publisher": "国家税务总局辽宁省税务局（转新华社）",
+      "url": "https://liaoning.chinatax.gov.cn/art/2026/8/10/art_2623_172941.html",
+      "quote": "按照我国个人所得税法相关规定，对境外保险收益征税并非新政策。",
+      "supports": true,
+      "fetched_at": "2026-08-21T09:20:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260821-004",
+      "hypothesis_id": "H-20260807-005",
+      "evidence_type": "event",
+      "title": "中国移动2026-2027年人工智能超节点设备集中采购项目",
+      "published_at": "2026-03-17",
+      "source_level": "authoritative",
+      "publisher": "中国移动采购与招标网（由行业媒体转载）",
+      "url": "https://m.c114.com.cn/w3542-1307004.html",
+      "quote": "中国移动采购与招标网发布2026年至2027年人工智能超节点设备集中采购项目招标公告。",
+      "supports": true,
+      "fetched_at": "2026-08-21T09:20:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260821-005",
+      "hypothesis_id": "H-20260806-002",
+      "evidence_type": "event",
+      "title": "FCC拟限制中国数据中心光模块进口的报道",
+      "published_at": "2026-08-04",
+      "source_level": "media",
+      "publisher": "Reuters（经行业媒体转述）",
+      "url": "https://cignal.ai/2026/08/fcc-ban-on-new-chinese-optical-modules/",
+      "quote": "报道指FCC正准备限制新的中国光模块进口，但尚非正式政策文本。",
+      "supports": true,
+      "fetched_at": "2026-08-21T09:20:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260821-006",
+      "hypothesis_id": "H-20260814-003",
+      "evidence_type": "event",
+      "title": "中际旭创8月20日行情",
+      "published_at": "2026-08-20",
+      "source_level": "media",
+      "publisher": "富途行情",
+      "url": "https://www.moomoo.com/hans/stock/300308-SZ",
+      "quote": "8月20日中际旭创昨收895.60元，盘中区间882.60至912.01元，尚未跌至700元。",
+      "supports": false,
+      "fetched_at": "2026-08-21T09:20:00+08:00"
+    }
+  ]
+}
