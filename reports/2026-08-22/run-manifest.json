@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-22",
+  "workflow": "codex-native-hypothesis-tracking",
+  "providers": [],
+  "request_ids": [],
+  "warnings": [],
+  "files": [
+    {
+      "name": "codex-context.json",
+      "sha256": "0d761d40530224de02baa1f69436ec06f8a2361a3cadda036cbbd9df4b16f6ca",
+      "size": 1700
+    },
+    {
+      "name": "article-pack.md",
+      "sha256": "00bcf7103feec500c669b735abd84d5d784eb0f249c4948a8f3be3e4893056ea",
+      "size": 137604
+    },
+    {
+      "name": "article-index.jsonl",
+      "sha256": "c68459d75122fc38c08688d4b0ef5e6ea65710a03307a6eb9168353c8ba9f964",
+      "size": 28609
+    },
+    {
+      "name": "evidence-tasks.json",
+      "sha256": "75d7168da596179921592767c4c8a2e7ad9412f7b33d3cfc9517fae09e37c309",
+      "size": 99
+    },
+    {
+      "name": "hypothesis-dedup-index.json",
+      "sha256": "1be0f0c6eba61580e5b6639559d7b14ca4626bbf55e5e59ecf6cbe877327a5a9",
+      "size": 1141
+    },
+    {
+      "name": "evidence.json",
+      "sha256": "486dedd9c030eb65c53a4340a179b919c81f9508a8fad9381641f3c671e232ef",
+      "size": 76
+    },
+    {
+      "name": "verification.json",
+      "sha256": "bddefc06c315c2a622a9bacb9d77c2616bf955d7eccefb118da8a4eed1230a5f",
+      "size": 83
+    },
+    {
+      "name": "hypotheses.json",
+      "sha256": "4aef1dc1c282980a7bed8a0483b206033fd9ce01bccb5af0fbba86e17d81f43e",
+      "size": 81
+    },
+    {
+      "name": "daily-brief.md",
+      "sha256": "14320226cf9aa15f31d5676d6a9daa24692827717e5006d047cd5b0c2c0d91b3",
+      "size": 18035
+    },
+    {
+      "name": "daily-brief.html",
+      "sha256": "3e7ad6052f91debe4f38ce3a863f2bb54d04605e2204747769e076b3fc1c4cb9",
+      "size": 22800
+    }
+  ],
+  "validated_at": "2026-08-22T09:05:56+08:00"
+}

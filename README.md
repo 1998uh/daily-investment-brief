@@ -206,7 +206,7 @@ Source health: D:\ai-project\daily-investment-brief\pipeline\health.sqlite
 
 ```powershell
 # 1. 采集文章
-daily-brief collect --date 2026-08-21
+daily-brief collect --date 2026-08-22
 
 # 2. 生成日报文章包，供 Codex 写作
 daily-brief prepare --date 2026-08-15
