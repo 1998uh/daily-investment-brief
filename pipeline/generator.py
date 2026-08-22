@@ -308,6 +308,19 @@ def generate_fallback(
 | 高频讨论方向是否延续 | 本期文章主题聚合与下期关注条目 | 下一期相关讨论明显降温或核心作者转向 | 下一期 | 待验证 |
 | 静默账号是否影响主线 | 数据覆盖表中的静默账号 | 静默账号回归后观点与本期主线相反 | 下一期 | 待验证 |
 
+## 💎 今日精选标的
+
+> **注意**：fallback 模式下此板块为简化版，仅统计文章提及频次。完整版需使用 LLM 模式生成。
+
+### 高频提及标的
+
+（基于文章标题和内容的简单统计）
+
+### 编辑说明
+
+本板块在 fallback 模式下仅提供基础统计。**这不是投资建议**，仅作为信息汇总参考。
+完整的共识分析、风险提示和推荐理由需使用 LLM 模式生成。
+
 ---
 
 ⚠ **免责声明**：本简报为原始文章与观点的结构化整理，不构成任何投资建议。市场有风险，投资需谨慎。
@@ -617,3 +630,51 @@ def _session_label(window_end: datetime) -> str:
         return "盘后"
     else:
         return "盘中"
+
+
+def annotate_watchlist(markdown: str) -> str:
+    """功能 4: 扫描日报内容，标注关注标的"""
+    watchlist_path = ROOT / "config" / "watchlist.json"
+    if not watchlist_path.exists():
+        return markdown
+
+    try:
+        watchlist_data = json.loads(watchlist_path.read_text(encoding="utf-8"))
+        watchlist = watchlist_data.get("watchlist", [])
+    except (json.JSONDecodeError, KeyError):
+        return markdown
+
+    if not watchlist:
+        return markdown
+
+    # 构建标的名称和代码的搜索集合
+    targets = {}
+    for item in watchlist:
+        name = item.get("name", "")
+        symbol = item.get("symbol", "")
+        if name:
+            targets[name] = "[*关注标的]"
+        if symbol:
+            targets[symbol] = "[*关注标的]"
+
+    # 逐段落扫描并标注
+    lines = markdown.split("\n")
+    result_lines = []
+    in_table = False
+    for line in lines:
+        # 检测表格边界
+        if line.strip().startswith("|"):
+            in_table = True
+        elif in_table and not line.strip().startswith("|"):
+            in_table = False
+
+        # 在非表格行中查找标的
+        if not in_table and line.strip() and not line.startswith("#"):
+            for target_name in targets:
+                if target_name in line and "[*关注标的]" not in line:
+                    line = line.rstrip() + f" {targets[target_name]}"
+                    break
+
+        result_lines.append(line)
+
+    return "\n".join(result_lines)

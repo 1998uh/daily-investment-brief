@@ -11,7 +11,7 @@ from .collectors.runner import collect_to_sources, collect_single_account
 from .generator import generate_brief, synthesize_from_batches, build_direct_prompt
 from .html import wrap_html
 from .ingest import load_articles
-from .workstation import create_journal_entry
+from .workstation import create_journal_entry, generate_journal_draft
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -695,6 +695,11 @@ def generate_command(args: argparse.Namespace) -> int:
     # ── 写出文件（路径 A / C 共用）────────────────────────────────────────
     out_dir.mkdir(parents=True, exist_ok=True)
     md_path = out_dir / "daily-brief.md"
+
+    # 功能 4: 标注关注标的
+    from .generator import annotate_watchlist
+    markdown = annotate_watchlist(markdown)
+
     md_path.write_text(markdown, encoding="utf-8")
 
     markdown_only = getattr(args, "markdown_only", False)
@@ -707,9 +712,22 @@ def generate_command(args: argparse.Namespace) -> int:
     print(f"Generated Markdown: {md_path}")
     if html_path:
         print(f"Generated HTML: {html_path}")
+
+    # 功能 3: 尝试生成 journal 首稿
     journal = create_journal_entry(brief_date)
-    journal_status = "created" if journal.created else "exists"
-    print(f"Journal template ({journal_status}): {journal.path}")
+    if journal.created:
+        # 如果是新创建的 journal，尝试生成首稿
+        if used_llm:
+            draft_path = generate_journal_draft(brief_date)
+            if draft_path:
+                print(f"Journal draft (auto-generated): {draft_path}")
+            else:
+                print(f"Journal template (empty): {journal.path}")
+        else:
+            print(f"Journal template (empty): {journal.path}")
+    else:
+        print(f"Journal (exists): {journal.path}")
+
     print(f"Mode: {'LLM' if used_llm else 'fallback'} ({result_model})")
     return 0
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 import calendar
+import json
 
 from .config import ROOT
 
@@ -346,3 +347,145 @@ def default_current_week() -> str:
 
 def default_current_month() -> str:
     return datetime.now().strftime("%Y-%m")
+
+
+def generate_journal_draft(
+    entry_date: date,
+    *,
+    root: Path = ROOT,
+) -> Path | None:
+    """功能 3: 自动生成 journal 首稿
+
+    基于当日的 daily-brief.md 用 LLM 生成首稿。
+    如果日报不存在或 LLM 调用失败，返回 None。
+    """
+    report_path = root / "reports" / entry_date.isoformat() / "daily-brief.md"
+    if not report_path.exists():
+        return None
+
+    try:
+        report_content = report_path.read_text(encoding="utf-8")
+    except Exception:
+        return None
+
+    # 构建 prompt
+    prompt = f"""请阅读以下每日投资简报，为我生成一份个人判断记录的首稿。
+
+要求：
+1. 提取今日最重要的 2-3 个信息点
+2. 识别文中最强的观点分歧（多空碰撞）
+3. 保持精简，每个字段 1-2 句话即可
+4. 如果某个字段无法从日报中提取，留空
+
+请按以下 JSON 格式输出：
+
+```json
+{{
+  "most_important_info": "今日最重要信息的 1-2 句总结",
+  "judgment_changed": "它改变了我什么判断（如果没有明确改变，留空）",
+  "previous_view": "我原来的看法（如果日报中没有提及，留空）",
+  "current_view": "我现在的看法（基于今日信息）",
+  "next_verification": "接下来需要验证什么",
+  "error_signal": "如果我的判断错了，什么信号会说明",
+  "position_adjustment": "是否需要调整仓位或观察名单",
+  "mistakes_reminder": "今日值得提醒的风险点或错题"
+}}
+```
+
+日报内容：
+
+{report_content}
+"""
+
+    try:
+        from .llm import chat_completion
+        from .config import get_settings
+
+        settings = get_settings()
+        response = chat_completion(
+            settings,
+            [
+                {"role": "system", "content": "你是投资决策助手，帮助用户提炼日报核心信息。"},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            label="journal draft",
+        )
+
+        # 提取 JSON
+        draft_data = _extract_json_from_response(response)
+        if not draft_data:
+            return None
+
+        # 生成 journal 内容
+        journal_content = _render_journal_with_draft(entry_date, draft_data)
+        journal_path_target = journal_path(entry_date, root=root)
+        journal_path_target.parent.mkdir(parents=True, exist_ok=True)
+        journal_path_target.write_text(journal_content, encoding="utf-8")
+        return journal_path_target
+
+    except Exception:
+        return None
+
+
+def _extract_json_from_response(response: str) -> dict | None:
+    """从 LLM 响应中提取 JSON"""
+    # 尝试提取代码块中的 JSON
+    json_match = response.find("```json")
+    if json_match != -1:
+        end_match = response.find("```", json_match + 7)
+        if end_match != -1:
+            json_str = response[json_match + 7:end_match].strip()
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError:
+                pass
+
+    # 尝试直接解析整个响应
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        return None
+
+
+def _render_journal_with_draft(entry_date: date, draft: dict) -> str:
+    """用 LLM 生成的首稿渲染 journal"""
+    date_label = entry_date.isoformat()
+    return f"""# {date_label} 个人投资判断
+
+## 今日最重要信息
+
+{draft.get("most_important_info", "")}
+
+## 它改变了我什么判断
+
+{draft.get("judgment_changed", "")}
+
+## 我原来的看法
+
+{draft.get("previous_view", "")}
+
+## 我现在的看法
+
+{draft.get("current_view", "")}
+
+## 接下来验证什么
+
+{draft.get("next_verification", "")}
+
+## 如果错了，什么信号说明我错了
+
+{draft.get("error_signal", "")}
+
+## 是否调整仓位/观察名单
+
+{draft.get("position_adjustment", "")}
+
+## 今日错题或提醒
+
+{draft.get("mistakes_reminder", "")}
+
+---
+
+> 此首稿由 LLM 基于日报自动生成，请根据个人判断修改和完善。
+"""

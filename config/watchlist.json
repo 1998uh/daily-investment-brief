@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-08-22",
+  "watchlist": [
+    {
+      "symbol": "000001.SZ",
+      "name": "平安银行",
+      "category": "金融"
+    },
+    {
+      "symbol": "600519.SH",
+      "name": "贵州茅台",
+      "category": "消费"
+    },
+    {
+      "symbol": "000858.SZ",
+      "name": "五粮液",
+      "category": "消费"
+    },
+    {
+      "symbol": "601318.SH",
+      "name": "中国平安",
+      "category": "金融"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 import json
@@ -52,6 +52,10 @@ def prepare_hypothesis_context(
     )
     coverage = build_coverage(articles, expected)
     active = active_hypotheses(reports_root, report_date=report_date)
+
+    # 功能 8: 假设到期预警
+    check_expiring_hypotheses(active, report_date=report_date)
+
     scheduled = [
         tracked
         for tracked in active
@@ -401,3 +405,29 @@ def _display_path(path: Path) -> str:
 
 def _now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def check_expiring_hypotheses(active, *, report_date: date) -> None:
+    """扫描即将到期的假设并输出醒目提示"""
+    expiring_soon = []
+    for tracked in active:
+        hypothesis = tracked.hypothesis
+        days_until_deadline = (hypothesis.deadline - report_date).days
+        if 0 < days_until_deadline <= 3:
+            expiring_soon.append((days_until_deadline, hypothesis))
+
+    if not expiring_soon:
+        return
+
+    expiring_soon.sort(key=lambda x: x[0])
+
+    print("\n" + "=" * 70)
+    print("[!] 假设到期预警")
+    print("=" * 70)
+    for days, hypothesis in expiring_soon:
+        deadline_label = "明天" if days == 1 else f"{days}天后"
+        print(f"\n[!] {hypothesis.id} 将于{deadline_label}到期：{hypothesis.claim}")
+        print(f"    标的：{hypothesis.subject.name}")
+        print(f"    到期日：{hypothesis.deadline.isoformat()}")
+        print(f"    建议今天收盘前检查证据")
+    print("\n" + "=" * 70 + "\n")
