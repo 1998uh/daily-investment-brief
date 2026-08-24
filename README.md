@@ -92,11 +92,17 @@ BRIEF_LLM_RETRY_DELAY_SECONDS=2
 
 ### 3. 平台登录与健康检测
 
-微信读书、微博、雪球的 Cookie 通过持久化浏览器 profile 自动管理，**每个平台只需登录一次**，之后 pipeline 启动时自动读取最新 Cookie，无需手动维护。
+微博、雪球的 Cookie 通过持久化浏览器 profile 自动管理，**每个平台只需登录一次**。微信公众号默认使用 WeRead 移动协议扫码登录并自动续期；旧的浏览器 Cookie 方式仍可通过 `--legacy-browser` 使用。
 
 ```powershell
 # 微信读书（微信公众号采集）
 python -m pipeline.cli auth-login --platform weread
+
+# 如需继续使用旧的持久化浏览器 Cookie 登录
+python -m pipeline.cli auth-login --platform weread --legacy-browser
+
+# 可选：导入 WeRead 移动协议凭证（Token 不会写入账号配置）
+python -m pipeline.cli auth-login --platform weread --mobile-credentials path\to\weread_credentials.json
 
 # 微博
 python -m pipeline.cli auth-login --platform weibo
@@ -108,9 +114,17 @@ python -m pipeline.cli auth-login --platform xueqiu
 python -m pipeline.cli auth-login --platform douyin
 ```
   
-运行后会弹出浏览器窗口，完成登录、等页面完全加载后，回到终端按 Enter 保存 session。
+运行 `auth-login --platform weread` 后，二维码会保存到 `data/weread_login_qr.png`；使用微信扫码并确认，终端会自动轮询并保存移动凭证。微博、雪球和抖音仍会弹出浏览器窗口，完成登录后回到终端按 Enter 保存 session。
 
 > session 通常有效 7-30 天。过期后重新运行对应命令扫码一次即可。
+
+微信公众号采集会优先使用 `data/weread_credentials.json` 中的 WeRead 移动协议凭证发现文章；没有移动凭证或移动接口失败时，自动回退到现有浏览器 Cookie/Web API、RSS 和手工 URL。正文仍优先通过现有 `WEREAD_COOKIE` 获取，避免移动接口只返回元数据导致日报缺少原文。
+
+如需暂时关闭移动链路，可设置：
+
+```env
+WEREAD_MOBILE_ENABLED=false
+```
 
 #### Cookie 健康检测
 
@@ -156,12 +170,14 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 
 ### 微信公众号采集排查（`-2041` / `-2010`）
 
-微信公众号采集走微信读书 Web API，常见报错和排查顺序：
+微信公众号采集走微信读书移动协议 + Web API 混合链路，常见报错和排查顺序：
 
 | 报错 | 含义 | 排查方式 |
 |---|---|---|
 | `errCode: -2010` | 未登录/会话失效 | 检查 `WEREAD_COOKIE` 是否包含 `wr_skey`/`wr_vid`/`wr_rt`（缺失说明登录态丢失，重新 `auth-login`） |
 | `errCode: -2041` | 该公众号未同步到账号数据 | 1) 确认已在微信读书里关注该公众号；2) **仅关注不够**，需要在手机微信读书 App 里手动点开该公众号最近一篇文章浏览一次，触发同步后才能被 `/web/mp/articles` 接口读到 |
+
+移动接口可能以 HTTP `499` 返回同一个 `errcode: -2041` JSON；采集器会读取响应体并按风控处理，不再把它误报成普通网络错误。
 
 `-2041` 和"是否关注"没有稳定的对应关系（接口返回的 `follow` 字段不可靠），点开文章浏览一次是目前已知唯一稳定复现有效的解法。
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import date, timedelta
+import json
 from pathlib import Path
 import sys
 
@@ -237,6 +238,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Platform to log in to.",
     )
     auth.add_argument("--profile", help="Override browser profile directory.")
+    auth.add_argument(
+        "--mobile-credentials",
+        help="Import a WeRead mobile credential JSON file instead of opening a browser.",
+    )
+    auth.add_argument(
+        "--legacy-browser",
+        action="store_true",
+        help="Use the legacy persistent browser login for WeRead.",
+    )
 
     prepare = subparsers.add_parser(
         "prepare",
@@ -940,6 +950,30 @@ def dashboard_command(args: argparse.Namespace) -> int:
 
 
 def auth_login_command(args: argparse.Namespace) -> int:
+    if args.platform == "weread" and args.mobile_credentials:
+        from .collectors.weread_mobile import WeReadCredentialStore, WeReadCredentials
+
+        path = Path(args.mobile_credentials)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            credentials = WeReadCredentials.from_payload(payload)
+            WeReadCredentialStore().save(credentials)
+        except (OSError, ValueError, TypeError) as exc:
+            print(f"读取微信读书移动凭证失败: {exc}", file=sys.stderr)
+            return 2
+        print("微信读书移动凭证已保存（Token 不会显示）。")
+        return 0
+
+    if args.platform == "weread" and not args.legacy_browser:
+        from .collectors.weread_auth import login_mobile_interactive
+
+        try:
+            login_mobile_interactive()
+        except Exception as exc:
+            print(f"微信读书移动扫码登录失败: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
     from .collectors.browser import invalidate_cookie_cache, login_persistent_profile
 
     profile = Path(args.profile) if args.profile else None
