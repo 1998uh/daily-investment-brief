@@ -222,7 +222,7 @@ Source health: D:\ai-project\daily-investment-brief\pipeline\health.sqlite
 
 ```powershell
 # 1. 采集文章
-daily-brief collect --date 2026-08-22
+daily-brief collect --date 2026-08-24
 
 # 2. 生成日报文章包，供 Codex 写作
 daily-brief prepare --date 2026-08-15
@@ -276,8 +276,8 @@ reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 daily-brief collect --date 2026-08-15
 
 # 只采集指定平台
-daily-brief collect --date 2026-08-13 --platform wechat   # 微信公众号
-daily-brief collect --date 2026-08-15 --platform xueqiu   # 雪球
+daily-brief collect --date 2026-08-24 --platform wechat   # 微信公众号
+daily-brief collect --date 2026-08-24 --platform xueqiu   # 雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 微博
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
