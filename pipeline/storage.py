@@ -29,10 +29,19 @@ def init_db(db_path: Path = DEFAULT_DB_PATH) -> None:
                 content TEXT NOT NULL,
                 provider TEXT NOT NULL DEFAULT '',
                 fetched_at TEXT NOT NULL,
-                raw_json TEXT NOT NULL DEFAULT ''
+                raw_json TEXT NOT NULL DEFAULT '',
+                review_id TEXT NOT NULL DEFAULT '',
+                content_status TEXT NOT NULL DEFAULT 'ready'
             )
             """
         )
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(articles)")}
+        if "review_id" not in columns:
+            conn.execute("ALTER TABLE articles ADD COLUMN review_id TEXT NOT NULL DEFAULT ''")
+        if "content_status" not in columns:
+            conn.execute(
+                "ALTER TABLE articles ADD COLUMN content_status TEXT NOT NULL DEFAULT 'ready'"
+            )
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS source_health (
@@ -47,9 +56,14 @@ def init_db(db_path: Path = DEFAULT_DB_PATH) -> None:
             """
         )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_articles_window ON articles(published_at)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_articles_review_id ON articles(review_id)")
 
 
 def item_id(item: CollectedItem) -> str:
+    if item.review_id.strip():
+        return hashlib.sha1(
+            f"wechat-review:{item.review_id.strip()}".encode("utf-8")
+        ).hexdigest()
     if item.url.strip():
         return hashlib.sha1(item.url.strip().encode("utf-8")).hexdigest()
     digest = hashlib.sha1(item.content[:2000].encode("utf-8")).hexdigest()
@@ -65,17 +79,24 @@ def upsert_items(items: list[CollectedItem], db_path: Path = DEFAULT_DB_PATH) ->
         for item in items:
             published = item.published_at.isoformat() if item.published_at else ""
             existing = conn.execute(
-                "SELECT length(content) FROM articles WHERE id = ?", (item_id(item),)
+                "SELECT length(content), url, content_status, review_id FROM articles WHERE id = ?",
+                (item_id(item),),
             ).fetchone()
-            if existing and existing[0] and existing[0] >= len(item.content.strip()):
+            if (
+                existing
+                and existing[0] >= len(item.content.strip())
+                and existing[1] == item.url
+                and existing[2] == item.content_status
+                and (not item.review_id.strip() or existing[3] == item.review_id)
+            ):
                 continue
             conn.execute(
                 """
                 INSERT INTO articles (
                     id, source, author, title, url, published_at, content,
-                    provider, fetched_at, raw_json
+                    provider, fetched_at, raw_json, review_id, content_status
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     source = excluded.source,
                     author = excluded.author,
@@ -85,7 +106,9 @@ def upsert_items(items: list[CollectedItem], db_path: Path = DEFAULT_DB_PATH) ->
                     content = excluded.content,
                     provider = excluded.provider,
                     fetched_at = excluded.fetched_at,
-                    raw_json = excluded.raw_json
+                    raw_json = excluded.raw_json,
+                    review_id = excluded.review_id,
+                    content_status = excluded.content_status
                 """,
                 (
                     item_id(item),
@@ -98,6 +121,8 @@ def upsert_items(items: list[CollectedItem], db_path: Path = DEFAULT_DB_PATH) ->
                     item.provider,
                     now,
                     item.raw_json,
+                    item.review_id,
+                    item.content_status,
                 ),
             )
             changed += 1
@@ -123,7 +148,8 @@ def query_items(
         params.append(author)
 
     sql = (
-        "SELECT source, author, title, url, published_at, content, provider, raw_json "
+        "SELECT source, author, title, url, published_at, content, provider, raw_json, "
+        "review_id, content_status "
         f"FROM articles WHERE {' AND '.join(clauses)} ORDER BY published_at DESC, fetched_at DESC"
     )
     with sqlite3.connect(db_path) as conn:
@@ -142,6 +168,8 @@ def query_items(
                 content=row[5],
                 provider=row[6],
                 raw_json=row[7],
+                review_id=row[8],
+                content_status=row[9],
             )
         )
     return items

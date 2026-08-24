@@ -68,3 +68,40 @@ def test_source_health_roundtrip(tmp_path):
             "checked_at": rows[1]["checked_at"],
         },
     ]
+
+
+def test_review_id_is_stable_when_url_is_missing_and_content_is_filled_later(tmp_path):
+    db_path = tmp_path / "articles.sqlite"
+    published = datetime(2026, 7, 16, 9, tzinfo=timezone.utc)
+    metadata = CollectedItem(
+        source="微信公众号",
+        author="author",
+        title="title",
+        url="",
+        published_at=published,
+        content="",
+        provider="wechat_weread_mobile",
+        raw_json='{"reviewId":"review-1"}',
+        review_id="review-1",
+        content_status="pending",
+    )
+    full = CollectedItem(
+        source="微信公众号",
+        author="author",
+        title="title",
+        url="https://mp.weixin.qq.com/s/article-1",
+        published_at=published,
+        content="完整正文",
+        provider="wechat_weread_content",
+        review_id="review-1",
+        content_status="ready",
+    )
+
+    assert upsert_items([metadata], db_path) == 1
+    assert upsert_items([full], db_path) == 1
+
+    items = query_items(published - timedelta(hours=1), published + timedelta(hours=1), db_path=db_path)
+    assert len(items) == 1
+    assert items[0].review_id == "review-1"
+    assert items[0].content == "完整正文"
+    assert items[0].content_status == "ready"

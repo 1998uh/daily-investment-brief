@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import email.utils
+import json
 import os
 from pathlib import Path
 import re
@@ -11,6 +12,13 @@ import xml.etree.ElementTree as ET
 from .accounts import Account
 from .base import CollectedItem, CollectionLog
 from .http import HttpClient, clean_text, extract_title, strip_html
+from .weread_mobile import (
+    AuthExpiredError,
+    RiskControlError,
+    WeReadCredentialStore,
+    WeReadCredentials,
+    WeReadMobileClient,
+)
 from ..cancel import raise_if_cancelled
 from ..config import Settings
 from ..datetime_utils import parse_datetime
@@ -78,6 +86,7 @@ def _weread_headers(book_id: str, *, path: str = "", cookie: str = "") -> dict:
 
 
 _MAX_CONTENT_PER_ACCOUNT = 5
+_MOBILE_DISABLED_VALUES = {"0", "false", "no", "off"}
 
 
 def collect_wechat(
@@ -94,9 +103,39 @@ def collect_wechat(
     client = HttpClient(cookie_env="WECHAT_COOKIE")
     items: list[CollectedItem] = []
 
-    # 优先尝试微信读书 Web API（需要 account.uid 存公众号 book_id，且设置 WEREAD_COOKIE）
+    # Prefer mobile discovery when a persistent mobile credential is available.
     weread_book_id = account.uid if account.uid and account.uid.startswith("MP_WXS_") else ""
-    if weread_book_id and os.getenv("WEREAD_COOKIE"):
+    mobile_credentials = None
+    mobile_enabled = os.getenv("WEREAD_MOBILE_ENABLED", "true").lower()
+    if weread_book_id and mobile_enabled not in _MOBILE_DISABLED_VALUES:
+        try:
+            mobile_credentials = WeReadCredentialStore().load()
+        except Exception as exc:
+            log.add_warning(f"微信公众号 / {account.name}: 移动凭证读取失败，回退旧链路: {exc}")
+
+    if weread_book_id and mobile_credentials:
+        try:
+            items.extend(
+                collect_wechat_mobile(
+                    account,
+                    book_id=weread_book_id,
+                    credentials=mobile_credentials,
+                    window_start=window_start,
+                    window_end=window_end,
+                    settings=settings,
+                    include_undated=include_undated,
+                    limit=limit,
+                    log=log,
+                )
+            )
+        except RiskControlError as exc:
+            log.add_warning(
+                f"微信公众号 / {account.name}: 移动接口触发风控，停止本次移动采集: {exc}"
+            )
+        except Exception as exc:
+            log.add_warning(f"微信公众号 / {account.name}: 移动接口失败，降级到 Web/RSS/URL: {exc}")
+
+    if weread_book_id and os.getenv("WEREAD_COOKIE") and not items:
         try:
             items.extend(
                 collect_wechat_weread(
@@ -114,7 +153,7 @@ def collect_wechat(
             log.add_warning(f"微信公众号 / {account.name}: 微信读书接口失败，降级到 RSS/URL: {exc}")
 
     # RSS 通道（weread 未配置或失败时使用）
-    if not items and account.rss_url:
+    if (not items or not any(item.content.strip() for item in items)) and account.rss_url:
         try:
             items.extend(
                 collect_wechat_rss(
@@ -136,7 +175,13 @@ def collect_wechat(
         if len(items) >= limit:
             break
         try:
-            item = fetch_wechat_article(account, url, client=client, settings=settings, reference=window_end)
+            item = fetch_wechat_article(
+                account,
+                url,
+                client=client,
+                settings=settings,
+                reference=window_end,
+            )
         except Exception as exc:
             log.add_warning(f"微信公众号 / {account.name}: 抓取文章失败 {url}: {exc}")
             continue
@@ -152,7 +197,114 @@ def collect_wechat(
     else:
         log.add_info(f"微信公众号 / {account.name}: 采集 {len(items)} 条")
 
+    # Prefer entries with正文 when fallback channels add usable content to mobile metadata.
+    items.sort(key=lambda item: bool(item.content.strip()), reverse=True)
     return items[:limit]
+
+
+def collect_wechat_mobile(
+    account: Account,
+    *,
+    book_id: str,
+    credentials: WeReadCredentials,
+    window_start: datetime,
+    window_end: datetime,
+    settings: Settings,
+    include_undated: bool,
+    limit: int,
+    log: CollectionLog,
+) -> list[CollectedItem]:
+    """Use the WeRead mobile protocol for discovery and the existing paths for content."""
+    raise_if_cancelled()
+    client = WeReadMobileClient(credentials=credentials)
+    try:
+        metadata = client.fetch_recent_articles(book_id, limit=max(limit, 20))
+    except AuthExpiredError:
+        # Refresh once, then replay the original list request; never loop on auth errors.
+        refreshed = client.refresh()
+        WeReadCredentialStore().save(refreshed)
+        metadata = client.fetch_recent_articles(book_id, limit=max(limit, 20))
+    items: list[CollectedItem] = []
+    public_client = HttpClient(cookie_env="WECHAT_COOKIE")
+    weread_content_client = HttpClient(cookie_env="WEREAD_COOKIE")
+    content_fetched = 0
+    for article in metadata:
+        raise_if_cancelled()
+        if len(items) >= limit:
+            break
+        if article.publish_at and article.publish_at < window_start:
+            break
+        if article.publish_at and article.publish_at >= window_end:
+            continue
+        if article.publish_at is None and not include_undated:
+            continue
+
+        url = article.url
+        if not url and article.review_id:
+            try:
+                url = client.resolve_article_url(article.review_id)
+            except Exception as exc:
+                log.add_warning(
+                    f"微信公众号 / {account.name}: 原文 URL 回填失败 {article.review_id}: {exc}"
+                )
+
+        content = ""
+        provider = "wechat_weread_mobile"
+        content_status = "pending"
+        if (
+            article.review_id
+            and os.getenv("WEREAD_COOKIE")
+            and content_fetched < _MAX_CONTENT_PER_ACCOUNT
+        ):
+            try:
+                content_html_page = weread_content_client.get_text(
+                    f"{_WEREAD_CONTENT}?reviewId={article.review_id}",
+                    headers=_weread_headers(
+                        book_id,
+                        path=f"/web/mp/content?reviewId={article.review_id}",
+                        cookie=os.getenv("WEREAD_COOKIE", ""),
+                    ),
+                )
+                raw_html = extract_wechat_content_html(content_html_page)
+                content = strip_html(raw_html) if raw_html else ""
+                content_fetched += 1
+                provider = "wechat_weread_content"
+                content_status = "ready" if content.strip() else "failed"
+            except Exception as exc:
+                log.add_warning(
+                    f"微信公众号 / {account.name}: 微信读书正文获取失败 {article.review_id}: {exc}"
+                )
+
+        if not content and url:
+            try:
+                fetched = fetch_wechat_article(
+                    account,
+                    url,
+                    client=public_client,
+                    settings=settings,
+                    reference=window_end,
+                )
+                content = fetched.content
+                provider = "wechat_public_url"
+                content_status = "ready" if content.strip() else "failed"
+            except Exception as exc:
+                log.add_warning(f"微信公众号 / {account.name}: 原文正文获取失败 {url}: {exc}")
+
+        items.append(
+            CollectedItem(
+                source="微信公众号",
+                author=article.author or account.name,
+                title=clean_text(article.title) or account.name,
+                url=url,
+                published_at=article.publish_at,
+                content=content,
+                provider=provider,
+                raw_json=json.dumps(article.raw or {}, ensure_ascii=False),
+                review_id=article.review_id,
+                content_status=content_status,
+            )
+        )
+    return items
 
 
 def collect_wechat_weread(

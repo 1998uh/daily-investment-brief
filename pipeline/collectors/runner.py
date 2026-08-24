@@ -24,13 +24,13 @@ from ..storage import query_items, record_source_health, upsert_items
 PLATFORM_CONCURRENCY: dict[str, int] = {
     "雪球": 3,
     "微博": 2,
-    "微信公众号": 4,
+    "微信公众号": 1,
     "抖音": 2,
 }
 PLATFORM_DELAY: dict[str, tuple[float, float]] = {
     "雪球": (2.0, 5.0),
     "微博": (1.0, 3.0),
-    "微信公众号": (0.5, 1.0),
+    "微信公众号": (2.0, 3.0),
     "抖音": (3.0, 6.0),  # 抖音反爬较严格，延时更长
 }
 DEFAULT_CONCURRENCY = 2
@@ -158,6 +158,10 @@ def collect_to_sources(
             export_items.extend(item for item in items if item.published_at is None)
     else:
         export_items = items
+    # Mobile WeRead discovery may cache metadata before正文补齐；日报输入只导出有正文的公众号文章。
+    export_items = [
+        item for item in export_items if item.source != "微信公众号" or item.content.strip()
+    ]
     written = write_items(export_items, out_dir)
     log.add_info(
         f"新增/更新缓存: {changed} / 实时采集条目: {len(items)} / 导出条目: {len(export_items)}"
@@ -355,8 +359,10 @@ def validate_accounts(accounts: list[Account], log: CollectionLog) -> None:
     for account in accounts:
         if account.source in {"雪球", "微博"} and not (account.uid or account.url):
             log.add_warning(f"{account.source} / {account.name}: 需要补 uid 或主页 url")
-        if account.source == "微信公众号" and not (account.urls or account.rss_url):
-            log.add_warning(f"{account.source} / {account.name}: 需要补 urls 或 rss_url")
+        if account.source == "微信公众号" and not (
+            account.uid.startswith("MP_WXS_") or account.urls or account.rss_url
+        ):
+            log.add_warning(f"{account.source} / {account.name}: 需要补 uid(book_id)、urls 或 rss_url")
         if account.source == "抖音" and not (account.uid or account.url):
             log.add_warning(f"{account.source} / {account.name}: 需要补 uid(sec_user_id) 或主页 url")
 
@@ -420,6 +426,9 @@ def collect_single_account(
             export_items.extend(item for item in items if item.published_at is None)
     else:
         export_items = items
+    export_items = [
+        item for item in export_items if item.source != "微信公众号" or item.content.strip()
+    ]
     written = write_items(export_items, out_dir)
     log.add_info(
         f"新增/更新缓存: {changed} / 实时采集条目: {len(items)} / 导出条目: {len(export_items)}"

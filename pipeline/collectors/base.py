@@ -15,6 +15,8 @@ class CollectedItem:
     content: str
     provider: str = ""
     raw_json: str = ""
+    review_id: str = ""
+    content_status: str = "ready"
 
 
 @dataclass
