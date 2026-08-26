@@ -137,6 +137,109 @@ WEREAD_MOBILE_ENABLED=false
 daily-brief source-health
 ```
 
+### Docker 常驻雪球/微博采集
+
+雪球和微博可以由独立的 Docker 服务后台持续采集。后台文章按自然发布日期归档到 `sources/_raw/<date>/`，同时写入 SQLite；`_raw` 只供人工检查，不直接进入日报。生成日报前使用 `materialize` 按 08:00 窗口重建正式的 `sources/<日报日期>/`。首次部署时准备两个仅包含 Cookie 文本的文件（不要提交到 Git）：
+
+```text
+secrets/xueqiu_cookie.txt
+secrets/weibo_cookie.txt
+```
+
+启动常驻服务：
+
+```powershell
+docker compose up -d social-collector
+docker compose logs -f social-collector
+```
+
+默认每 30 分钟轮询一次，保留最近 48 小时窗口，按时间边界持续翻页（单账号最多扫描 2,000 条原始动态），过滤回复和转发。雪球时间线返回长文摘要时，容器内的无头 Chromium 会补取全文；仍失败的记录标记为 `content_status: partial`，后续轮询继续补全。文章写入 `data/articles.sqlite` 并按发布日期归档到 `sources/_raw/YYYY-MM-DD/`。查看后台健康状态：
+
+```powershell
+daily-brief social-health
+```
+
+如果雪球或微博登录态失效，只需在宿主机浏览器重新登录并替换对应的 Cookie 文件；容器下一轮会自动读取新文件，无需重建或重启容器。需要立即重新探测时再执行：
+
+```powershell
+docker compose restart social-collector
+```
+
+Docker 服务不保存账号密码；Chromium 只复用用户自己的登录 Cookie 访问正常页面和接口。Cookie 真正失效时仍需要人工更新一次。`social-health` 与容器 healthcheck 同时检查账号错误和状态新鲜度，不再只检查数据库文件是否存在。
+
+#### 如何判断雪球或微博无法获取数据
+
+日常检查使用以下三条命令：
+
+```powershell
+docker compose ps
+python -m pipeline.cli social-health
+docker compose logs --since 2h social-collector | Select-String "social pass:|ERROR|failed"
+```
+
+第一层检查 Docker 服务是否存活。`docker compose ps` 的正常状态应为：
+
+```text
+Up ... (healthy)
+```
+
+常见异常状态：
+
+| 状态 | 含义 |
+|---|---|
+| `healthy` | 容器正在运行，最近的平台健康记录也有效 |
+| `unhealthy` | 存在平台采集错误或健康记录长期未更新 |
+| `Restarting` | 采集进程持续崩溃并被 Docker 重启 |
+| 没有容器 | Docker Desktop 或 `social-collector` 尚未启动 |
+
+第二层运行真实平台健康检查：
+
+```powershell
+python -m pipeline.cli social-health
+$LASTEXITCODE
+```
+
+健康状态与退出码：
+
+| 输出 | 含义 |
+|---|---|
+| `ok` | 最近一次账号采集正常 |
+| `error` | Cookie、接口或请求明确失败，后面会显示 `message` |
+| `stale` | 超过健康阈值没有更新，后台可能已停止或本轮卡住 |
+| 退出码 `0` | 所有雪球、微博账号状态正常且未过期 |
+| 退出码 `1` | 至少一个账号异常、状态过期，或尚无健康记录 |
+
+默认轮询周期为 30 分钟；健康记录超过约 65 分钟没有更新时判定为 `stale`。可通过 `SOCIAL_COLLECTOR_STALE_SECONDS` 调整阈值。
+
+第三层检查每轮汇总日志。正常日志类似：
+
+```text
+social pass: accounts=25 items=95 changed=2 written=2 errors=0
+```
+
+字段含义：
+
+| 字段 | 含义 |
+|---|---|
+| `accounts` | 本轮处理的雪球、微博账号数量 |
+| `items` | 最近 48 小时窗口内发现的有效原创/长文数量 |
+| `changed` | SQLite 新增或补全的文章数量 |
+| `written` | 新建或更新的 Markdown 文件数量 |
+| `errors` | 本轮发生明确采集错误的账号数量 |
+
+`errors=0` 表示本轮没有明确错误；`errors>0` 时应立即查看同一时间段的详细日志和 `social-health`。`changed=0`、`written=0` 通常只表示没有新文章，并不等于失败。
+
+单个账号显示 `ok ... count=0` 也不一定是故障，可能是作者最近 48 小时没有发布原创，或只发布了回复、转发和被过滤的低质量内容。以下信号才可明确判断平台无法正常获取：
+
+- 雪球 Cookie 缺少 `xq_a_token`，或微博 Cookie 缺少 `SUB`；
+- 返回 HTTP `401`、`403`、登录过期或“请先登录”；
+- 第一页请求失败、响应不是 JSON、API 返回错误；
+- `social-health` 显示 `error` 或 `stale`；
+- 日志中的 `errors` 连续大于 0；
+- 同一平台所有账号连续多轮都变成 `count=0` 或平台总 `items=0`。
+
+建议的正常判据是：容器为 `healthy`、`social-health` 退出码为 `0`、最近一轮 `errors=0`，并且雪球或微博没有出现全平台连续多轮为 0 的异常突降。
+
 输出示例：
 
 ```text
@@ -221,17 +324,25 @@ Source health: D:\ai-project\daily-investment-brief\pipeline\health.sqlite
 #### A. 每日主流程：先生成日报
 
 ```powershell
-# 1. 采集文章
-daily-brief collect --date 2026-08-25
+# 1. 检查后台雪球/微博并补采微信公众号
+daily-brief social-health
+daily-brief collect --date 2026-08-27 --platform wechat
 
-# 2. 生成日报文章包，供 Codex 写作
-daily-brief prepare --date 2026-08-15
+# 2. 按 08:00 日报窗口从 SQLite 重建正式输入目录
+daily-brief materialize --date 2026-08-27
+
+# 3. 生成日报文章包，供 Codex 写作
+daily-brief prepare --date 2026-08-27
 
 # 由 Codex 读取 article-pack.md，生成 daily-brief.md
 
-# 3. 只校验日报本身，不要求假设和证据文件
-daily-brief validate --date 2026-08-15 --report-only
+# 4. 只校验日报本身，不要求假设和证据文件
+daily-brief validate --date 2026-08-27 --report-only
 ```
+
+`materialize` 是日期归属的唯一正式步骤。它查询 `[前一日 08:00, 当日 08:00)`，原子重建
+`sources/<日报日期>/`，并输出雪球、微博、微信公众号数量。不要让 Codex 根据 `_raw` 文件夹自行判断日期，
+也不要因为目标目录已经存在就跳过物化。
 
 #### B. 可选流程：需要时再验证假设
 
@@ -273,7 +384,7 @@ reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-08-15
+daily-brief collect --date 2026-08-26
 
 # 只采集指定平台
 daily-brief collect --date 2026-08-24 --platform wechat   # 微信公众号

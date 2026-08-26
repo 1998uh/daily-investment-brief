@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/playwright/python:v1.62.0-noble
+
+WORKDIR /app
+
+COPY pipeline ./pipeline
+COPY config ./config
+
+RUN pip install --no-cache-dir --timeout 120 \
+    --index-url https://pypi.tuna.tsinghua.edu.cn/simple \
+    "PyYAML>=6.0" "requests>=2.31" "qrcode>=7.4" "Pillow>=10.0" \
+    "tzdata>=2024.1" "html2text>=2024.2.26" "playwright==1.62.0"
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV SOCIAL_COLLECTOR_INTERVAL_SECONDS=1800
+ENV SOCIAL_COLLECTOR_LOOKBACK_HOURS=48
+
+CMD ["python", "-m", "pipeline.social_daemon"]

@@ -9,7 +9,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_env(path: Path | None = None) -> None:
+def load_env(path: Path | None = None, *, inject_cookies: bool = True) -> None:
     env_path = path or ROOT / ".env"
     if env_path.exists():
         for raw_line in env_path.read_text(encoding="utf-8").splitlines():
@@ -21,7 +21,17 @@ def load_env(path: Path | None = None) -> None:
             value = value.strip().strip('"').strip("'")
             os.environ.setdefault(key, value)
 
-    # 从各平台 browser profile 提取最新 Cookie，覆盖注入（profile 不存在时静默跳过）
+    if not inject_cookies:
+        return
+
+    # 容器/后台服务优先从挂载文件注入；显式环境变量仍保持最高优先级。
+    try:
+        from .collectors.auth import inject_platform_cookie_files
+        inject_platform_cookie_files()
+    except Exception:
+        pass
+
+    # 从各平台 browser profile 提取最新 Cookie（profile 不存在时静默跳过）
     try:
         from .collectors.browser import inject_browser_cookies
         inject_browser_cookies()
@@ -56,8 +66,8 @@ class Settings:
         return bool(self.base_url and self.model)
 
 
-def get_settings() -> Settings:
-    load_env()
+def get_settings(*, inject_cookies: bool = True) -> Settings:
+    load_env(inject_cookies=inject_cookies)
     return Settings(
         base_url=os.getenv("BRIEF_BASE_URL", "").rstrip("/"),
         model=os.getenv("BRIEF_MODEL", ""),

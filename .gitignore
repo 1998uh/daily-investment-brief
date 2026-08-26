@@ -8,6 +8,7 @@ __pycache__/
 .mypy_cache/
 config/accounts*.json
 !config/accounts.example.json
+secrets/
 
 sources/
 data/

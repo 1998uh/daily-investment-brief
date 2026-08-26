@@ -34,7 +34,7 @@ def is_reply_item(item: CollectedItem) -> bool:
 
 def _write_normal_items(items: list[CollectedItem], out_dir: Path) -> list[Path]:
     written: list[Path] = []
-    existing = load_existing_files(out_dir)  # key -> (path, content_length)
+    existing = load_existing_files(out_dir)  # key -> (path, content_length, content_status)
 
     for item in items:
         key = item.url.strip() or content_key(item)
@@ -42,18 +42,18 @@ def _write_normal_items(items: list[CollectedItem], out_dir: Path) -> list[Path]
         new_body_len = len(item.content.strip())
 
         if key in existing:
-            old_path, old_body_len = existing[key]
-            if new_body_len > old_body_len * 1.2:
-                # 新内容明显更长（>20%），覆盖旧文件
+            old_path, old_body_len, old_status = existing[key]
+            if new_body_len > old_body_len * 1.2 or old_status != item.content_status:
+                # 正文显著增长或完整性状态变化时覆盖旧文件。
                 old_path.write_text(new_content, encoding="utf-8")
-                existing[key] = (old_path, new_body_len)
+                existing[key] = (old_path, new_body_len, item.content_status)
                 written.append(old_path)
             continue
 
         filename = make_filename(item)
         path = unique_path(out_dir / filename)
         path.write_text(new_content, encoding="utf-8")
-        existing[key] = (path, new_body_len)
+        existing[key] = (path, new_body_len, item.content_status)
         written.append(path)
 
     return written
@@ -113,9 +113,9 @@ def make_reply_group_filename(source: str, author: str, date_str: str) -> str:
     return f"{source_slug}-{name_slug}-回复合集-{date_str}-{digest}.md"
 
 
-def load_existing_files(out_dir: Path) -> dict[str, tuple[Path, int]]:
-    """加载已有文件的 key -> (path, 正文长度) 映射。"""
-    files: dict[str, tuple[Path, int]] = {}
+def load_existing_files(out_dir: Path) -> dict[str, tuple[Path, int, str]]:
+    """加载已有文件的 key -> (path, 正文长度, 完整性状态) 映射。"""
+    files: dict[str, tuple[Path, int, str]] = {}
     for path in out_dir.glob("*.md"):
         text = path.read_text(encoding="utf-8", errors="replace")
         url_match = re.search(r"^url:\s*(.*?)$", text, re.MULTILINE)
@@ -126,7 +126,9 @@ def load_existing_files(out_dir: Path) -> dict[str, tuple[Path, int]]:
         # 正文在 front matter 之后（第二个 --- 之后）
         parts = text.split("---", 2)
         body = parts[2].strip() if len(parts) >= 3 else text
-        files[key] = (path, len(body))
+        status_match = re.search(r"^content_status:\s*(.*?)$", text, re.MULTILINE)
+        content_status = status_match.group(1).strip() if status_match else "ready"
+        files[key] = (path, len(body), content_status)
     return files
 
 
@@ -139,6 +141,7 @@ title: {escape_front_matter(item.title)}
 url: {item.url}
 published_at: {published}
 provider: {item.provider}
+content_status: {item.content_status}
 collected_at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 ---
 

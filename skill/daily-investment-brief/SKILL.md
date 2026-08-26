@@ -39,13 +39,18 @@ PART-B 独立运行，不受普通日报的三平台门禁影响，也不得从�
 
 ### 1. 先生成日报
 
-日期未指定时用本地当前日期。若 `sources/YYYY-MM-DD/` 为空，先运行：
+日期未指定时用本地当前日期。后台雪球/微博按自然日归档到 `sources/_raw/YYYY-MM-DD/`，
+该目录只供人工检查，不是日报输入。即使 `sources/YYYY-MM-DD/` 已存在，也必须先执行：
 
 ```powershell
-python -m pipeline.cli collect --date YYYY-MM-DD
+python -m pipeline.cli social-health
+python -m pipeline.cli collect --date YYYY-MM-DD --platform wechat
+python -m pipeline.cli materialize --date YYYY-MM-DD
 ```
 
-通过三平台门禁后，生成日报所需的文章包。日报主流程不等待假设取证，也不要求先完成历史假设验证。
+`materialize` 从 SQLite 查询 `[前一日 08:00, 当日 08:00)` 并原子重建正式输入目录。
+Codex 不得自行遍历 `_raw` 或跨日期目录判断归属。任一平台为 0 或 `social-health` 非 0 时执行
+三平台门禁；通过后再生成日报文章包。日报主流程不等待假设取证，也不要求先完成历史假设验证。
 
 ### 强制写作契约
 

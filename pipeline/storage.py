@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import hashlib
 import json
@@ -202,7 +202,7 @@ def record_source_health(
                 1 if ok else 0,
                 count,
                 message[:500],
-                datetime.now().isoformat(timespec="seconds"),
+                datetime.now(timezone.utc).isoformat(timespec="seconds"),
             ),
         )
 

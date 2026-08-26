@@ -14,7 +14,7 @@ from .douyin import collect_douyin
 from .weibo import collect_weibo
 from .wechat import collect_wechat, collect_wechat_manual_urls
 from .writer import write_items
-from .xueqiu import collect_xueqiu
+from .xueqiu import collect_xueqiu, is_cached_xueqiu_reply_or_retweet
 from ..cancel import PipelineCancelled, interruptible_sleep, is_cancelled, raise_if_cancelled
 from ..config import ROOT, Settings
 from ..datetime_utils import brief_window, format_window_cn
@@ -160,7 +160,10 @@ def collect_to_sources(
         export_items = items
     # Mobile WeRead discovery may cache metadata before正文补齐；日报输入只导出有正文的公众号文章。
     export_items = [
-        item for item in export_items if item.source != "微信公众号" or item.content.strip()
+        item
+        for item in export_items
+        if (item.source != "微信公众号" or item.content.strip())
+        and not is_cached_xueqiu_reply_or_retweet(item)
     ]
     written = write_items(export_items, out_dir)
     log.add_info(
@@ -427,7 +430,10 @@ def collect_single_account(
     else:
         export_items = items
     export_items = [
-        item for item in export_items if item.source != "微信公众号" or item.content.strip()
+        item
+        for item in export_items
+        if (item.source != "微信公众号" or item.content.strip())
+        and not is_cached_xueqiu_reply_or_retweet(item)
     ]
     written = write_items(export_items, out_dir)
     log.add_info(

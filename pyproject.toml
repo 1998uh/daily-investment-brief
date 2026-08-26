@@ -8,6 +8,7 @@ dependencies = [
     "mcp>=1.12",
     "PyYAML>=6.0",
     "requests>=2.31",
+    "html2text>=2024.2.26",
     "qrcode>=7.4",
     "Pillow>=10.0",
     "tzdata>=2024.1",

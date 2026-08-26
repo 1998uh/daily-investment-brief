@@ -117,6 +117,25 @@ _thread_lock = threading.Lock()
 _shutdown = False
 
 
+def _cookie_header_to_browser_cookies(cookie: str) -> list[dict[str, str]]:
+    cookies: list[dict[str, str]] = []
+    for part in (cookie or "").split(";"):
+        part = part.strip()
+        if "=" not in part:
+            continue
+        name, value = part.split("=", 1)
+        if name.strip():
+            cookies.append(
+                {
+                    "name": name.strip(),
+                    "value": value.strip(),
+                    "domain": ".xueqiu.com",
+                    "path": "/",
+                }
+            )
+    return cookies
+
+
 def _pw_worker() -> None:
     """Playwright 专用线程的主循环。
 
@@ -126,6 +145,7 @@ def _pw_worker() -> None:
     context = None
     page = None
     waf_passed = False
+    active_cookie: str | None = None
 
     try:
         pw = sync_playwright().start()
@@ -145,23 +165,6 @@ def _pw_worker() -> None:
         )
         log.debug("Playwright worker: Chromium persistent context 已启动")
 
-        # 设置 cookie
-        cookie = os.getenv("XUEQIU_COOKIE", "")
-        cookies = []
-        for part in cookie.split(";"):
-            part = part.strip()
-            if "=" in part:
-                k, v = part.split("=", 1)
-                cookies.append({
-                    "name": k.strip(),
-                    "value": v.strip(),
-                    "domain": ".xueqiu.com",
-                    "path": "/",
-                })
-
-        if cookies:
-            context.add_cookies(cookies)
-
         page = context.new_page()
 
         # 处理请求队列
@@ -177,6 +180,17 @@ def _pw_worker() -> None:
             if api_url == "__SHUTDOWN__":
                 event.set()
                 break
+
+            # Mounted Cookie files can rotate while the daemon is running.
+            # Refresh the persistent browser context before the next fetch.
+            current_cookie = os.getenv("XUEQIU_COOKIE", "")
+            if current_cookie != active_cookie:
+                context.clear_cookies()
+                cookies = _cookie_header_to_browser_cookies(current_cookie)
+                if cookies:
+                    context.add_cookies(cookies)
+                active_cookie = current_cookie
+                waf_passed = False
 
             # 首次使用时通过 WAF
             if not waf_passed:
@@ -506,7 +520,7 @@ def inject_weread_cookie() -> bool:
 
 
 def inject_browser_cookies() -> None:
-    """从各平台 browser profile 提取最新 Cookie，覆盖注入到环境变量。
+    """从各平台 browser profile 提取 Cookie，补充注入到空的环境变量。
 
     支持 weread / weibo / xueqiu / douyin，profile 不存在时静默跳过。
     """
@@ -518,6 +532,13 @@ def inject_browser_cookies() -> None:
     ]
     for platform, env_key, urls in _PLATFORM_CONFIG:
         cookie = extract_platform_cookie(platform, urls)
-        if cookie:
+        # Explicit environment/file credentials take precedence over a stale
+        # browser-profile extraction. This is important for long-running Docker
+        # collectors whose mounted cookie file may be rotated at runtime.
+        if (
+            cookie
+            and not os.getenv(env_key, "").strip()
+            and not os.getenv(f"{env_key}_FILE", "").strip()
+        ):
             os.environ[env_key] = cookie
             log.debug(f"{env_key} 已从 browser profile 自动注入")

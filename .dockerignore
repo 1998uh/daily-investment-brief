@@ -1,0 +1,11 @@
+.git
+.venv
+.browser-profiles
+data
+sources
+reports
+secrets
+.env
+__pycache__
+*.pyc
+tests

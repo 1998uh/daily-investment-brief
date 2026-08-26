@@ -115,3 +115,31 @@ def test_write_items_reply_group_is_idempotent(tmp_path):
     assert len(first) == 1
     assert len(second) == 0
     assert len(list(tmp_path.glob("*.md"))) == 1
+
+
+def test_write_items_overwrites_when_content_becomes_ready_without_large_growth(tmp_path):
+    published = datetime(2026, 8, 3, 9, tzinfo=timezone.utc)
+    partial = _item(
+        title="长文",
+        content="摘要正文，长度已经接近详情。",
+        published_at=published,
+        url="https://xueqiu.com/1/99",
+    )
+    partial = CollectedItem(**{**partial.__dict__, "content_status": "partial"})
+    ready = CollectedItem(
+        **{
+            **partial.__dict__,
+            "content": "摘要正文，长度已经接近详情。",
+            "provider": "xueqiu_full",
+            "content_status": "ready",
+        }
+    )
+
+    first = write_items([partial], tmp_path)
+    second = write_items([ready], tmp_path)
+
+    assert len(first) == 1
+    assert second == first
+    text = first[0].read_text(encoding="utf-8")
+    assert "content_status: ready" in text
+    assert "provider: xueqiu_full" in text

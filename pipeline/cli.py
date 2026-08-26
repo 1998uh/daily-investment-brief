@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -36,6 +37,12 @@ def main(argv: list[str] | None = None) -> int:
                 return dashboard_command(args)
             if args.command == "auth-login":
                 return auth_login_command(args)
+            if args.command == "social-daemon":
+                return social_daemon_command(args)
+            if args.command == "social-health":
+                return social_health_command(args)
+            if args.command == "materialize":
+                return materialize_command(args)
             if args.command == "prepare":
                 return prepare_command(args)
             if args.command == "verify":
@@ -248,6 +255,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="Use the legacy persistent browser login for WeRead.",
     )
 
+    daemon = subparsers.add_parser(
+        "social-daemon", help="Run the persistent Xueqiu/Weibo collector."
+    )
+    daemon.add_argument("--accounts", help="Account config JSON path.")
+    daemon.add_argument("--output-root", help="Date-partitioned source output root.")
+    daemon.add_argument("--db", help="SQLite article database path.")
+    daemon.add_argument("--interval-seconds", type=int, help="Polling interval; default 1800.")
+    daemon.add_argument("--lookback-hours", type=int, help="Rolling collection window; default 48.")
+    daemon.add_argument("--limit", type=int, default=1000, help="Safety cap per account per pass.")
+
+    social_health = subparsers.add_parser(
+        "social-health", help="Show persistent Xueqiu/Weibo collector health."
+    )
+    social_health.add_argument("--db", help="SQLite article database path.")
+
+    materialize = subparsers.add_parser(
+        "materialize", help="Build an exact report-window source directory from SQLite."
+    )
+    materialize.add_argument("--date", required=True, help="Report date, e.g. 2026-08-27.")
+    materialize.add_argument("--db", help="SQLite article database path.")
+    materialize.add_argument("--out-dir", help="Output directory; defaults to sources/<date>.")
+
     prepare = subparsers.add_parser(
         "prepare",
         help="Prepare compact Codex context, evidence tasks, and article pack.",
@@ -348,9 +377,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def collect_command(args: argparse.Namespace) -> int:
-    from .collectors.browser import inject_browser_cookies
-    inject_browser_cookies()
-
     # --start-date / --end-date 范围采集
     if args.start_date:
         if not args.end_date:
@@ -979,6 +1005,90 @@ def auth_login_command(args: argparse.Namespace) -> int:
     profile = Path(args.profile) if args.profile else None
     login_persistent_profile(args.platform, profile_dir=profile)
     invalidate_cookie_cache(args.platform)
+    return 0
+
+
+def social_daemon_command(args: argparse.Namespace) -> int:
+    from .social_daemon import run_forever
+
+    run_forever(
+        accounts_path=Path(args.accounts) if args.accounts else ROOT / "config" / "accounts.json",
+        output_root=(
+            Path(args.output_root) if args.output_root else ROOT / "sources" / "_raw"
+        ),
+        db_path=Path(args.db) if args.db else ROOT / "data" / "articles.sqlite",
+        interval_seconds=args.interval_seconds,
+        lookback_hours=args.lookback_hours,
+        limit=args.limit,
+    )
+    return 0
+
+
+def social_health_command(args: argparse.Namespace) -> int:
+    from .storage import DEFAULT_DB_PATH, load_source_health
+
+    db_path = Path(args.db) if args.db else DEFAULT_DB_PATH
+    rows = [row for row in load_source_health(db_path) if row["source"] in {"雪球", "微博"}]
+    if not rows:
+        print(f"No social collector health records found in {db_path}")
+        return 1
+    print(f"Social collector health: {db_path}")
+    interval = int(os.getenv("SOCIAL_COLLECTOR_INTERVAL_SECONDS", "1800"))
+    stale_seconds = int(
+        os.getenv("SOCIAL_COLLECTOR_STALE_SECONDS", str(max(3600, interval * 2 + 300)))
+    )
+    all_ok = True
+    for row in rows:
+        try:
+            checked_at = datetime.fromisoformat(str(row["checked_at"]))
+            now = datetime.now(checked_at.tzinfo) if checked_at.tzinfo else datetime.now()
+            stale = now - checked_at > timedelta(seconds=stale_seconds)
+        except (TypeError, ValueError):
+            stale = True
+        if stale:
+            status = "stale"
+            all_ok = False
+        elif row["ok"]:
+            status = "ok"
+        else:
+            status = "error"
+            all_ok = False
+        print(
+            f"- {status} {row['source']} / {row['author']} "
+            f"count={row['count']} checked_at={row['checked_at']}"
+        )
+        if row["message"]:
+            print(f"  message: {row['message']}")
+    return 0 if all_ok else 1
+
+
+def materialize_command(args: argparse.Namespace) -> int:
+    from .materialize import materialize_daily_sources
+    from .storage import DEFAULT_DB_PATH
+
+    report_date = date.fromisoformat(args.date)
+    settings = get_settings(inject_cookies=False)
+    result = materialize_daily_sources(
+        report_date=report_date,
+        db_path=Path(args.db) if args.db else DEFAULT_DB_PATH,
+        out_dir=Path(args.out_dir) if args.out_dir else ROOT / "sources" / args.date,
+        timezone_name=settings.timezone,
+        window_start=settings.window_start,
+        window_end=settings.window_end,
+    )
+    print(
+        f"Materialized window: {result.window_start:%Y-%m-%d %H:%M} ~ "
+        f"{result.window_end:%Y-%m-%d %H:%M} ({settings.timezone})"
+    )
+    for source in ("雪球", "微博", "微信公众号"):
+        print(f"- {source}: {result.counts[source]}")
+    print(f"Written files: {len(result.written)} -> {result.output_dir}")
+    if result.missing_sources:
+        print(
+            "[error] 日报数据源不完整: " + ", ".join(result.missing_sources),
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 

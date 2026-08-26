@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import re
+import json
 
 from .accounts import Account
 from .base import CollectedItem, CollectionLog
@@ -157,7 +158,7 @@ def _fetch_timeline(
     clog: CollectionLog,
     seen_ids: set[str],
     label: str,
-    max_pages: int = 10,
+    max_pages: int = 100,
 ) -> list[CollectedItem]:
     """从指定 API 端点翻页采集，跳过 seen_ids 中已有的条目。"""
     items: list[CollectedItem] = []
@@ -184,9 +185,14 @@ def _fetch_timeline(
             break
 
         page_timestamps: list[datetime | None] = []
-        valid_items_in_page = 0  # 记录本页有效解析的数量
         for status in statuses:
             raise_if_cancelled()
+            raw_published_at = parse_datetime(
+                status.get("created_at"),
+                reference=window_end,
+                timezone_name=settings.timezone,
+            )
+            page_timestamps.append(raw_published_at)
             sid = str(status.get("id") or "")
             if sid and sid in seen_ids:
                 continue
@@ -194,10 +200,8 @@ def _fetch_timeline(
             item = _parse_status(status, account, uid, window_end, settings, client, clog, fetch_full=False)
             if not item:
                 continue
-            valid_items_in_page += 1
             if sid:
                 seen_ids.add(sid)
-            page_timestamps.append(item.published_at)
             if item.published_at is None:
                 if include_undated:
                     # 日期未知也尝试获取全文
@@ -210,11 +214,6 @@ def _fetch_timeline(
                 items.append(item)
             if len(items) >= limit:
                 break
-
-        # 如果本页返回了数据但没有一个有效解析，避免无限循环
-        if statuses and valid_items_in_page == 0:
-            clog.add_warning(f"雪球 / {account.name}: {label} 第 {page} 页返回 {len(statuses)} 条数据但无有效解析，停止翻页")
-            break
 
         dated = [t for t in page_timestamps if t is not None]
         if dated and all(t < window_start for t in dated):
@@ -238,9 +237,18 @@ def _upgrade_full_text(
 ) -> CollectedItem:
     """对已在窗口内的条目补充获取全文，返回更新后的 item。"""
     full_content = _fetch_full_text(status, status_id, uid, client, clog, author)
-    if full_content and len(full_content) > len(item.content):
-        from dataclasses import replace
-        return replace(item, content=full_content)
+    from dataclasses import replace
+
+    if full_content:
+        content = full_content if len(full_content) > len(item.content) else item.content
+        return replace(
+            item,
+            content=content,
+            provider="xueqiu_full",
+            content_status="ready",
+        )
+    if _needs_full_text(status):
+        return replace(item, provider="xueqiu_summary", content_status="partial")
     return item
 
 
@@ -250,11 +258,10 @@ def _upgrade_full_text(
 
 def _is_reply_or_junk(status: dict, content: str) -> bool:
     """判断是否为回复、转发或系统生成的低质量内容，应跳过。"""
-    # 1. API 字段过滤：reply_id 非空 → 回复
-    reply_id = status.get("reply_id")
-    if reply_id and str(reply_id) != "0":
+    if _is_reply_or_retweet(status, content):
         return True
 
+    # 1. API 字段过滤：reply_id 非空 → 回复
     # 2. 文本特征过滤
     stripped = content.strip()
     junk_prefixes = (
@@ -267,16 +274,37 @@ def _is_reply_or_junk(status: dict, content: str) -> bool:
     )
     if any(stripped.startswith(p) for p in junk_prefixes):
         return True
-
-    # 3. 转发别人内容且自己没写实质内容
-    if status.get("retweeted_status") and len(stripped) < 100:
-        return True
-
     # 4. 内容太短（< 30 字），大概率无分析价值
     if len(stripped) < 30:
         return True
 
     return False
+
+
+def _is_reply_or_retweet(status: dict, content: str) -> bool:
+    reply_id = status.get("reply_id")
+    if reply_id and str(reply_id) != "0":
+        return True
+    comment_id = status.get("commentId")
+    if comment_id and str(comment_id) != "0":
+        return True
+    if re.match(r"^回复\s*(?:@|\[@)", (content or "").strip()):
+        return True
+    return bool(status.get("retweeted_status"))
+
+
+def is_cached_xueqiu_reply_or_retweet(item: CollectedItem) -> bool:
+    """Prevent legacy reply/retweet rows from re-entering active Markdown exports."""
+    if item.source != "雪球":
+        return False
+    payload: dict = {}
+    if item.raw_json:
+        try:
+            decoded = json.loads(item.raw_json)
+            payload = decoded if isinstance(decoded, dict) else {}
+        except ValueError:
+            payload = {}
+    return _is_reply_or_retweet(payload, item.content or item.title)
 
 
 # ---------------------------------------------------------------------------
@@ -320,10 +348,17 @@ def _parse_status(
     )
 
     # 仅对需要的帖子获取全文（由调用方控制）
+    provider = "xueqiu_timeline"
+    content_status = "ready"
     if fetch_full:
         full_content = _fetch_full_text(status, status_id, uid, client, clog, account.name)
-        if full_content and len(full_content) > len(content):
-            content = full_content
+        if full_content:
+            if len(full_content) > len(content):
+                content = full_content
+            provider = "xueqiu_full"
+        elif _needs_full_text(status):
+            provider = "xueqiu_summary"
+            content_status = "partial"
 
     return CollectedItem(
         source="雪球",
@@ -332,7 +367,9 @@ def _parse_status(
         url=url,
         published_at=published_at,
         content=content,
-        provider="xueqiu_timeline",
+        provider=provider,
+        raw_json=json.dumps(status, ensure_ascii=False, default=str),
+        content_status=content_status,
     )
 
 
@@ -360,14 +397,7 @@ def _fetch_full_text(
         return ""
 
     # 判断是否需要获取全文
-    has_title = bool(str(status.get("title") or "").strip())
-    raw_text = str(status.get("text") or "")
-    clearly_truncated = (
-        has_title
-        or "..." in raw_text[-30:]
-        or "展开全文" in raw_text
-        or "全文" in raw_text[-50:]
-    )
+    clearly_truncated = _needs_full_text(status)
     # Timeline often already includes a usable long body. Length alone is not a
     # reason to call fragile detail endpoints or emit noisy warnings.
     if not clearly_truncated:
@@ -448,6 +478,18 @@ def _fetch_full_text(
 
     clog.add_warning(f"雪球 / {author}: 文章 {status_id} 全文获取失败，使用摘要")
     return ""
+
+
+def _needs_full_text(status: dict) -> bool:
+    has_title = bool(str(status.get("title") or "").strip())
+    raw_text = str(status.get("text") or status.get("description") or "")
+    return (
+        has_title
+        or "..." in raw_text[-30:]
+        or "…" in raw_text[-30:]
+        or "展开全文" in raw_text
+        or "全文" in raw_text[-50:]
+    )
 
 
 def _extract_detail_text(payload: object) -> str:

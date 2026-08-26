@@ -1,0 +1,29 @@
+services:
+  social-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    restart: unless-stopped
+    shm_size: 1gb
+    env_file:
+      - .env
+    environment:
+      XUEQIU_COOKIE: ""
+      WEIBO_COOKIE: ""
+      XUEQIU_COOKIE_FILE: /run/secrets/xueqiu_cookie
+      WEIBO_COOKIE_FILE: /run/secrets/weibo_cookie
+      SOCIAL_COLLECTOR_INTERVAL_SECONDS: ${SOCIAL_COLLECTOR_INTERVAL_SECONDS:-1800}
+      SOCIAL_COLLECTOR_LOOKBACK_HOURS: ${SOCIAL_COLLECTOR_LOOKBACK_HOURS:-48}
+    volumes:
+      - ./config:/app/config:ro
+      - ./data:/app/data
+      - ./sources/_raw:/app/sources/_raw
+      - ./data/browser-profiles:/app/.browser-profiles
+      - ${XUEQIU_COOKIE_FILE:-./secrets/xueqiu_cookie.txt}:/run/secrets/xueqiu_cookie:ro
+      - ${WEIBO_COOKIE_FILE:-./secrets/weibo_cookie.txt}:/run/secrets/weibo_cookie:ro
+    healthcheck:
+      test: ["CMD", "python", "-m", "pipeline.cli", "social-health", "--db", "/app/data/articles.sqlite"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

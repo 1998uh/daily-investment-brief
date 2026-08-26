@@ -1,0 +1,21 @@
+services:
+  social-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    restart: unless-stopped
+    shm_size: 1gb
+    env_file:
+      - .env
+    environment:
+      XUEQIU_COOKIE: ""
+      WEIBO_COOKIE: ""
+      XUEQIU_COOKIE_FILE: /run/secrets/xueqiu_cookie
+      WEIBO_COOKIE_FILE: /run/secrets/weibo_cookie
+    volumes:
+      - ./config:/app/config:ro
+      - ./data:/app/data
+      - ./sources/_raw:/app/sources/_raw
+      - ./data/browser-profiles:/app/.browser-profiles
+      - ./secrets/xueqiu_cookie.txt:/run/secrets/xueqiu_cookie:ro
+      - ./secrets/weibo_cookie.txt:/run/secrets/weibo_cookie:ro
