@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-02",
+  "items": [
+    {
+      "evidence_id": "E-20260902-001",
+      "hypothesis_id": "H-20260901-001",
+      "evidence_type": "event",
+      "title": "2026年9月FOMC会议尚未召开",
+      "published_at": "2026-08-19",
+      "source_level": "official",
+      "publisher": "Federal Reserve",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "quote": "September 15-16*",
+      "supports": false,
+      "fetched_at": "2026-09-02T08:05:00+08:00"
+    }
+  ]
+}

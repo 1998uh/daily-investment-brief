@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-04",
+  "results": [
+    {
+      "hypothesis_id": "H-20260806-002",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要FCC等正式政策文件、海外工厂适用范围、公司公告或云厂商订单披露，不能用股价代替。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-09-05T08:56:43+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-004",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要税务机关正式文件、CRS执行口径以及友邦、保诚等险企的新业务价值或渠道新单披露；单日股价不能独立证明保费需求变化。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-09-05T08:56:43+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-005",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要模型官方发布、云厂商API调用与收入披露、招标公告或供应商订单公告；模型热度和股价上涨不能替代订单证据。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-09-05T08:56:43+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260808-003",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要交易所正式规则、基金公告、终止上市时间表及场内规模和折溢价数据；自媒体转述不能单独视为规则生效。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-09-05T08:56:43+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260901-001",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "跟踪9月FOMC议息会议结果、会后10Y美债收益率与A股成长/创业板表现；若9月维持利率不变且措辞转鸽则证伪。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-09-05T08:56:43+08:00"
+    }
+  ]
+}

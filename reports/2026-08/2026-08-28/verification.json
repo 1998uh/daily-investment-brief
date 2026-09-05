@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-28",
+  "results": [
+    {
+      "hypothesis_id": "H-20260806-002",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要FCC等正式政策文件、海外工厂适用范围、公司公告或云厂商订单披露，不能用股价代替。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-28T08:56:15+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-004",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要税务机关正式文件、CRS执行口径以及友邦、保诚等险企的新业务价值或渠道新单披露；单日股价不能独立证明保费需求变化。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-28T08:56:15+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260807-005",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "需要模型官方发布、云厂商API调用与收入披露、招标公告或供应商订单公告；模型热度和股价上涨不能替代订单证据。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-08-28T08:56:15+08:00"
+    },
+    {
+      "hypothesis_id": "H-20260814-003",
+      "previous_status": "pending",
+      "status": "inconclusive",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "截至 2026-08-28 到期日，当前文章材料记录科技板块反弹（科创板单日 +3.77%、中证500 +2.26%）以及中际旭创相关讨论，但没有可复核的结构化证据证明科技板块出现 30% 以上普跌或中际旭创跌至 700 元；因此该预判在本期无法确认或证伪。依据 article-pack 中 A-4b9c6e778c59、A-e2e3b75cdc29、A-9016bdd99826 等当期材料。",
+      "deterministic": false,
+      "evidence_ids": [
+        "E-20260828-005"
+      ],
+      "evaluated_at": "2026-08-28T08:56:15+08:00"
+    }
+  ]
+}

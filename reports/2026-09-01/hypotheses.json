@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-01",
+  "hypotheses": [
+    {
+      "id": "H-20260901-001",
+      "created_date": "2026-09-01",
+      "claim": "沃什放鹰后美联储9月议息会议加息（或维持鹰派），长端美债收益率攀升、A股高估值成长承压",
+      "subject": {"type": "macro", "name": "美联储9月利率决议", "thscode": ""},
+      "sources": [
+        {"author": "买股票的老木匠", "article_id": "A-7be528e4d785", "url": "", "quote": "此时就会导致美联储在9月份的议息会议上义无反顾地加息"},
+        {"author": "小豆小瓜_", "article_id": "A-b5390fead058", "url": "", "quote": "沃什演讲后，加息预期持续升级，9月加息概率上升到66%"}
+      ],
+      "deadline": "2026-09-30",
+      "verification_mode": "event",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪9月FOMC议息会议结果、会后10Y美债收益率与A股成长/创业板表现；若9月维持利率不变且措辞转鸽则证伪。",
+      "review_policy": "event_triggered",
+      "trigger_terms": ["FOMC", "议息会议", "加息", "降息"],
+      "status": "pending"
+    },
+    {
+      "id": "H-20260901-002",
+      "created_date": "2026-09-01",
+      "claim": "正宗方向交易不正宗小盘标的（小光/CCL/超节点）风格延续，直至两市成交额放大至2.5-2.7万亿或海外ARR叙事回正",
+      "subject": {"type": "theme", "name": "科技小盘交易风格", "thscode": ""},
+      "sources": [
+        {"author": "唐史主任司马迁", "article_id": "A-5f16f4500c2f", "url": "", "quote": "这个风格会持续到什么时候，从当前看，至少要出现几个条件才会有变化：1、成交量到2.5-2.7万亿以上"}
+      ],
+      "deadline": "2026-09-30",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "每周观察两市成交额是否突破2.5万亿、光模块/PCB等科技大票是否放量领涨、超节点/小盘风格标的相对表现；大票启动即视为风格切换。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260901-003",
+      "created_date": "2026-09-01",
+      "claim": "国内外模型排队带动AI算力持续扩容，国产HBM突破将加大对长鑫DRAM产能消耗并推动国产GPU放量",
+      "subject": {"type": "theme", "name": "国产HBM与AI算力扩容", "thscode": ""},
+      "sources": [
+        {"author": "淡淡的相思林", "article_id": "A-abca394a968b", "url": "", "quote": "要想海外内存股涨，现在最需要的就是国产hbm突破……同时推动国产gpu放量"},
+        {"author": "小豆小瓜_", "article_id": "A-b5390fead058", "url": "", "quote": "算力大涨的原因是这两天国内外的模型，都出现了排队的情况"}
+      ],
+      "deadline": "2026-09-30",
+      "verification_mode": "event",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪长鑫/晋华HBM与DRAM扩产披露、国产GPU（超节点）出货或招标订单、国内外模型排队与算力租赁价格变化；量产推迟或需求回落即证伪。",
+      "review_policy": "weekly",
+      "status": "pending"
+    }
+  ]
+}

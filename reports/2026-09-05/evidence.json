@@ -1,0 +1,32 @@
+{
+ "schema_version": "1.0",
+ "report_date": "2026-09-05",
+ "items": [
+  {
+   "evidence_id": "E-20260905-001",
+   "hypothesis_id": "H-20260901-001",
+   "evidence_type": "event",
+   "title": "美国8月非农就业增加16.2万人（预期5.5万、前值-2.3万），远超预期（财联社转引，博主转载，未核实美国劳工部一手页面）",
+   "published_at": "2026-09-04",
+   "source_level": "social",
+   "publisher": "买股票的老木匠（雪球，转财联社）",
+   "url": "https://xueqiu.com/3058599833/408129803",
+   "quote": "20:30:18美国8月非农就业人数增加16.2万人，预估为增加5.5万人，前值为减少2.3万人。(来自财联社APP)",
+   "supports": true,
+   "fetched_at": "2026-09-05T09:35:00+08:00"
+  },
+  {
+   "evidence_id": "E-20260905-002",
+   "hypothesis_id": "H-20260901-001",
+   "evidence_type": "event",
+   "title": "8月非农大超预期后，链上预测9月加息25bp概率从40%跳涨至53%、9月维持不变概率从60%降至47%，黄金瞬跌2%",
+   "published_at": "2026-09-04",
+   "source_level": "social",
+   "publisher": "猫笔刀（微信公众号）",
+   "url": "https://mp.weixin.qq.com/s?__biz=MzE5ODk2NjUwOA==&mid=2247498290&idx=1&sn=7924fd86efcfeef033f87cbef2ed456c&chksm=97d1578275aaafa3b764a852d91046f29f0359a2f3d3ae9f4d2d16a6dc16fcdd756ce24fe06c#rd",
+   "quote": "美国公布8月非农就业数据，增加16.2万人，这个数据远远高于市场预期的5.5万人，前值为减少2.3万人……给9月份美联储加息狠狠推了一把。数据公布后链上赌场关于9月份加息0.25%的概率从40%跳涨至53%，原本9月份利率不变的概率从60%下调至47%。受此影响黄金瞬跌2%",
+   "supports": true,
+   "fetched_at": "2026-09-05T09:35:00+08:00"
+  }
+ ]
+}

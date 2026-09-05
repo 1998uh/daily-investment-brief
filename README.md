@@ -108,7 +108,7 @@ python -m pipeline.cli auth-login --platform weread --mobile-credentials path\to
 python -m pipeline.cli auth-login --platform weibo
 
 # 雪球
-python -m pipeline.cli auth-login --platform xueqiu
+python -m pipeline.cli auth-login --platform xueqiu --legacy-browser
 
 # 抖音
 python -m pipeline.cli auth-login --platform douyin
@@ -326,7 +326,7 @@ Source health: D:\ai-project\daily-investment-brief\pipeline\health.sqlite
 ```powershell
 # 1. 检查后台雪球/微博并补采微信公众号
 daily-brief social-health
-daily-brief collect --date 2026-08-27 --platform wechat
+daily-brief collect --date 2026-09-03 --platform wechat
 
 # 2. 按 08:00 日报窗口从 SQLite 重建正式输入目录
 daily-brief materialize --date 2026-08-27
@@ -384,12 +384,12 @@ reports/<date>/run-manifest.json    # 数据源、请求 ID 和文件哈希
 
 ```powershell
 # 单日采集（并行）
-daily-brief collect --date 2026-08-26
+daily-brief collect --date 2026-08-31
 
 # 只采集指定平台
 daily-brief collect --date 2026-08-24 --platform wechat   # 微信公众号
 daily-brief collect --date 2026-08-24 --platform xueqiu   # 雪球
-daily-brief collect --date 2026-08-03 --platform weibo    # 微博
+daily-brief collect --date 2026-09-01 --platform weibo    # 微博
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
 daily-brief collect --start-date 2026-06-10 --end-date 2026-06-17

@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-05",
+  "hypotheses": [
+    {
+      "id": "H-20260905-001",
+      "created_date": "2026-09-05",
+      "claim": "市场（含大摩等外资行）对国内两大存储厂明年新增产能的测算偏高——按设备交付6–8个月与装机爬坡6–8个月推算，实际新增产能或仅及预期约七成（约高估了一个三星年增量），供给扩张受物理周期约束，2027年国产存储供给放量将被市场修正、存储价格高景气可能超预期延续",
+      "subject": {"type": "theme", "name": "国产存储供给测算", "thscode": ""},
+      "sources": [
+        {"author": "淡淡的相思林", "article_id": "A-92914be3fbcd", "url": "", "quote": "因为现在设备交付6-8个月，装机爬坡6-8个月，已经开始能见到明年各大fab能开出多少万了……现在的主流观点基本把国内新增存储产能多估计了相当于一个三星每年新增的体量出来，等到明年的时候就会发现问题了。把供给估测的太大了"},
+        {"author": "淡淡的相思林", "article_id": "A-099ffeb997ae", "url": "", "quote": "目前能看到的产业机会也就是俩，先等筹码出清……一个是两长明年开出产能远逊于市场给吹的规模，使市场认识到供给扩张本身受限的机会"}
+      ],
+      "deadline": "2027-03-31",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪两大存储厂（长存/长鑫）公开扩产进度、设备到货与良率爬坡信息，以及外资行对新增产能测算的修正；若扩产进度达到或超过市场预期、或存储现货价格明显回落则证伪“供给受限、高景气延续”。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260905-002",
+      "created_date": "2026-09-05",
+      "claim": "特斯拉Cybercab在奥斯汀落地无安全员付费载客运营（45辆注册、规划年产12.5万台、单车成本<3万美元、运营成本约0.2美元/英里）标志无人驾驶出行进入规模化拐点，商业模式向“AI运力平台”演进，带动中美智驾/出行/算力产业链重估",
+      "subject": {"type": "theme", "name": "特斯拉Cybercab与robotaxi商业化", "thscode": ""},
+      "sources": [
+        {"author": "陆家嘴幽灵", "article_id": "A-b2ab22443321", "url": "", "quote": "目前已有45辆Cybercab完成注册并开启无安全员的付费载客运营，未来规划年产能最高达12.5万台。设定的运营成本目标是每英里约0.2美元，远低于传统网约车……如果Cybercab的无人运营模式能在全美铺开，它的商业属性将增加一项AI运力平台"},
+        {"author": "陈达美股投资", "article_id": "A-a0cdaac7d5de", "url": "", "quote": "老美加大对 Robotaxi 的支持力度，谷歌 Waymo 已经从概念验证走向规模化运营，还有特斯拉 Cybercab 最近在德州起量。无人驾驶的商业化，落地会更深更快，而萝卜商业模式可直接对标 Waymo"}
+      ],
+      "deadline": "2026-12-31",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪Cybercab运营城市/车队规模扩张、事故与监管进展，以及Waymo、百度萝卜快跑等竞品扩张；若年内Cybercab规模化复制停滞、或发生重大安全事故/监管收紧、或竞品明显占据主导则证伪拐点判断。",
+      "review_policy": "weekly",
+      "status": "pending"
+    }
+  ]
+}

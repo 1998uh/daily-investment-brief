@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-08-28",
+  "items": [
+    {
+      "evidence_id": "E-20260828-001",
+      "hypothesis_id": "H-20260806-002",
+      "evidence_type": "event",
+      "title": "FCC modifies foreign-produced power inverter Covered List entry",
+      "published_at": "2026-08-20",
+      "source_level": "official",
+      "publisher": "Federal Communications Commission",
+      "url": "https://docs.fcc.gov/public/attachments/DA-26-870A1.pdf",
+      "quote": "FCC announced a modification of the power inverters entry on the Covered List and revised the scope of foreign-produced inverters subject to the restriction.",
+      "supports": false,
+      "fetched_at": "2026-08-28T09:05:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260828-002",
+      "hypothesis_id": "H-20260807-004",
+      "evidence_type": "event",
+      "title": "Hong Kong Inland Revenue Department FSIE guidance remains the governing published framework",
+      "published_at": "2026-08-28",
+      "source_level": "official",
+      "publisher": "Hong Kong Inland Revenue Department",
+      "url": "https://www.ird.gov.hk/chs/tax/bus_fsie.htm",
+      "quote": "The published guidance describes the foreign-sourced income exemption regime and specified foreign income rules; it does not establish a nationwide 20% individual tax collection rule for Hong Kong savings insurance proceeds.",
+      "supports": false,
+      "fetched_at": "2026-08-28T09:05:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260828-003",
+      "hypothesis_id": "H-20260807-004",
+      "evidence_type": "event",
+      "title": "AIA reports Hong Kong new business value growth in 2026 interim results",
+      "published_at": "2026-08-20",
+      "source_level": "authoritative",
+      "publisher": "AIA Group investor relations",
+      "url": "https://www.aia.com/zh-hk/investor-relations/overview",
+      "quote": "AIA Hong Kong new business value was reported at US$1.168 billion, up 10% year on year, while annualized new premiums were broadly unchanged.",
+      "supports": false,
+      "fetched_at": "2026-08-28T09:05:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260828-004",
+      "hypothesis_id": "H-20260807-005",
+      "evidence_type": "event",
+      "title": "Domestic procurement notice for国产 GPU servers used for large-model collaborative computing",
+      "published_at": "2026-08-25",
+      "source_level": "official",
+      "publisher": "China Government Procurement Network",
+      "url": "https://www.ccgp.gov.cn/cggg/zygg/gkzb/202608/t20260825_27196941.htm",
+      "quote": "A public tender was issued for国产 GPU server procurement for a wide-area multi-computing-center large-model collaborative computing project, with a budget of RMB 4.321292 million and bid opening on 2026-09-15.",
+      "supports": true,
+      "fetched_at": "2026-08-28T09:05:00+08:00"
+    },
+    {
+      "evidence_id": "E-20260828-005",
+      "hypothesis_id": "H-20260814-003",
+      "evidence_type": "manual_resolution",
+      "resolved_status": "inconclusive",
+      "note": "截至 2026-08-28 到期日，当前文章材料记录科技板块反弹（科创板单日 +3.77%、中证500 +2.26%）以及中际旭创相关讨论，但没有可复核的结构化证据证明科技板块出现 30% 以上普跌或中际旭创跌至 700 元；因此该预判在本期无法确认或证伪。依据 article-pack 中 A-4b9c6e778c59、A-e2e3b75cdc29、A-9016bdd99826 等当期材料。",
+      "resolved_by": "Codex based on 2026-08-28 article pack",
+      "fetched_at": "2026-08-28T09:05:00+08:00"
+    }
+  ]
+}

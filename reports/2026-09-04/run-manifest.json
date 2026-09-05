@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-04",
+  "workflow": "codex-native-hypothesis-tracking",
+  "providers": [
+    "Federal Reserve",
+    "唐史主任司马迁（微博）",
+    "小豆小瓜_（雪球）"
+  ],
+  "request_ids": [],
+  "warnings": [],
+  "files": [
+    {
+      "name": "codex-context.json",
+      "sha256": "a686109fdb924bd68b2d49726057aff9288d1bb1cb8c92762e98ac5871a7e48e",
+      "size": 3070
+    },
+    {
+      "name": "article-pack.md",
+      "sha256": "8015518636436a45dc69bd3b9546fb1cb2479dd059d0843b3007a911f2319386",
+      "size": 91857
+    },
+    {
+      "name": "article-index.jsonl",
+      "sha256": "8c7a7961eb796d9371b099e6d5968746594750e11774c06a7deeed5923fa79f8",
+      "size": 16695
+    },
+    {
+      "name": "evidence-tasks.json",
+      "sha256": "66f08382c3f04305415220770cde441f3eced3da0fe6171edf86bcc4ca7dd43d",
+      "size": 2929
+    },
+    {
+      "name": "hypothesis-dedup-index.json",
+      "sha256": "08a3fdaf50d726e8ece9c3ab881d777581cff0bc3a8682fa6d0bec2f34329637",
+      "size": 1611
+    },
+    {
+      "name": "evidence.json",
+      "sha256": "31166a5528c58b5c461e0c07df8e683cac6510773b75b1a4820f3b1fd05d0d83",
+      "size": 2091
+    },
+    {
+      "name": "verification.json",
+      "sha256": "73e1e20b7603326114933c50675891b96ef7b9af553c89fe864c1d321c2b8d8c",
+      "size": 2409
+    },
+    {
+      "name": "hypotheses.json",
+      "sha256": "aac0cdb244f324f7e870f15a9d1ffe1360693881331a6e796c94c8b968b2c1b1",
+      "size": 3000
+    },
+    {
+      "name": "daily-brief.md",
+      "sha256": "815c97ebcc3815bd7f3f89567175dd7b7c8013dce3fa4fb231d98ff2ca72b32c",
+      "size": 27372
+    },
+    {
+      "name": "daily-brief.html",
+      "sha256": "63f5e76e54bfd0095058eaaa2d8a4ccce886fca6f61178d16d8825421395d82e",
+      "size": 32903
+    }
+  ],
+  "validated_at": "2026-09-05T09:44:45+08:00"
+}

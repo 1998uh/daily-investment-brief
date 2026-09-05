@@ -1,0 +1,45 @@
+{
+ "schema_version": "1.0",
+ "report_date": "2026-09-04",
+ "items": [
+  {
+   "evidence_id": "E-20260904-001",
+   "hypothesis_id": "H-20260901-001",
+   "evidence_type": "event",
+   "title": "2026年9月FOMC会议定于9月15-16日，截至本日尚未召开，也无临时利率决议",
+   "published_at": "2026-09-04",
+   "source_level": "official",
+   "publisher": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+   "quote": "September 15-16*",
+   "supports": false,
+   "fetched_at": "2026-09-05T09:30:00+08:00"
+  },
+  {
+   "evidence_id": "E-20260904-002",
+   "hypothesis_id": "H-20260901-001",
+   "evidence_type": "event",
+   "title": "美联储理事沃勒称看到通胀降温迹象、暗示不加息，市场对9月加息概率从67%降至50%（作者转述，未核实官方原文）",
+   "published_at": "2026-09-04",
+   "source_level": "social",
+   "publisher": "小豆小瓜_（雪球）",
+   "url": "https://xueqiu.com/6028781397/407981481",
+   "quote": "美联储理事沃勒出来讲话，说看到了通胀降温的迹象，暗示不加息。消息出来后，9月加息概率从67%跌到50%，晚上美股大力拉升，纳指+1.4%……黄金也涨疯了，今天大涨+2.35%",
+   "supports": false,
+   "fetched_at": "2026-09-05T09:30:00+08:00"
+  },
+  {
+   "evidence_id": "E-20260904-003",
+   "hypothesis_id": "H-20260807-005",
+   "evidence_type": "event",
+   "title": "博主转述产业渠道信息：国产卡回片、下板子订单电子圈可跟踪，昇腾系今年出货量大、明年更大且超节点比例持续提高（未到正式订单/招标披露层级）",
+   "published_at": "2026-09-03",
+   "source_level": "social",
+   "publisher": "唐史主任司马迁（微博）",
+   "url": "https://weibo.com/2014433131/Rgm396Mol",
+   "quote": "算力方面，国产卡也在回片，下板子的单子，电子圈也都能跟到。HBM缺是全行业缺……昇腾系今年出货量很大，明年会更大。且超节点比例越来越高",
+   "supports": true,
+   "fetched_at": "2026-09-05T09:30:00+08:00"
+  }
+ ]
+}

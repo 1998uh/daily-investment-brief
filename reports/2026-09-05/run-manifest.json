@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-05",
+  "workflow": "codex-native-hypothesis-tracking",
+  "providers": [
+    "买股票的老木匠（雪球，转财联社）",
+    "猫笔刀（微信公众号）"
+  ],
+  "request_ids": [],
+  "warnings": [],
+  "files": [
+    {
+      "name": "codex-context.json",
+      "sha256": "f61cf8886094a4a4eeda734ca5ecdd529864d45fa4db2e8fa9a84363d4450ec5",
+      "size": 1868
+    },
+    {
+      "name": "article-pack.md",
+      "sha256": "e43f8a7f2c39b1798026a7acd2c5d8d0a5bd549cf76b49747b4e4a296598ba1b",
+      "size": 112258
+    },
+    {
+      "name": "article-index.jsonl",
+      "sha256": "5c41ea490abc6b23438adf3060530edb0af09c874abf75da0abd18b80311cd34",
+      "size": 21589
+    },
+    {
+      "name": "evidence-tasks.json",
+      "sha256": "c49bc32c88a27b52319aa7ff53ede2a96e0978382a0892884db935baff96f3cb",
+      "size": 668
+    },
+    {
+      "name": "hypothesis-dedup-index.json",
+      "sha256": "e0a5944e3d6f4dd383a0f025e00fa08c546a1c16e586b7ec6f8b782dd5f3f563",
+      "size": 2661
+    },
+    {
+      "name": "evidence.json",
+      "sha256": "e11bef20e816bdd6e0a381c0c15fd3a7937ca90798ff44724d84aabf0e440dad",
+      "size": 1766
+    },
+    {
+      "name": "verification.json",
+      "sha256": "f81d70862094524da21ddb5ba05aaa3cf27b54ee45c6ffaf540ec8a1e5333d91",
+      "size": 545
+    },
+    {
+      "name": "hypotheses.json",
+      "sha256": "201db476d0f49a2248febf17276c3a235641583a27ac3fe39e60f7f14c197af2",
+      "size": 3601
+    },
+    {
+      "name": "daily-brief.md",
+      "sha256": "29554b09621d8d4631d2bea7403e0823aa8e426d8cb428e354cbf5002f58b92f",
+      "size": 26509
+    },
+    {
+      "name": "daily-brief.html",
+      "sha256": "b4390bdfbd6877b470e526acce598701bffd64f7a72ec21b627ff920f59bd2ab",
+      "size": 31762
+    }
+  ],
+  "validated_at": "2026-09-05T09:44:46+08:00"
+}

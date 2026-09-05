@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-03",
+  "workflow": "codex-native-hypothesis-tracking",
+  "providers": [
+    "Federal Reserve"
+  ],
+  "request_ids": [],
+  "warnings": [],
+  "files": [
+    {
+      "name": "codex-context.json",
+      "sha256": "589a6f4c8f4fde106ee30db6699a9f92227c0b18e0e9e0dc960c743e7904ff3a",
+      "size": 1869
+    },
+    {
+      "name": "article-pack.md",
+      "sha256": "1ff94f573fd83ba215267587850c0b4e7ef29b961bf4f2ad0f866958b30d3cd6",
+      "size": 85624
+    },
+    {
+      "name": "article-index.jsonl",
+      "sha256": "80f9a6d0ec4fa2955c1fdcfc1f0b43fe8a1b7a5148160a862d7914fc63980635",
+      "size": 19438
+    },
+    {
+      "name": "evidence-tasks.json",
+      "sha256": "a39540afdb53a7e3f1b0ca13f32ea9795c310bdcf4e21a2a101cdcec77f2dd88",
+      "size": 668
+    },
+    {
+      "name": "hypothesis-dedup-index.json",
+      "sha256": "4dbc6673925f47840739c1232f021ad0697028f17c8d96b12e1006281710d22a",
+      "size": 1611
+    },
+    {
+      "name": "evidence.json",
+      "sha256": "e96d76a7ec636c4e4cdedc85cc8688a93bfa85d37221920984733e045c4af6d6",
+      "size": 587
+    },
+    {
+      "name": "verification.json",
+      "sha256": "a67ac48caa6cb18c6c504e84d904e22a5a0ee2784d3fd83ad39ddbdceed6e2b6",
+      "size": 545
+    },
+    {
+      "name": "hypotheses.json",
+      "sha256": "4cb5a6c30a005396733602e78c677b36b323fcd7d9e32ec9d2f2f899e1ddb085",
+      "size": 2509
+    },
+    {
+      "name": "daily-brief.md",
+      "sha256": "a4889a66b6e792bdeaaef7e5ecde1c2670dc0d424ca1d05564f6cdd0683ea0c0",
+      "size": 23966
+    },
+    {
+      "name": "daily-brief.html",
+      "sha256": "37166d846b85307b925c6aff48082cec1b7af139128b015033de5ffe321eaf87",
+      "size": 28933
+    }
+  ],
+  "validated_at": "2026-09-05T09:44:44+08:00"
+}

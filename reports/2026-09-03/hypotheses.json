@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-03",
+  "hypotheses": [
+    {
+      "id": "H-20260903-001",
+      "created_date": "2026-09-03",
+      "claim": "COMEX金价在4350-4400美元趋势位获得强力抵抗，若失守则下探4200（作者确认的黄金启动点），黄金股面临补跌",
+      "subject": {"type": "theme", "name": "COMEX金价与黄金股", "thscode": ""},
+      "sources": [
+        {"author": "诸葛孔暗", "article_id": "A-4f12c905d058", "url": "", "quote": "comex在4350-4400的趋势位迎来强力抵抗……要么这里频繁争夺等待非农数据，要么撑不住，彻底再向下去找4200的位置，这里是我最初确认黄金启动的点位，跌回这里意味着黄金股要当心补跌"}
+      ],
+      "deadline": "2026-09-18",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪COMEX金价在4350-4400一线的表现与黄金股走势：若9/4非农或CPI后市场转鸽、实际利率回落使金价站稳4400上方则黄金趋势延续；若金价放量跌破4200或黄金股明显补跌则假设兑现避险终结。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260903-002",
+      "created_date": "2026-09-03",
+      "claim": "A股科技抱团以成交额前5%个股拥挤度跌破45%（现42.5%，创本轮新低）确认瓦解，市场进入挖掘业绩突出科技股的“第二阶段”，不再无脑普涨",
+      "subject": {"type": "theme", "name": "科技抱团拥挤度与业绩阶段", "thscode": ""},
+      "sources": [
+        {"author": "小豆小瓜_", "article_id": "A-c8e36eeece92", "url": "", "quote": "成交额前5%个股的拥挤度，已经下滑到42.5%，创本轮抱团以来的新低。历史上有5次抱团行情，抱团结束的标志就是拥挤度快速下滑到45%以下……科技股不会再无脑拉涨……市场会进入第二阶段，开始挖掘业绩突出的科技股"}
+      ],
+      "deadline": "2026-09-30",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "每周观察两市成交额是否重新放大至2.5万亿以上、拥挤度是否回升至45%上方使科技再度普涨（则瓦解不成立）；反之若成交额维持地量而业绩龙头（存储/光模块/PCB等）相对占优则支持进入业绩阶段。",
+      "review_policy": "weekly",
+      "status": "pending"
+    }
+  ]
+}

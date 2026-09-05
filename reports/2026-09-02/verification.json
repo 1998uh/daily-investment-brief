@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-02",
+  "results": [
+    {
+      "hypothesis_id": "H-20260901-001",
+      "previous_status": "pending",
+      "status": "pending",
+      "conditions": [],
+      "falsification_conditions": [],
+      "reason": "跟踪9月FOMC议息会议结果、会后10Y美债收益率与A股成长/创业板表现；若9月维持利率不变且措辞转鸽则证伪。",
+      "deterministic": false,
+      "evidence_ids": [],
+      "evaluated_at": "2026-09-02T08:04:25+08:00"
+    }
+  ]
+}

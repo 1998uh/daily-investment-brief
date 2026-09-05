@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "report_date": "2026-09-04",
+  "hypotheses": [
+    {
+      "id": "H-20260904-001",
+      "created_date": "2026-09-04",
+      "claim": "特朗普推进的半导体加征关税因美国本土缺乏HBM/DDR5先进存储产能而“雷声大雨点小”，对韩国存储落地受限，对A股半导体更多是消息面扰动而非基本面反转",
+      "subject": {"type": "theme", "name": "半导体关税落地范围", "thscode": ""},
+      "sources": [
+        {"author": "淡淡的相思林", "article_id": "A-8a93a5fbc2c8", "url": "", "quote": "非常套娃的是，川普要对外国收半导体关税，最赚钱的韩国反而无法选中。因为收关税的前提是有国产替代的，而美国本土别说hbm，连座最新的ddr5厂都没"},
+        {"author": "猫笔刀", "article_id": "A-c2450fb998f4", "url": "", "quote": "美国要对半导体加关税这件事，确实特朗普很早就有这个意向，并且一直在推进……韩国总统府午间公开表态：方案尚未最终确定，会保护本国企业利益"}
+      ],
+      "deadline": "2026-10-15",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "跟踪美国正式半导体关税公告/豁免清单、韩美谈判结果，以及A股半导体（尤其存储、设备）在政策落地后的实际走势；若关税正式覆盖韩国先进存储或A股半导体持续受实质压制则证伪“雷声大雨点小”。",
+      "review_policy": "weekly",
+      "status": "pending"
+    },
+    {
+      "id": "H-20260904-002",
+      "created_date": "2026-09-04",
+      "claim": "金刚石散热正处于从实验室走向量产的“0到1”放量拐点窗口（英伟达2026年Q3量产采用金刚石铜复合材料方案），以出现首笔千万级批量量产订单为放量确认信号",
+      "subject": {"type": "theme", "name": "金刚石散热放量拐点", "thscode": ""},
+      "sources": [
+        {"author": "热点投研", "article_id": "A-26dce5601584", "url": "", "quote": "今明两年是金刚石散热产业从“0到1”的拐点窗口期……最核心的是看谁拿到了第一个大批量量产订单。如果能有一家企业拿到千万级甚至五千万级的订单……这就是行业放量的信号"},
+        {"author": "诸葛孔暗", "article_id": "A-42b9070b72a9", "url": "", "quote": "$黄河旋风(SH600172)$ $白银有色(SH601212)$ $远东股份(SH600869)$"}
+      ],
+      "deadline": "2026-11-30",
+      "verification_mode": "hybrid",
+      "conditions": [],
+      "falsification_conditions": [],
+      "manual_reason": "关注英伟达Rubin/先进封装供应链是否确认金刚石铜供应商、国内（黄河旋风/四方达/惠丰钻石/国际精工等）或海外是否出现公开的千万级批量量产订单；若2026年Q3量产推迟或长期停留在送样/小批量验证则证伪。",
+      "review_policy": "weekly",
+      "status": "pending"
+    }
+  ]
+}

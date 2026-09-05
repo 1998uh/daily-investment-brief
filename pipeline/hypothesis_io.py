@@ -22,6 +22,7 @@ from .models import Article
 
 
 DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+MONTH_DIR_RE = re.compile(r"^\d{4}-\d{2}$")
 AUTHOR_SEPARATOR_RE = re.compile(r"[、,，;；]+")
 
 
@@ -76,14 +77,27 @@ def dated_report_dirs(
 ) -> list[tuple[date, Path]]:
     if not reports_root.exists():
         return []
-    result: list[tuple[date, Path]] = []
+    found: list[tuple[date, Path]] = []
     for path in reports_root.iterdir():
-        if not path.is_dir() or not DATE_DIR_RE.match(path.name):
+        if not path.is_dir():
             continue
-        parsed = date.fromisoformat(path.name)
+        if DATE_DIR_RE.match(path.name):
+            found.append((date.fromisoformat(path.name), path))
+            continue
+        if MONTH_DIR_RE.match(path.name):
+            for child in path.iterdir():
+                if child.is_dir() and DATE_DIR_RE.match(child.name):
+                    found.append((date.fromisoformat(child.name), child))
+    found.sort(key=lambda item: (item[0], str(item[1])))
+    result: list[tuple[date, Path]] = []
+    seen: set[date] = set()
+    for parsed, path in found:
+        if parsed in seen:
+            continue
+        seen.add(parsed)
         if before_or_equal is None or parsed <= before_or_equal:
             result.append((parsed, path))
-    return sorted(result, key=lambda item: item[0])
+    return result
 
 
 def load_hypothesis_ledger(
