@@ -11,6 +11,7 @@ config/accounts*.json
 secrets/
 
 sources/
+reports/
 data/
 private-reports/
 reports/dashboard/

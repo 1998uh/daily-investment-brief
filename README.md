@@ -388,7 +388,7 @@ daily-brief collect --date 2026-08-31
 
 # 只采集指定平台
 daily-brief collect --date 2026-08-24 --platform wechat   # 微信公众号
-daily-brief collect --date 2026-08-24 --platform xueqiu   # 雪球
+daily-brief collect --date 2026-09-15 --platform xueqiu   # 雪球
 daily-brief collect --date 2026-09-01 --platform weibo    # 微博
 
 # 日期范围采集（逐日循环，每天存到各自的 sources/<date>/）
@@ -493,7 +493,7 @@ daily-brief collect --date 2026-07-20 --and-generate
 
 # 工作流 2：分平台采集（适用于网络不稳定或调试单个平台）
 daily-brief collect --date 2026-08-03 --platform wechat   # 只采集微信公众号
-daily-brief collect --date 2026-08-03 --platform xueqiu   # 只采集雪球
+daily-brief collect --date 2026-09-15 --platform xueqiu   # 只采集雪球
 daily-brief collect --date 2026-08-03 --platform weibo    # 只采集微博
 daily-brief collect --date 2026-08-03 --platform douyin   # 只采集抖音
 

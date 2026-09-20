@@ -87,6 +87,7 @@ def collect_weibo(
         return []
 
     client = HttpClient(cookie_env="WEIBO_COOKIE", timeout=30)
+    failures: list[str] = []
     try:
         items = collect_weibo_web(
             client,
@@ -101,6 +102,7 @@ def collect_weibo(
         log.add_info(f"微博 / {account.name}: 采集 {len(items)} 条")
         return items
     except Exception as exc:
+        failures.append(f"网页接口: {exc}")
         log.add_warning(f"微博 / {account.name}: 网页接口失败，尝试移动端接口：{exc}")
 
     try:
@@ -117,17 +119,24 @@ def collect_weibo(
         log.add_info(f"微博 / {account.name}: 采集 {len(items)} 条")
         return items
     except Exception as exc:
+        failures.append(f"移动端接口: {exc}")
         log.add_warning(f"微博 / {account.name}: 移动端接口失败，尝试浏览器登录态：{exc}")
 
-    items = collect_weibo_browser(
-        account,
-        uid=uid,
-        window_start=window_start,
-        window_end=window_end,
-        settings=settings,
-        limit=limit,
-        include_undated=include_undated,
-    )
+    try:
+        items = collect_weibo_browser(
+            account,
+            uid=uid,
+            window_start=window_start,
+            window_end=window_end,
+            settings=settings,
+            limit=limit,
+            include_undated=include_undated,
+        )
+    except Exception as exc:
+        failures.append(f"浏览器接口: {exc}")
+        items = []
+    if not items and failures:
+        log.add_error(f"微博 / {account.name}: 所有采集接口均失败（{'；'.join(failures)}）")
     log.add_info(f"微博 / {account.name}: 浏览器登录态采集 {len(items)} 条")
     return items
 
@@ -152,6 +161,14 @@ def collect_weibo_web(
             {"uid": uid, "page": page, "feature": "0"}
         )
         payload = client.get_json(api_url, headers=weibo_web_headers(uid))
+        ok = payload.get("ok")
+        if ok not in (None, 1):
+            # 登录态失效时返回 ok=-100 且没有 data，当成"空页"会掩盖故障
+            if page == 1:
+                raise RuntimeError(
+                    f"微博 API 返回错误 {ok}: {payload.get('msg') or '未知错误'}"
+                )
+            break
         statuses = payload.get("data", {}).get("list", [])
         if not statuses:
             break
@@ -201,6 +218,11 @@ def collect_weibo_mobile(
                 "Accept": "application/json, text/plain, */*",
             },
         )
+        ok = payload.get("ok")
+        if ok not in (None, 1):
+            if page == 1:
+                raise RuntimeError(f"微博移动端 API 返回错误 {ok}")
+            break
         cards = payload.get("data", {}).get("cards", [])
         if not cards:
             break
@@ -244,6 +266,8 @@ def collect_weibo_browser(
         )
         payload = fetch_json_with_profile("weibo", api_url, home_url=f"https://weibo.com/u/{uid}")
         if not payload:
+            if page == 1:
+                raise RuntimeError("微博浏览器接口未返回数据（登录态可能失效）")
             break
         statuses = payload.get("data", {}).get("list", [])
         if not statuses:
