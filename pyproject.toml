@@ -19,6 +19,7 @@ collect = [
     "playwright>=1.40",
     "faster-whisper>=1.0.0",
     "yt-dlp>=2024.0.0",
+    "baostock>=0.8.9",
 ]
 dev = [
     "pytest>=8.0",
