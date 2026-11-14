@@ -13,6 +13,7 @@ from .collectors.runner import collect_to_sources, collect_single_account
 from .generator import generate_brief, synthesize_from_batches, build_direct_prompt
 from .html import wrap_html
 from .ingest import load_articles
+from .mailer import send_failure_email, send_report_email
 from .report_gate import check_report
 from .workstation import create_journal_entry, generate_journal_draft
 
@@ -46,6 +47,8 @@ def main(argv: list[str] | None = None) -> int:
                 return materialize_command(args)
             if args.command == "render-html":
                 return render_html_command(args)
+            if args.command == "send-email":
+                return send_email_command(args)
             if args.command == "prepare":
                 return prepare_command(args)
             if args.command == "verify":
@@ -289,6 +292,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     render_html.add_argument(
         "--check", action="store_true", help="Run the content gate after rendering."
+    )
+
+    send_email = subparsers.add_parser(
+        "send-email", help="Email the daily brief or a failure notice."
+    )
+    send_email.add_argument("--date", required=True, help="Report date, e.g. 2026-11-14.")
+    send_email.add_argument(
+        "--out-dir", help="Report directory; defaults to reports/<date>."
+    )
+    send_email.add_argument(
+        "--force", action="store_true", help="Send even if the sent marker exists."
+    )
+    send_email.add_argument(
+        "--dry-run", action="store_true", help="Print what would be sent without using SMTP."
+    )
+    send_email.add_argument(
+        "--failure-stage", help="Send a failure notice for this stage instead of the report."
+    )
+    send_email.add_argument(
+        "--failure-detail", default="", help="Failure detail included in the notice."
     )
 
     prepare = subparsers.add_parser(
@@ -1124,6 +1147,103 @@ def render_html_command(args: argparse.Namespace) -> int:
             print(f"[gate] {failure}", file=sys.stderr)
         if failures:
             return 1
+    return 0
+
+
+def _coverage_from_context(out_dir: Path) -> dict[str, int]:
+    path = out_dir / "codex-context.json"
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    rows = payload.get("coverage") if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        return {}
+    coverage: dict[str, int] = {}
+    for row in rows:
+        if not isinstance(row, dict) or not row.get("source"):
+            continue
+        try:
+            coverage[str(row["source"])] = int(row.get("articles_total") or 0)
+        except (TypeError, ValueError):
+            coverage[str(row["source"])] = 0
+    return coverage
+
+
+def _write_email_marker(marker: Path, report_date: date, message_id: str) -> None:
+    marker.write_text(
+        json.dumps(
+            {
+                "message_id": message_id,
+                "sent_at": datetime.now().isoformat(timespec="seconds"),
+                "report_date": report_date.isoformat(),
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def send_email_command(args: argparse.Namespace) -> int:
+    report_date = date.fromisoformat(args.date)
+    out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
+    marker = out_dir / ".email-sent.json"
+    if marker.exists() and not args.force:
+        print(f"Email already sent for {args.date}; use --force to resend.")
+        return 0
+
+    if args.failure_stage:
+        coverage = _coverage_from_context(out_dir)
+        if args.dry_run:
+            print(
+                f"DRY-RUN failure email: [失败] 投资日报 {args.date} "
+                f"(stage={args.failure_stage})"
+            )
+            return 0
+        try:
+            message_id = send_failure_email(
+                report_date=report_date,
+                stage=args.failure_stage,
+                detail=args.failure_detail,
+                coverage=coverage,
+            )
+        except Exception as exc:  # noqa: BLE001 - surface transport failures as exit code
+            print(f"Failure email send failed: {exc}", file=sys.stderr)
+            return 1
+        _write_email_marker(marker, report_date, message_id)
+        print(f"Sent failure email: [失败] 投资日报 {args.date} (id={message_id})")
+        return 0
+
+    md_path = out_dir / "daily-brief.md"
+    html_path = out_dir / "daily-brief.html"
+    if not md_path.exists() or not html_path.exists():
+        print("Missing daily-brief.md or daily-brief.html", file=sys.stderr)
+        return 2
+
+    md_text = md_path.read_text(encoding="utf-8")
+    html_text = html_path.read_text(encoding="utf-8")
+    failures = check_report(report_date, md_text, html_text)
+    if failures:
+        for failure in failures:
+            print(f"[gate] {failure}", file=sys.stderr)
+        return 1
+
+    if args.dry_run:
+        print(f"DRY-RUN report email: 投资日报 {args.date}")
+        return 0
+
+    try:
+        message_id = send_report_email(
+            report_date=report_date, md_path=md_path, html_path=html_path
+        )
+    except Exception as exc:  # noqa: BLE001 - surface transport failures as exit code
+        print(f"Report email send failed: {exc}", file=sys.stderr)
+        return 1
+    _write_email_marker(marker, report_date, message_id)
+    print(f"Sent: 投资日报 {args.date} (id={message_id})")
     return 0
 
 
