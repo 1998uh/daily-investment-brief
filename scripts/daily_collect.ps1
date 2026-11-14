@@ -99,14 +99,33 @@ $env:PYTHONIOENCODING = "utf-8"
 # rebuilt from SQLite by `materialize` as part of the "生成日报" flow.
 $archive = Join-Path $Root "sources\_raw\$Date"
 
-Invoke-Step "collect wechat" {
-    & $python -m pipeline.cli collect --date $Date --platform wechat --out-dir $archive
-} | Out-Null
+# Share the prepare mutex with the 08:00 email job so an overrunning 07:30
+# collect cannot write the same SQLite/archive while the report is prepared.
+$mutex = New-Object System.Threading.Mutex($false, "Global\DailyInvestmentBrief-Prepare")
+$owned = $false
+try {
+    try {
+        $owned = $mutex.WaitOne([TimeSpan]::FromMinutes(20))
+    } catch [System.Threading.AbandonedMutexException] {
+        $owned = $true
+    }
+    if (-not $owned) {
+        Write-Log "another preparation run holds the lock; exiting"
+        exit 1
+    }
 
-Invoke-Step "collect douyin" {
-    & $python -m pipeline.cli collect --date $Date --platform douyin --out-dir $archive
-} | Out-Null
+    Invoke-Step "collect wechat" {
+        & $python -m pipeline.cli collect --date $Date --platform wechat --out-dir $archive
+    } | Out-Null
 
-Invoke-Step "container status" { docker compose ps } | Out-Null
+    Invoke-Step "collect douyin" {
+        & $python -m pipeline.cli collect --date $Date --platform douyin --out-dir $archive
+    } | Out-Null
 
-Write-Log "daily collection finished"
+    Invoke-Step "container status" { docker compose ps } | Out-Null
+
+    Write-Log "daily collection finished"
+} finally {
+    if ($owned) { try { $mutex.ReleaseMutex() } catch { } }
+    try { $mutex.Dispose() } catch { }
+}

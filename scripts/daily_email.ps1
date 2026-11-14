@@ -138,26 +138,12 @@ try {
         if ($DryRun) {
             Write-Log "DRY-RUN: skipping headless writing"
         } else {
-            $prompt = @"
-你正在无人值守模式下生成 $Date 的投资日报。
-
-必读文件（按顺序完整读取）：
-- AGENTS.md
-- skill/daily-investment-brief/SKILL.md
-- templates/direct_brief_prompt.md
-- reports/$Date/codex-context.json
-- reports/$Date/article-pack.md
-
-无人值守覆盖：
-- 采集、social-health、materialize、prepare 已由外层脚本完成。不要运行任何命令，不要尝试自行采集或重建目录。
-- 只写 reports/$Date/daily-brief.md，不要生成 HTML。
-- 不要调用 generate、fallback 或任何外部模型。
-
-当日各平台文章数：$countsText。
-若任一平台为 0，仍按用户长期授权正常写作，但必须在标题元信息和数据覆盖章节显著标注“数据源不完整”，并列出缺失平台；不得写成“当日无观点”或“市场静默”。
-
-完成后只输出一行 DONE。
-"@
+            $promptTemplate = Join-Path $Root "templates\headless_daily_brief_prompt.md"
+            if (-not (Test-Path $promptTemplate)) {
+                Send-Failure "prompt-template-missing"
+                exit 1
+            }
+            $prompt = (Get-Content -Raw -Encoding utf8 $promptTemplate).Replace("{{DATE}}", $Date).Replace("{{COUNTS}}", $countsText)
             # Prefer the .cmd shim: Start-Job uses a fresh session whose
             # execution policy may block the claude.ps1 wrapper.
             $claudeCmd = (Get-Command claude.cmd -ErrorAction SilentlyContinue).Source

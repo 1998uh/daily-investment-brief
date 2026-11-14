@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 
 from .config import ROOT, get_settings
 from .cancel import PipelineCancelled, cancellation_context, raise_if_cancelled
@@ -1136,7 +1137,11 @@ def materialize_command(args: argparse.Namespace) -> int:
 
 
 def render_html_command(args: argparse.Namespace) -> int:
-    report_date = date.fromisoformat(args.date)
+    try:
+        report_date = date.fromisoformat(args.date)
+    except ValueError:
+        print(f"Invalid date: {args.date!r}; expected YYYY-MM-DD", file=sys.stderr)
+        return 2
     out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
     md_path = out_dir / "daily-brief.md"
     if not md_path.exists():
@@ -1178,6 +1183,41 @@ def _coverage_from_context(out_dir: Path) -> dict[str, int]:
     return coverage
 
 
+_CLAIM_STALE_SECONDS = 1800
+
+
+def _claim_send(claim: Path) -> int | None:
+    """Atomically claim a send slot so two CLI runs cannot both email."""
+    claim.parent.mkdir(parents=True, exist_ok=True)
+    for _ in range(2):
+        try:
+            return os.open(claim, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            try:
+                age = time.time() - claim.stat().st_mtime
+            except OSError:
+                return None
+            if age <= _CLAIM_STALE_SECONDS:
+                return None
+            try:
+                claim.unlink()
+            except OSError:
+                return None
+    return None
+
+
+def _release_send(claim: Path, fd: int | None) -> None:
+    if fd is not None:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+    try:
+        claim.unlink()
+    except OSError:
+        pass
+
+
 def _write_email_marker(marker: Path, report_date: date, message_id: str) -> None:
     marker.write_text(
         json.dumps(
@@ -1194,7 +1234,11 @@ def _write_email_marker(marker: Path, report_date: date, message_id: str) -> Non
 
 
 def send_email_command(args: argparse.Namespace) -> int:
-    report_date = date.fromisoformat(args.date)
+    try:
+        report_date = date.fromisoformat(args.date)
+    except ValueError:
+        print(f"Invalid date: {args.date!r}; expected YYYY-MM-DD", file=sys.stderr)
+        return 2
     out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
     report_marker = out_dir / ".email-sent.json"
     failure_marker = out_dir / ".email-failure-sent.json"
@@ -1223,6 +1267,11 @@ def send_email_command(args: argparse.Namespace) -> int:
                 f"(stage={args.failure_stage})"
             )
             return 0
+        claim = out_dir / ".email-failure-sent.lock"
+        fd = _claim_send(claim)
+        if fd is None:
+            print(f"Another failure notice send is in progress for {args.date}; skipping.")
+            return 0
         try:
             message_id = send_failure_email(
                 report_date=report_date,
@@ -1230,12 +1279,14 @@ def send_email_command(args: argparse.Namespace) -> int:
                 detail=detail,
                 coverage=coverage,
             )
+            _write_email_marker(failure_marker, report_date, message_id)
+            print(f"Sent failure email: [失败] 投资日报 {args.date} (id={message_id})")
+            return 0
         except Exception as exc:  # noqa: BLE001 - surface transport failures as exit code
             print(f"Failure email send failed: {exc}", file=sys.stderr)
             return 1
-        _write_email_marker(failure_marker, report_date, message_id)
-        print(f"Sent failure email: [失败] 投资日报 {args.date} (id={message_id})")
-        return 0
+        finally:
+            _release_send(claim, fd)
 
     if report_marker.exists() and not args.force:
         print(f"Email already sent for {args.date}; use --force to resend.")
@@ -1259,16 +1310,23 @@ def send_email_command(args: argparse.Namespace) -> int:
         print(f"DRY-RUN report email: 投资日报 {args.date}")
         return 0
 
+    claim = out_dir / ".email-sent.lock"
+    fd = _claim_send(claim)
+    if fd is None:
+        print(f"Another report email send is in progress for {args.date}; skipping.")
+        return 0
     try:
         message_id = send_report_email(
             report_date=report_date, md_path=md_path, html_path=html_path
         )
+        _write_email_marker(report_marker, report_date, message_id)
+        print(f"Sent: 投资日报 {args.date} (id={message_id})")
+        return 0
     except Exception as exc:  # noqa: BLE001 - surface transport failures as exit code
         print(f"Report email send failed: {exc}", file=sys.stderr)
         return 1
-    _write_email_marker(report_marker, report_date, message_id)
-    print(f"Sent: 投资日报 {args.date} (id={message_id})")
-    return 0
+    finally:
+        _release_send(claim, fd)
 
 
 def prepare_command(args: argparse.Namespace) -> int:

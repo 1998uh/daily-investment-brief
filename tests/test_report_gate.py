@@ -24,5 +24,8 @@ def test_missing_section_is_rejected():
 
 
 def test_short_or_empty_body_is_rejected():
-    assert check_report(date(2026, 11, 14), "太短", "<html>ok</html>")
-    assert check_report(date(2026, 11, 14), VALID, "   ")
+    short_failures = check_report(date(2026, 11, 14), "太短", "<html>ok</html>")
+    assert any("长度不足" in item for item in short_failures)
+
+    empty_html_failures = check_report(date(2026, 11, 14), VALID, "   ")
+    assert "daily-brief.html 为空" in empty_html_failures

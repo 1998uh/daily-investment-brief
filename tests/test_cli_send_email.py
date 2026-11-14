@@ -1,4 +1,6 @@
 import json
+import os
+import time
 from argparse import Namespace
 
 from pipeline import cli
@@ -83,6 +85,65 @@ def test_report_email_is_not_blocked_by_failure_marker(tmp_path, monkeypatch):
 
     assert len(sent) == 1
     assert (tmp_path / ".email-sent.json").exists()
+
+
+def test_send_email_rejects_bad_date(tmp_path):
+    assert cli.send_email_command(_args(tmp_path, date="not-a-date")) == 2
+
+
+def test_send_email_skips_when_another_send_is_in_progress(tmp_path, monkeypatch):
+    _write_report(tmp_path)
+    (tmp_path / ".email-sent.lock").write_text("", encoding="utf-8")
+    called = []
+    monkeypatch.setattr(cli, "send_report_email", lambda **k: called.append(k) or "<1>")
+
+    assert cli.send_email_command(_args(tmp_path)) == 0
+
+    assert called == []
+
+
+def test_stale_send_claim_does_not_block(tmp_path, monkeypatch):
+    _write_report(tmp_path)
+    lock = tmp_path / ".email-sent.lock"
+    lock.write_text("", encoding="utf-8")
+    old = time.time() - 3600
+    os.utime(lock, (old, old))
+    monkeypatch.setattr(cli, "send_report_email", lambda **k: "<mid>")
+
+    assert cli.send_email_command(_args(tmp_path)) == 0
+
+    assert (tmp_path / ".email-sent.json").exists()
+
+
+def test_send_claim_is_released_after_success(tmp_path, monkeypatch):
+    _write_report(tmp_path)
+    monkeypatch.setattr(cli, "send_report_email", lambda **k: "<mid>")
+
+    assert cli.send_email_command(_args(tmp_path)) == 0
+
+    assert not (tmp_path / ".email-sent.lock").exists()
+
+
+def test_send_claim_is_released_after_failure(tmp_path, monkeypatch):
+    _write_report(tmp_path)
+
+    def boom(**kwargs):
+        raise OSError("smtp down")
+
+    monkeypatch.setattr(cli, "send_report_email", boom)
+    assert cli.send_email_command(_args(tmp_path)) == 1
+    assert not (tmp_path / ".email-sent.lock").exists()
+
+
+def test_failure_send_skips_when_claim_exists(tmp_path, monkeypatch):
+    _write_report(tmp_path)
+    (tmp_path / ".email-failure-sent.lock").write_text("", encoding="utf-8")
+    called = []
+    monkeypatch.setattr(cli, "send_failure_email", lambda **k: called.append(k) or "<f>")
+
+    assert cli.send_email_command(_args(tmp_path, failure_stage="headless")) == 0
+
+    assert called == []
 
 
 def test_failure_email_reads_detail_from_log_file(tmp_path, monkeypatch):

@@ -3,6 +3,11 @@ from argparse import Namespace
 from pipeline.cli import render_html_command
 
 
+def test_render_html_rejects_bad_date(tmp_path):
+    code = render_html_command(Namespace(date="not-a-date", out_dir=str(tmp_path), check=False))
+    assert code == 2
+
+
 def test_render_html_writes_file_and_passes_check(tmp_path):
     out = tmp_path / "2026-11-14"
     out.mkdir()

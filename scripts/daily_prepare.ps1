@@ -2,7 +2,8 @@
 # Catch the 07:30-08:00 tail for WeChat/Douyin, rebuild sources/<date> from
 # SQLite, then produce the Codex article pack. Report writing stays manual.
 #
-# Registered by schtasks (task name: DailyInvestmentBrief-Prepare).
+# Manual prep utility. Not registered as a scheduled task; the 08:00
+# DailyInvestmentBrief-Email task performs these steps itself.
 # Logs: data/logs/daily-prepare-<date>.log
 
 param(
@@ -41,20 +42,38 @@ $archive = Join-Path $Root "sources\_raw\$Date"
 
 Write-Log "daily prepare start (date=$Date)"
 
-Invoke-Step "collect wechat tail" {
-    & $python -m pipeline.cli collect --date $Date --platform wechat --out-dir $archive
-} | Out-Null
+# Share the prepare mutex with the 07:30 collect and 08:00 email jobs.
+$mutex = New-Object System.Threading.Mutex($false, "Global\DailyInvestmentBrief-Prepare")
+$owned = $false
+try {
+    try {
+        $owned = $mutex.WaitOne([TimeSpan]::FromMinutes(20))
+    } catch [System.Threading.AbandonedMutexException] {
+        $owned = $true
+    }
+    if (-not $owned) {
+        Write-Log "another preparation run holds the lock; exiting"
+        exit 1
+    }
 
-Invoke-Step "collect douyin tail" {
-    & $python -m pipeline.cli collect --date $Date --platform douyin --out-dir $archive
-} | Out-Null
+    Invoke-Step "collect wechat tail" {
+        & $python -m pipeline.cli collect --date $Date --platform wechat --out-dir $archive
+    } | Out-Null
 
-Invoke-Step "materialize" {
-    & $python -m pipeline.cli materialize --date $Date
-} | Out-Null
+    Invoke-Step "collect douyin tail" {
+        & $python -m pipeline.cli collect --date $Date --platform douyin --out-dir $archive
+    } | Out-Null
 
-Invoke-Step "prepare" {
-    & $python -m pipeline.cli prepare --date $Date
-} | Out-Null
+    Invoke-Step "materialize" {
+        & $python -m pipeline.cli materialize --date $Date
+    } | Out-Null
 
-Write-Log "daily prepare finished"
+    Invoke-Step "prepare" {
+        & $python -m pipeline.cli prepare --date $Date
+    } | Out-Null
+
+    Write-Log "daily prepare finished"
+} finally {
+    if ($owned) { try { $mutex.ReleaseMutex() } catch { } }
+    try { $mutex.Dispose() } catch { }
+}
