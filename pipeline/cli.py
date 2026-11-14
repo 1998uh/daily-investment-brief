@@ -13,6 +13,7 @@ from .collectors.runner import collect_to_sources, collect_single_account
 from .generator import generate_brief, synthesize_from_batches, build_direct_prompt
 from .html import wrap_html
 from .ingest import load_articles
+from .report_gate import check_report
 from .workstation import create_journal_entry, generate_journal_draft
 
 
@@ -43,6 +44,8 @@ def main(argv: list[str] | None = None) -> int:
                 return social_health_command(args)
             if args.command == "materialize":
                 return materialize_command(args)
+            if args.command == "render-html":
+                return render_html_command(args)
             if args.command == "prepare":
                 return prepare_command(args)
             if args.command == "verify":
@@ -276,6 +279,17 @@ def build_parser() -> argparse.ArgumentParser:
     materialize.add_argument("--date", required=True, help="Report date, e.g. 2026-08-27.")
     materialize.add_argument("--db", help="SQLite article database path.")
     materialize.add_argument("--out-dir", help="Output directory; defaults to sources/<date>.")
+
+    render_html = subparsers.add_parser(
+        "render-html", help="Render daily-brief.html from daily-brief.md."
+    )
+    render_html.add_argument("--date", required=True, help="Report date, e.g. 2026-11-14.")
+    render_html.add_argument(
+        "--out-dir", help="Report directory; defaults to reports/<date>."
+    )
+    render_html.add_argument(
+        "--check", action="store_true", help="Run the content gate after rendering."
+    )
 
     prepare = subparsers.add_parser(
         "prepare",
@@ -1089,6 +1103,27 @@ def materialize_command(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
+    return 0
+
+
+def render_html_command(args: argparse.Namespace) -> int:
+    report_date = date.fromisoformat(args.date)
+    out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
+    md_path = out_dir / "daily-brief.md"
+    if not md_path.exists():
+        print(f"Missing daily brief: {md_path}", file=sys.stderr)
+        return 2
+    markdown = md_path.read_text(encoding="utf-8")
+    html_text = wrap_html(markdown, "每日投资简报")
+    html_path = out_dir / "daily-brief.html"
+    html_path.write_text(html_text, encoding="utf-8")
+    print(f"Rendered HTML: {html_path}")
+    if args.check:
+        failures = check_report(report_date, markdown, html_text)
+        for failure in failures:
+            print(f"[gate] {failure}", file=sys.stderr)
+        if failures:
+            return 1
     return 0
 
 
