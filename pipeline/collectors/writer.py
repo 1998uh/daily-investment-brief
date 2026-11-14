@@ -12,6 +12,7 @@ SOURCE_SLUGS = {
     "雪球": "xueqiu",
     "微信公众号": "wechat",
     "微博": "weibo",
+    "抖音": "douyin",
 }
 
 _REPLY_RE = re.compile(r"^回复[@\[]")

@@ -123,6 +123,30 @@ def test_get_articles_uses_synckey_only_for_first_request():
     assert transport.calls[1][1] == {"bookId": "MP_WXS_123", "count": 20, "offset": 20}
 
 
+def test_fetch_recent_articles_starts_with_positive_synckey():
+    """synckey=0 is rejected as -2041; the first page must use a positive cursor."""
+
+    class FakeTransport:
+        def __init__(self):
+            self.calls = []
+
+        def get_json(self, path, *, params, headers):
+            self.calls.append((path, params, headers))
+            return {"data": [{"reviewId": "r1", "createTime": 1720000000, "mpInfo": {"title": "t"}}]}
+
+    transport = FakeTransport()
+    client = WeReadMobileClient(
+        vid="vid-1",
+        access_token="token-1",
+        transport=transport,
+        min_interval=0,
+    )
+
+    client.fetch_recent_articles("MP_WXS_123", limit=1)
+
+    assert transport.calls[0][1]["synckey"] == 1
+
+
 def test_resolve_article_url_reads_doc_url_from_review_single():
     class FakeTransport:
         def __init__(self):

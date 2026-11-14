@@ -386,7 +386,9 @@ class WeReadMobileClient:
             page = self.get_articles(
                 book_id,
                 count=min(20, limit - len(articles)),
-                synckey=0 if first else None,
+                # synckey=0 is rejected by the API as -2041; a positive cursor
+                # asks for the latest chapters from the beginning.
+                synckey=1 if first else None,
                 offset=None if first else offset,
             )
             first = False

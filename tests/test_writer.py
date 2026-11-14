@@ -29,6 +29,22 @@ def test_is_reply_item_detects_reply_prefix():
     assert is_reply_item(normal) is False
 
 
+def test_write_items_uses_douyin_slug_for_douyin_source(tmp_path):
+    item = CollectedItem(
+        source="抖音",
+        author="曲线超哥",
+        title="视频标题",
+        url="https://www.douyin.com/video/1",
+        published_at=datetime(2026, 11, 14, tzinfo=timezone.utc),
+        content="视频文案",
+        provider="douyin",
+    )
+
+    written = write_items([item], tmp_path)
+
+    assert written[0].name.startswith("douyin-曲线超哥-")
+
+
 def test_write_items_merges_same_author_same_day_replies(tmp_path):
     day = datetime(2026, 8, 3, tzinfo=timezone.utc)
     reply1 = _item(
