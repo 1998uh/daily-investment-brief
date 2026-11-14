@@ -32,6 +32,17 @@ EVIDENCE_TASKS_NAME = "evidence-tasks.json"
 HYPOTHESIS_DEDUP_INDEX_NAME = "hypothesis-dedup-index.json"
 
 
+def _load_market_metrics(out_dir: Path) -> dict[str, Any]:
+    path = Path(out_dir) / "market-metrics.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"available": False, "warnings": ["market-metrics.json 不存在或无法读取"]}
+    if not isinstance(payload, dict):
+        return {"available": False, "warnings": ["market-metrics.json 格式无效"]}
+    return payload
+
+
 def prepare_hypothesis_context(
     *,
     report_date: date,
@@ -101,6 +112,7 @@ def prepare_hypothesis_context(
         "report_date": report_date.isoformat(),
         "timezone": settings.timezone,
         "article_count": len(articles),
+        "market_metrics": _load_market_metrics(out_dir),
         "article_pack": _display_path(article_pack_path),
         "article_index": _display_path(article_index_path),
         "evidence_tasks": _display_path(evidence_tasks_path),
