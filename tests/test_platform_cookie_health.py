@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date, datetime, timezone
 import json
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -86,6 +87,24 @@ def test_douyin_cookie_health_accepts_successful_empty_first_page(monkeypatch):
     assert calls == [("sec-user", 0)]
 
 
+def test_douyin_cookie_health_warns_when_feed_is_stale(monkeypatch):
+    monkeypatch.setenv("DOUYIN_COOKIE", "sessionid=valid")
+    old = int(datetime(2026, 11, 1, tzinfo=timezone.utc).timestamp())
+
+    result = check_douyin_cookie(
+        "sec-user",
+        fetcher=lambda _uid, _cursor: {
+            "status_code": 0,
+            "aweme_list": [{"aweme_id": "1", "create_time": old}],
+        },
+    )
+
+    assert result.ok
+    assert result.latest_date == date(2026, 11, 1)
+    assert "最新作品" in result.message
+    assert "feed" in result.message
+
+
 def test_douyin_cookie_health_rejects_api_error(monkeypatch):
     monkeypatch.setenv("DOUYIN_COOKIE", "sessionid=expired")
 
@@ -96,6 +115,29 @@ def test_douyin_cookie_health_rejects_api_error(monkeypatch):
 
     assert not result.ok
     assert "API 错误 8" in result.message
+
+
+def test_print_cookie_health_shows_stale_feed_warning(capsys):
+    from pipeline.cli import _print_cookie_health
+    from pipeline.collectors.douyin import DouyinCookieHealth
+
+    checks = [
+        (
+            "抖音",
+            "auth-login --platform douyin",
+            DouyinCookieHealth(
+                True,
+                "第 1 页请求成功，最新作品 2026-11-07（feed 可能已过期或被风控限流）",
+                20,
+            ),
+        )
+    ]
+
+    assert _print_cookie_health(checks) is True
+    out = capsys.readouterr().out
+    assert "第 1 页返回 20 条" in out
+    assert "注意" in out
+    assert "feed" in out
 
 
 def test_source_health_prints_weibo_and_douyin_login_commands(tmp_path, capsys):

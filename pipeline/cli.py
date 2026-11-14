@@ -932,6 +932,8 @@ def _print_cookie_health(checks) -> bool:
     for platform, login_command, cookie_health in checks:
         if cookie_health.ok:
             print(f"[OK] {platform} Cookie 有效（第 1 页返回 {cookie_health.status_count} 条）")
+            if "feed" in cookie_health.message:
+                print(f"       注意: {cookie_health.message}")
         elif cookie_health.check_completed:
             all_ok = False
             print(f"[WARN] {platform} Cookie 已过期，请运行 {login_command}")

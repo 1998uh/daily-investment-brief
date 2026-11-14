@@ -8,13 +8,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 import logging
-import os 
+import os
 import re
+import time
 from typing import Any, Callable
+from zoneinfo import ZoneInfo
 
 from .accounts import Account
+from .auth import cookie_header_from_items, platform_cookie_file
 from .base import CollectedItem, CollectionLog
 from .browser import HAS_PLAYWRIGHT, browser_launch_kwargs, default_profile_dir
 from .http import clean_text, compact_text
@@ -37,6 +40,7 @@ class DouyinCookieHealth:
     message: str
     status_count: int = 0
     check_completed: bool = True
+    latest_date: date | None = None
 
 
 def _cookie_value(cookie: str, name: str) -> str:
@@ -85,7 +89,26 @@ def check_douyin_cookie(
     aweme_list = payload.get("aweme_list")
     if not isinstance(aweme_list, list):
         return DouyinCookieHealth(False, "第 1 页响应缺少 aweme_list")
-    return DouyinCookieHealth(True, "第 1 页请求成功", len(aweme_list))
+    timestamps = [
+        int(item.get("create_time") or 0)
+        for item in aweme_list
+        if isinstance(item, dict) and item.get("create_time")
+    ]
+    latest = max(timestamps, default=0)
+    latest_date = (
+        datetime.fromtimestamp(latest, tz=ZoneInfo("Asia/Shanghai")).date()
+        if latest
+        else None
+    )
+    message = "第 1 页请求成功"
+    if latest_date:
+        message += f"，最新作品 {latest_date.isoformat()}"
+        today = datetime.now(ZoneInfo("Asia/Shanghai")).date()
+        if (today - latest_date).days >= 7:
+            message += "（feed 可能已过期或被风控限流）"
+    return DouyinCookieHealth(
+        True, message, len(aweme_list), latest_date=latest_date
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -280,6 +303,25 @@ def _fetch_user_posts(sec_user_id: str, max_cursor: int = 0) -> dict[str, Any] |
             return result
 
         finally:
+            try:
+                cookie = cookie_header_from_items(context.cookies())
+                if cookie:
+                    cookie_path = platform_cookie_file("douyin")
+                    cookie_path.parent.mkdir(parents=True, exist_ok=True)
+                    cookie_path.write_text(cookie, encoding="utf-8")
+                # Session cookies are discarded when Chromium closes. Give the
+                # current values a future expiry so the profile stays logged in.
+                now = time.time()
+                persisted = []
+                for item in context.cookies():
+                    entry = dict(item)
+                    if entry.get("expires", -1) in (-1, None):
+                        entry["expires"] = now + 30 * 86400
+                    persisted.append(entry)
+                if persisted:
+                    context.add_cookies(persisted)
+            except Exception as exc:  # noqa: BLE001 - never break collection
+                log.debug(f"抖音 Cookie 回写失败: {exc}")
             context.close()
 
 

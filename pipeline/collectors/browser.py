@@ -436,14 +436,38 @@ def login_persistent_profile(platform: str, *, profile_dir: Path | None = None) 
 
     target_profile = profile_dir or default_profile_dir(platform)
     target_profile.mkdir(parents=True, exist_ok=True)
+    domains = {
+        "weibo": ".weibo.com",
+        "xueqiu": ".xueqiu.com",
+        "douyin": ".douyin.com",
+    }
     with sync_playwright() as pw:
         launch_kwargs = browser_launch_kwargs(platform, headless=False)
         context = pw.chromium.launch_persistent_context(str(target_profile), **launch_kwargs)
+        cookie_path = None
+        if platform in domains:
+            from .auth import browser_cookies_from_header, platform_cookie_file
+
+            cookie_path = platform_cookie_file(platform)
+            if cookie_path.exists():
+                existing = cookie_path.read_text(encoding="utf-8").strip()
+                restored = browser_cookies_from_header(existing, domains[platform])
+                if restored:
+                    context.add_cookies(restored)
+                    print(f"[info] Restored cookies from {cookie_path}")
         page = context.pages[0] if context.pages else context.new_page()
         page.goto(urls[platform], wait_until="domcontentloaded")
         print(f"[info] Browser profile: {target_profile}")
         print("[info] Please finish login in the opened browser window.")
         input("[info] Press Enter here after login is complete...")
+        if cookie_path is not None:
+            from .auth import cookie_header_from_items
+
+            cookie = cookie_header_from_items(context.cookies())
+            if cookie:
+                cookie_path.parent.mkdir(parents=True, exist_ok=True)
+                cookie_path.write_text(cookie, encoding="utf-8")
+                print(f"[info] Cookie saved: {cookie_path}")
         context.close()
 
 

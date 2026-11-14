@@ -11,6 +11,48 @@ PLATFORM_COOKIE_ENV = {
     "douyin": "DOUYIN_COOKIE",
 }
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def platform_cookie_file(platform: str, environ: dict[str, str] | None = None) -> Path:
+    """Resolve the secret file that the collectors read for this platform."""
+    env = environ if environ is not None else os.environ
+    env_name = PLATFORM_COOKIE_ENV.get(platform)
+    if not env_name:
+        raise ValueError(f"unsupported cookie platform: {platform}")
+    configured = str(env.get(f"{env_name}_FILE", "") or "").strip()
+    if configured:
+        return Path(configured)
+    return ROOT / "secrets" / f"{platform}_cookie.txt"
+
+
+def cookie_header_from_items(cookies: list[dict]) -> str:
+    """Build a Cookie header from Playwright cookie items, keeping first values."""
+    seen: dict[str, str] = {}
+    for cookie in cookies:
+        name = str(cookie.get("name") or "")
+        value = str(cookie.get("value") or "")
+        if name and name not in seen:
+            seen[name] = value
+    return "; ".join(f"{name}={value}" for name, value in seen.items())
+
+
+def browser_cookies_from_header(cookie: str, domain: str) -> list[dict]:
+    """Convert a Cookie header into Playwright add_cookies items."""
+    items: list[dict] = []
+    for part in (cookie or "").split(";"):
+        name, separator, value = part.strip().partition("=")
+        if separator and name.strip():
+            items.append(
+                {
+                    "name": name.strip(),
+                    "value": value.strip(),
+                    "domain": domain,
+                    "path": "/",
+                }
+            )
+    return items
+
 _SECRET_PATTERN = re.compile(
     r"(?i)(xq_a_token|sessionid_ss|sessionid|wr_skey|wr_vid|wr_rt|odin_tt|ttwid|"
     r"u|SUB|ALF|SSOLoginState|XSRF-TOKEN|WEIBO_COOKIE|DOUYIN_COOKIE|WEREAD_COOKIE)"
