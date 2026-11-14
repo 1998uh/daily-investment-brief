@@ -15,6 +15,8 @@ from .generator import generate_brief, synthesize_from_batches, build_direct_pro
 from .html import wrap_html
 from .ingest import load_articles
 from .mailer import send_failure_email, send_report_email
+from .market_chart import render_market_trend
+from .market_metrics import MarketPoint, build_market_metrics, fetch_market_inputs
 from .report_gate import check_report
 from .workstation import create_journal_entry, generate_journal_draft
 
@@ -46,6 +48,8 @@ def main(argv: list[str] | None = None) -> int:
                 return social_health_command(args)
             if args.command == "materialize":
                 return materialize_command(args)
+            if args.command == "market-snapshot":
+                return market_snapshot_command(args)
             if args.command == "render-html":
                 return render_html_command(args)
             if args.command == "send-email":
@@ -283,6 +287,18 @@ def build_parser() -> argparse.ArgumentParser:
     materialize.add_argument("--date", required=True, help="Report date, e.g. 2026-08-27.")
     materialize.add_argument("--db", help="SQLite article database path.")
     materialize.add_argument("--out-dir", help="Output directory; defaults to sources/<date>.")
+
+    market = subparsers.add_parser(
+        "market-snapshot", help="Fetch the daily market trend snapshot and chart."
+    )
+    market.add_argument("--date", required=True, help="Report date, e.g. 2026-11-14.")
+    market.add_argument("--days", type=int, default=20, help="Trading days in the chart.")
+    market.add_argument(
+        "--force", action="store_true", help="Rebuild even if the snapshot exists."
+    )
+    market.add_argument(
+        "--out-dir", help="Report directory; defaults to reports/<date>."
+    )
 
     render_html = subparsers.add_parser(
         "render-html", help="Render daily-brief.html from daily-brief.md."
@@ -1133,6 +1149,80 @@ def materialize_command(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
+    return 0
+
+
+def market_snapshot_command(args: argparse.Namespace) -> int:
+    try:
+        report_date = date.fromisoformat(args.date)
+    except ValueError:
+        print(f"Invalid date: {args.date!r}; expected YYYY-MM-DD", file=sys.stderr)
+        return 2
+
+    out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
+    metrics_path = out_dir / "market-metrics.json"
+    chart_path = out_dir / "market-trend.png"
+    if not args.force and metrics_path.exists() and chart_path.exists():
+        print(f"Market snapshot already exists for {args.date}; use --force to rebuild.")
+        return 0
+
+    try:
+        inputs = fetch_market_inputs(report_date=report_date, days=args.days)
+    except Exception as exc:  # noqa: BLE001 - degrade instead of failing the report
+        inputs = {
+            "turnover": {},
+            "margin": {},
+            "etf_store": {},
+            "etf_snapshot": None,
+            "warnings": [f"市场数据获取失败: {type(exc).__name__}"],
+        }
+
+    metrics = build_market_metrics(
+        report_date=report_date,
+        turnover=inputs.get("turnover") or {},
+        margin=inputs.get("margin") or {},
+        etf_store=inputs.get("etf_store") or {},
+        etf_snapshot=inputs.get("etf_snapshot"),
+        days=max(1, int(args.days)),
+    )
+    metrics["warnings"] = list(
+        dict.fromkeys([*(metrics.get("warnings") or []), *(inputs.get("warnings") or [])])
+    )
+
+    chart_name = None
+    if metrics.get("available") and metrics.get("as_of"):
+        points = [
+            MarketPoint(
+                date=date.fromisoformat(point["date"]),
+                turnover=point.get("turnover"),
+                margin_balance=point.get("margin"),
+                etf_net_flow=point.get("etf_net_flow"),
+            )
+            for point in metrics.get("points") or []
+        ]
+        if any(point.turnover is not None for point in points):
+            margin_date = (
+                date.fromisoformat(metrics["margin"]["latest_date"])
+                if metrics.get("margin", {}).get("latest_date")
+                else None
+            )
+            render_market_trend(
+                points,
+                chart_path,
+                as_of=date.fromisoformat(metrics["as_of"]),
+                margin_date=margin_date,
+            )
+            chart_name = chart_path.name
+    metrics["chart"] = chart_name
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path.write_text(
+        json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"Market snapshot: {metrics_path}")
+    print(f"Market chart: {chart_path if chart_name else 'skipped'}")
+    for warning in metrics["warnings"]:
+        print(f"[warn] {warning}")
     return 0
 
 
