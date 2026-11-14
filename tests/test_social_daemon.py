@@ -49,6 +49,21 @@ def test_cookie_file_can_refresh_a_running_process(monkeypatch, tmp_path):
     assert load_platform_cookie("xueqiu") == ""
 
 
+def test_load_platform_cookie_reads_douyin_file(tmp_path, monkeypatch):
+    cookie_path = tmp_path / "douyin_cookie.txt"
+    cookie_path.write_text("sessionid=abc; sessionid_ss=def", encoding="utf-8")
+    monkeypatch.delenv("DOUYIN_COOKIE", raising=False)
+    monkeypatch.setenv("DOUYIN_COOKIE_FILE", str(cookie_path))
+
+    assert load_platform_cookie("douyin") == "sessionid=abc; sessionid_ss=def"
+
+
+def test_platform_cookie_is_usable_accepts_douyin_session_tokens():
+    assert platform_cookie_is_usable("douyin", "sessionid=abc") is True
+    assert platform_cookie_is_usable("douyin", "sessionid_ss=abc") is True
+    assert platform_cookie_is_usable("douyin", "ttwid=abc") is False
+
+
 def test_redact_secret_text_removes_cookie_values():
     message = "Cookie: xq_a_token=secret; SUB=private"
 

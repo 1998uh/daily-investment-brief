@@ -8,6 +8,7 @@ import re
 PLATFORM_COOKIE_ENV = {
     "xueqiu": "XUEQIU_COOKIE",
     "weibo": "WEIBO_COOKIE",
+    "douyin": "DOUYIN_COOKIE",
 }
 
 _SECRET_PATTERN = re.compile(
@@ -79,7 +80,11 @@ def redact_secret_text(value: object) -> str:
 
 def platform_cookie_is_usable(platform: str, cookie: str) -> bool:
     """Check the minimum login token before treating a secret as configured."""
-    required = {"xueqiu": "xq_a_token", "weibo": "SUB"}.get(platform)
+    required = {
+        "xueqiu": ("xq_a_token",),
+        "weibo": ("SUB",),
+        "douyin": ("sessionid", "sessionid_ss"),
+    }.get(platform)
     if not required:
         raise ValueError(f"unsupported cookie platform: {platform}")
     names = {
@@ -87,4 +92,4 @@ def platform_cookie_is_usable(platform: str, cookie: str) -> bool:
         for part in (cookie or "").split(";")
         if "=" in part
     }
-    return required in names
+    return any(name in names for name in required)
