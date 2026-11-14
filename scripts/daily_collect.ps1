@@ -1,4 +1,4 @@
-# Daily background collection for WeChat / Douyin.
+﻿# Daily background collection for WeChat / Douyin.
 # Xueqiu and Weibo are covered continuously by the Docker social-collector daemon.
 #
 # Registered by schtasks (task name: DailyInvestmentBrief-Collect).
@@ -32,6 +32,12 @@ function Invoke-Step([string]$Name, [scriptblock]$Body) {
         Write-Log "FAIL  $Name : $($_.Exception.Message)"
         return $false
     }
+}
+
+$parsedDate = [datetime]::MinValue
+if ([datetime]::TryParse($Date, [ref]$parsedDate) -and $parsedDate.DayOfWeek -eq [System.DayOfWeek]::Sunday) {
+    Write-Log "Sunday: no daily collection or report"
+    exit 0
 }
 
 $dockerDesktop = "D:\Docker\DockerDesktop\frontend\Docker Desktop.exe"

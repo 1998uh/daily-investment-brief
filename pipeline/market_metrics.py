@@ -1,25 +1,19 @@
 """Daily market-wide metrics for the report's trend section.
 
-Turnover comes from BaoStock (Shanghai + Shenzhen indices), margin balance and
-ETF main-force net inflow come from Eastmoney's public JSON endpoints.
+Turnover comes from BaoStock (Shanghai + Shenzhen indices); margin balance
+comes from Eastmoney's public JSON endpoint.
 """
 from __future__ import annotations
 
 from bisect import bisect_right
 from contextlib import redirect_stdout
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from io import StringIO
-import json
-from pathlib import Path
 import statistics
-import time
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import requests
-
-from .config import ROOT
 
 
 SHANGHAI_INDEX = "sh.000001"
@@ -29,12 +23,6 @@ MARGIN_URL = (
     "?reportName=RPTA_RZRQ_LSHJ&columns=ALL&sortColumns=DIM_DATE"
     "&sortTypes=-1&pageSize=30&pageNumber=1"
 )
-ETF_URL = (
-    "https://push2.eastmoney.com/api/qt/clist/get"
-    "?pn={page}&pz=100&po=1&np=1&fltt=2&invt=2&fid=f62"
-    "&fs=b:MK0021,b:MK0022,b:MK0023,b:MK0024&fields=f12,f14,f62,f124"
-)
-ETF_STORE_PATH = ROOT / "data" / "market-metrics" / "etf-flow.json"
 _HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0 Safari/537.36",
     "Referer": "https://quote.eastmoney.com/",
@@ -46,14 +34,6 @@ class MarketPoint:
     date: date
     turnover: float | None
     margin_balance: float | None
-    etf_net_flow: float | None
-
-
-@dataclass(frozen=True)
-class EtfSnapshot:
-    date: date
-    net_flow: float
-    top: list[dict[str, Any]]
 
 
 def _float(value: Any) -> float | None:
@@ -102,39 +82,6 @@ def parse_margin_payload(payload: dict[str, Any]) -> dict[date, float]:
     return dict(sorted(margin.items()))
 
 
-def parse_etf_pages(pages: list[dict[str, Any]]) -> EtfSnapshot:
-    """Sum every ETF's main-force net inflow and keep the top five."""
-    total = 0.0
-    entries: list[dict[str, Any]] = []
-    snapshot_ts: int | None = None
-    for payload in pages:
-        for row in ((payload or {}).get("data") or {}).get("diff") or []:
-            if not isinstance(row, dict):
-                continue
-            flow = _float(row.get("f62"))
-            if flow is None:
-                continue
-            total += flow
-            entries.append(
-                {
-                    "code": str(row.get("f12") or ""),
-                    "name": str(row.get("f14") or ""),
-                    "flow": flow,
-                }
-            )
-            if snapshot_ts is None:
-                ts = _float(row.get("f124"))
-                if ts:
-                    snapshot_ts = int(ts)
-    snapshot_date = (
-        datetime.fromtimestamp(snapshot_ts, tz=ZoneInfo("Asia/Shanghai")).date()
-        if snapshot_ts
-        else date.today()
-    )
-    entries.sort(key=lambda item: item["flow"], reverse=True)
-    return EtfSnapshot(date=snapshot_date, net_flow=total, top=entries[:5])
-
-
 def _latest_on_or_before(values: dict[date, float], day: date) -> tuple[date, float] | None:
     dated = sorted(values)
     index = bisect_right(dated, day) - 1
@@ -149,11 +96,9 @@ def build_market_metrics(
     report_date: date,
     turnover: dict[date, float],
     margin: dict[date, float],
-    etf_store: dict[str, dict],
-    etf_snapshot: EtfSnapshot | None,
     days: int = 20,
 ) -> dict[str, Any]:
-    """Align the three series on the last trading day before the report date."""
+    """Align turnover and margin on the last trading day before the report date."""
     warnings: list[str] = []
     eligible = sorted(day for day in turnover if day < report_date)
     if not eligible:
@@ -164,64 +109,26 @@ def build_market_metrics(
             "points": [],
             "turnover": {"latest": None, "prev": None, "avg20": None},
             "margin": {"latest": None, "latest_date": None},
-            "etf_flow": {"latest": None, "date": None, "top": []},
             "warnings": ["成交额历史不可用"],
         }
 
     window = eligible[-max(1, days):]
     as_of = window[-1]
     points: list[MarketPoint] = []
-    etf_dates: set[str] = set()
-
     for day in window:
-        margin_value = None
         lookup = _latest_on_or_before(margin, day)
-        if lookup:
-            margin_value = lookup[1]
-        etf_value = None
-        stored = etf_store.get(day.isoformat())
-        if isinstance(stored, dict):
-            if stored.get("partial"):
-                warnings.append(f"ETF 历史数据不完整（{day.isoformat()}）")
-            else:
-                etf_value = _float(stored.get("net_flow"))
-                etf_dates.add(day.isoformat())
-        elif etf_snapshot and etf_snapshot.date == day:
-            etf_value = etf_snapshot.net_flow
-            etf_dates.add(day.isoformat())
         points.append(
             MarketPoint(
                 date=day,
                 turnover=turnover.get(day),
-                margin_balance=margin_value,
-                etf_net_flow=etf_value,
+                margin_balance=lookup[1] if lookup else None,
             )
         )
 
     if not margin:
         warnings.append("两融数据不可用")
-    if len(etf_dates) < len(window):
-        warnings.append("ETF 历史数据不完整")
 
     margin_lookup = _latest_on_or_before(margin, as_of)
-    etf_latest = None
-    etf_date = None
-    etf_top: list[dict[str, Any]] = []
-    as_of_iso = as_of.isoformat()
-    stored = etf_store.get(as_of_iso)
-    if isinstance(stored, dict) and stored.get("partial"):
-        warnings.append(f"ETF 历史数据不完整（{as_of_iso}）")
-    elif isinstance(stored, dict):
-        etf_latest = _float(stored.get("net_flow"))
-        etf_date = as_of_iso
-        etf_top = stored.get("top") or []
-    elif etf_snapshot and etf_snapshot.date == as_of:
-        etf_latest = etf_snapshot.net_flow
-        etf_date = as_of_iso
-        etf_top = etf_snapshot.top
-    elif etf_snapshot and etf_snapshot.date > as_of:
-        warnings.append("ETF 快照日期晚于行情日，已忽略")
-
     latest_turnover = turnover.get(as_of)
     previous_turnover = turnover.get(window[-2]) if len(window) >= 2 else None
     values = [turnover[day] for day in window if day in turnover]
@@ -229,14 +136,13 @@ def build_market_metrics(
 
     return {
         "available": True,
-        "as_of": as_of_iso,
+        "as_of": as_of.isoformat(),
         "window_days": days,
         "points": [
             {
                 "date": point.date.isoformat(),
                 "turnover": point.turnover,
                 "margin": point.margin_balance,
-                "etf_net_flow": point.etf_net_flow,
             }
             for point in points
         ],
@@ -249,26 +155,8 @@ def build_market_metrics(
             "latest": margin_lookup[1] if margin_lookup else None,
             "latest_date": margin_lookup[0].isoformat() if margin_lookup else None,
         },
-        "etf_flow": {"latest": etf_latest, "date": etf_date, "top": etf_top},
         "warnings": warnings,
     }
-
-
-def load_etf_store(path: Path = ETF_STORE_PATH) -> dict[str, dict]:
-    try:
-        payload = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
-    return payload if isinstance(payload, dict) else {}
-
-
-def save_etf_store(store: dict[str, dict], path: Path = ETF_STORE_PATH) -> None:
-    target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(
-        json.dumps(store, ensure_ascii=False, indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
 
 
 def _baostock_rows(code: str, start: date, end: date) -> list[list[str]]:
@@ -301,46 +189,8 @@ def _fetch_margin() -> dict[date, float]:
     return parse_margin_payload(response.json())
 
 
-def _fetch_etf_pages(
-    max_pages: int = 30,
-    *,
-    interval_seconds: float = 1.2,
-    retries: int = 3,
-) -> tuple[list[dict[str, Any]], str | None]:
-    """Fetch ETF pages slowly; Eastmoney bans bursty IPs.
-
-    Returns the pages collected so far plus a warning when the universe is
-    incomplete, so callers can still publish a partial aggregate.
-    """
-    pages: list[dict[str, Any]] = []
-    for page in range(1, max_pages + 1):
-        payload: dict[str, Any] | None = None
-        last_error: Exception | None = None
-        for attempt in range(retries):
-            try:
-                response = requests.get(
-                    ETF_URL.format(page=page), headers=_HEADERS, timeout=20
-                )
-                response.raise_for_status()
-                payload = response.json()
-                break
-            except Exception as exc:  # noqa: BLE001 - retry transport failures
-                last_error = exc
-                if attempt < retries - 1:
-                    time.sleep(5 * (attempt + 1))
-        if payload is None:
-            return pages, f"ETF 第 {page} 页获取失败: {type(last_error).__name__}"
-        rows = ((payload or {}).get("data") or {}).get("diff") or []
-        pages.append(payload)
-        if len(rows) < 100:
-            return pages, None
-        if interval_seconds > 0:
-            time.sleep(interval_seconds)
-    return pages, "ETF 页数超过上限，数据可能不完整"
-
-
 def fetch_market_inputs(*, report_date: date, days: int = 20) -> dict[str, Any]:
-    """Fetch all sources; individual failures become warnings, never exceptions."""
+    """Fetch both sources; individual failures become warnings, never exceptions."""
     warnings: list[str] = []
     end = report_date - timedelta(days=1)
     start = end - timedelta(days=60)
@@ -359,35 +209,8 @@ def fetch_market_inputs(*, report_date: date, days: int = 20) -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001
         warnings.append(f"两融数据获取失败: {type(exc).__name__}")
 
-    etf_snapshot = None
-    try:
-        etf_pages, etf_warning = _fetch_etf_pages()
-        if etf_pages:
-            etf_snapshot = parse_etf_pages(etf_pages)
-            if etf_warning:
-                warnings.append(etf_warning)
-                warnings.append("ETF 数据不完整")
-        elif etf_warning:
-            warnings.append(etf_warning)
-    except Exception as exc:  # noqa: BLE001
-        warnings.append(f"ETF 资金获取失败: {type(exc).__name__}")
-
-    store = load_etf_store()
-    if etf_snapshot is not None:
-        store[etf_snapshot.date.isoformat()] = {
-            "net_flow": etf_snapshot.net_flow,
-            "top": etf_snapshot.top,
-            "partial": bool(etf_warning),
-        }
-        try:
-            save_etf_store(store)
-        except OSError as exc:
-            warnings.append(f"ETF 历史写入失败: {type(exc).__name__}")
-
     return {
         "turnover": turnover,
         "margin": margin,
-        "etf_store": store,
-        "etf_snapshot": etf_snapshot,
         "warnings": warnings,
     }

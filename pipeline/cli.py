@@ -1174,8 +1174,6 @@ def market_snapshot_command(args: argparse.Namespace) -> int:
         inputs = {
             "turnover": {},
             "margin": {},
-            "etf_store": {},
-            "etf_snapshot": None,
             "warnings": [f"市场数据获取失败: {type(exc).__name__}"],
         }
 
@@ -1183,8 +1181,6 @@ def market_snapshot_command(args: argparse.Namespace) -> int:
         report_date=report_date,
         turnover=inputs.get("turnover") or {},
         margin=inputs.get("margin") or {},
-        etf_store=inputs.get("etf_store") or {},
-        etf_snapshot=inputs.get("etf_snapshot"),
         days=max(1, int(args.days)),
     )
     metrics["warnings"] = list(
@@ -1198,7 +1194,6 @@ def market_snapshot_command(args: argparse.Namespace) -> int:
                 date=date.fromisoformat(point["date"]),
                 turnover=point.get("turnover"),
                 margin_balance=point.get("margin"),
-                etf_net_flow=point.get("etf_net_flow"),
             )
             for point in metrics.get("points") or []
         ]

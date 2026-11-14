@@ -60,6 +60,12 @@ function Send-Failure([string]$Stage) {
     Write-Log "Failure email attempt finished (exit $LASTEXITCODE)"
 }
 
+$parsedDate = [datetime]::MinValue
+if ([datetime]::TryParse($Date, [ref]$parsedDate) -and $parsedDate.DayOfWeek -eq [System.DayOfWeek]::Sunday) {
+    Write-Log "Sunday: no daily collection or report"
+    exit 0
+}
+
 # Only one prep/write run may touch sources/<date> and reports/<date> at a time.
 $mutex = New-Object System.Threading.Mutex($false, "Global\DailyInvestmentBrief-Prepare")
 $owned = $false

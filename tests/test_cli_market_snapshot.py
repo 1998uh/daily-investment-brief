@@ -22,8 +22,6 @@ def test_writes_json_and_chart_with_force(tmp_path, monkeypatch):
         lambda **k: {
             "turnover": {date(2026, 11, 13): 1.65e12},
             "margin": {},
-            "etf_store": {},
-            "etf_snapshot": None,
             "warnings": [],
         },
     )
@@ -48,8 +46,6 @@ def test_chart_failure_still_writes_json(tmp_path, monkeypatch):
         lambda **k: {
             "turnover": {date(2026, 11, 13): 1.65e12},
             "margin": {},
-            "etf_store": {},
-            "etf_snapshot": None,
             "warnings": [],
         },
     )

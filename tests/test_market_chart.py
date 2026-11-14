@@ -6,9 +6,9 @@ from pipeline.market_chart import render_market_trend
 from pipeline.market_metrics import MarketPoint
 
 
-def test_renders_a_three_panel_png(tmp_path):
+def test_renders_a_two_panel_png(tmp_path):
     points = [
-        MarketPoint(date(2026, 11, d), 1.5e12 + d, 2.3e12 + d, 1e9 - d)
+        MarketPoint(date(2026, 11, d), 1.5e12 + d, 2.3e12 + d)
         for d in range(1, 21)
     ]
 
@@ -24,7 +24,7 @@ def test_renders_a_three_panel_png(tmp_path):
 
 
 def test_missing_values_do_not_crash(tmp_path):
-    points = [MarketPoint(date(2026, 11, 1), None, None, None)]
+    points = [MarketPoint(date(2026, 11, 1), None, None)]
 
     path = render_market_trend(points, tmp_path / "chart.png", as_of=date(2026, 11, 1))
 

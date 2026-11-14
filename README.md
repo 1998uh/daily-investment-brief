@@ -290,8 +290,10 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 
 | 任务名 | 时间 | 脚本 | 作用 |
 |---|---|---|---|
-| `DailyInvestmentBrief-Collect` | 每天 `07:30` | `scripts/daily_collect.ps1` | 检查代理、启动/复用 `social-collector`，采集微信/抖音到 `sources/_raw/<日期>/` |
-| `DailyInvestmentBrief-Email` | 每天 `08:00` | `scripts/daily_email.ps1` | 补采 07:30–08:00 尾段 → `materialize` → `prepare` → 模型原生写日报 → 渲染 HTML → 内容门禁 → 邮件投递 |
+| `DailyInvestmentBrief-Collect` | 周一至周六 `07:30` | `scripts/daily_collect.ps1` | 检查代理、启动/复用 `social-collector`，采集微信/抖音到 `sources/_raw/<日期>/` |
+| `DailyInvestmentBrief-Email` | 周一至周六 `08:00` | `scripts/daily_email.ps1` | 补采 07:30–08:00 尾段 → `materialize` → `market-snapshot` → `prepare` → 模型原生写日报 → 渲染 HTML → 内容门禁 → 邮件投递 |
+
+**周日不生成日报**：两个任务改为周一到周六触发，脚本也会在周日直接退出。周一的日报窗口仍覆盖周日 08:00 之后的内容。
 
 08:00 任务会把 07:30–08:00 的尾段补齐，目标 08:10 前送达 `BRIEF_MAIL_TO`。发送成功后写 `reports/<日期>/.email-sent.json`，同一天重复触发默认跳过，手动加 `-Force` 才重发。任一环节失败都会尝试发送 `[失败] 投资日报 <日期>` 邮件。
 
@@ -313,8 +315,9 @@ BRIEF_MAIL_TO=收件邮箱
 $collect = New-ScheduledTaskAction -Execute "powershell.exe" -Argument '-NoProfile -ExecutionPolicy Bypass -File "D:\project\daily-investment-brief\scripts\daily_collect.ps1"'
 $email = New-ScheduledTaskAction -Execute "powershell.exe" -Argument '-NoProfile -ExecutionPolicy Bypass -File "D:\project\daily-investment-brief\scripts\daily_email.ps1"'
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
-Register-ScheduledTask -TaskName "DailyInvestmentBrief-Collect" -Action $collect -Trigger (New-ScheduledTaskTrigger -Daily -At 07:30) -Settings $settings -Force
-Register-ScheduledTask -TaskName "DailyInvestmentBrief-Email" -Action $email -Trigger (New-ScheduledTaskTrigger -Daily -At 08:00) -Settings $settings -Force
+$days = "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
+Register-ScheduledTask -TaskName "DailyInvestmentBrief-Collect" -Action $collect -Trigger (New-ScheduledTaskTrigger -Weekly -DaysOfWeek $days -At 07:30) -Settings $settings -Force
+Register-ScheduledTask -TaskName "DailyInvestmentBrief-Email" -Action $email -Trigger (New-ScheduledTaskTrigger -Weekly -DaysOfWeek $days -At 08:00) -Settings $settings -Force
 ```
 
 ---
@@ -359,7 +362,7 @@ Source health: D:\ai-project\daily-investment-brief\pipeline\health.sqlite
 正文前依次为：今日三句话 → 一页速览 → 大盘量能趋势 → 今日注意事项 → 事件正文；文末依次为：作者持仓与方向明细（备查）→ 数据覆盖 → 核心矛盾表 → 下期关注。
 
 - **一页速览**：持仓动作、方向共识、主要分歧、今日机会、一句话风险
-- **大盘量能趋势**：20 个交易日成交额 / 两融 / ETF 主力净流入图 + 最近 5 日表，由 `market-snapshot` 生成
+- **大盘量能趋势**：20 个交易日成交额 / 两融余额图 + 最近 5 日表，由 `market-snapshot` 生成
 - **核心矛盾**：一句话 + 3–4 行维度表，不使用 mermaid（邮件客户端不执行脚本）
 - 取消独立的博主持仓/方向表和“今日精选标的”；逐人明细并入文末备查表
 
@@ -373,7 +376,7 @@ daily-brief collect --date 2026-09-03 --platform wechat
 # 2. 按 08:00 日报窗口从 SQLite 重建正式输入目录
 daily-brief materialize --date 2026-08-27
 
-# 3. 生成量能快照（BaoStock 成交额 + 东方财富两融/ETF）
+# 3. 生成量能快照（BaoStock 成交额 + 东方财富两融余额）
 daily-brief market-snapshot --date 2026-08-27
 
 # 4. 生成日报文章包，供 Codex 写作
