@@ -13,6 +13,7 @@ from io import StringIO
 import json
 from pathlib import Path
 import statistics
+import time
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -295,17 +296,42 @@ def _fetch_margin() -> dict[date, float]:
     return parse_margin_payload(response.json())
 
 
-def _fetch_etf_pages(max_pages: int = 30) -> list[dict[str, Any]]:
+def _fetch_etf_pages(
+    max_pages: int = 30,
+    *,
+    interval_seconds: float = 1.2,
+    retries: int = 3,
+) -> tuple[list[dict[str, Any]], str | None]:
+    """Fetch ETF pages slowly; Eastmoney bans bursty IPs.
+
+    Returns the pages collected so far plus a warning when the universe is
+    incomplete, so callers can still publish a partial aggregate.
+    """
     pages: list[dict[str, Any]] = []
     for page in range(1, max_pages + 1):
-        response = requests.get(ETF_URL.format(page=page), headers=_HEADERS, timeout=20)
-        response.raise_for_status()
-        payload = response.json()
+        payload: dict[str, Any] | None = None
+        last_error: Exception | None = None
+        for attempt in range(retries):
+            try:
+                response = requests.get(
+                    ETF_URL.format(page=page), headers=_HEADERS, timeout=20
+                )
+                response.raise_for_status()
+                payload = response.json()
+                break
+            except Exception as exc:  # noqa: BLE001 - retry transport failures
+                last_error = exc
+                if attempt < retries - 1:
+                    time.sleep(5 * (attempt + 1))
+        if payload is None:
+            return pages, f"ETF 第 {page} 页获取失败: {type(last_error).__name__}"
         rows = ((payload or {}).get("data") or {}).get("diff") or []
         pages.append(payload)
         if len(rows) < 100:
-            break
-    return pages
+            return pages, None
+        if interval_seconds > 0:
+            time.sleep(interval_seconds)
+    return pages, "ETF 页数超过上限，数据可能不完整"
 
 
 def fetch_market_inputs(*, report_date: date, days: int = 20) -> dict[str, Any]:
@@ -330,7 +356,14 @@ def fetch_market_inputs(*, report_date: date, days: int = 20) -> dict[str, Any]:
 
     etf_snapshot = None
     try:
-        etf_snapshot = parse_etf_pages(_fetch_etf_pages())
+        etf_pages, etf_warning = _fetch_etf_pages()
+        if etf_pages:
+            etf_snapshot = parse_etf_pages(etf_pages)
+            if etf_warning:
+                warnings.append(etf_warning)
+                warnings.append("ETF 数据不完整")
+        elif etf_warning:
+            warnings.append(etf_warning)
     except Exception as exc:  # noqa: BLE001
         warnings.append(f"ETF 资金获取失败: {type(exc).__name__}")
 
