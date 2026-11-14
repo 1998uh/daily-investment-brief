@@ -12,7 +12,9 @@ PLATFORM_COOKIE_ENV = {
 }
 
 _SECRET_PATTERN = re.compile(
-    r"(?i)(xq_a_token|u|SUB|ALF|SSOLoginState|XSRF-TOKEN|WEIBO_COOKIE)\s*=\s*[^;\s]+"
+    r"(?i)(xq_a_token|sessionid_ss|sessionid|wr_skey|wr_vid|wr_rt|odin_tt|ttwid|"
+    r"u|SUB|ALF|SSOLoginState|XSRF-TOKEN|WEIBO_COOKIE|DOUYIN_COOKIE|WEREAD_COOKIE)"
+    r"\s*=\s*[^;\s]+"
 )
 
 

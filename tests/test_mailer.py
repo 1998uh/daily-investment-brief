@@ -52,6 +52,20 @@ def test_failure_email_redaction_survives_decoding():
     assert "SECRET-CODE" not in text_part.get_content()
 
 
+def test_failure_email_redacts_platform_cookie_values(monkeypatch):
+    monkeypatch.setenv("DOUYIN_COOKIE", "sessionid=COOKIE-SECRET; sessionid_ss=OTHER-SECRET")
+    msg = build_failure_email(
+        report_date=date(2026, 11, 14),
+        stage="collect",
+        detail="fetch failed sessionid=COOKIE-SECRET",
+        coverage={},
+        config=CONFIG,
+    )
+    text_part = msg.get_body(preferencelist=("plain",))
+    assert text_part is not None
+    assert "COOKIE-SECRET" not in text_part.get_content()
+
+
 def test_load_mail_config_reads_dotenv_when_environ_is_omitted(monkeypatch):
     calls = []
     monkeypatch.setattr("pipeline.config.load_env", lambda **kwargs: calls.append(kwargs))

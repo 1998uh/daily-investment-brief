@@ -53,12 +53,36 @@ def load_mail_config(environ: Mapping[str, str] | None = None) -> MailConfig:
     return MailConfig(host=host, port=port, user=user, auth_code=auth_code, recipient=recipient)
 
 
+_COOKIE_ENV_NAMES = (
+    "XUEQIU_COOKIE",
+    "WEIBO_COOKIE",
+    "DOUYIN_COOKIE",
+    "WEREAD_COOKIE",
+    "WECHAT_COOKIE",
+)
+
+
 def redact(text: str, secrets: Iterable[str]) -> str:
     result = str(text or "")
-    for secret in secrets:
-        if secret:
-            result = result.replace(secret, "<redacted>")
+    # Longest first so a full cookie header is replaced before its parts.
+    for secret in sorted({item for item in secrets if item}, key=len, reverse=True):
+        result = result.replace(secret, "<redacted>")
     return result
+
+
+def _secret_values(config: MailConfig) -> list[str]:
+    secrets: list[str] = [config.auth_code]
+    for name in _COOKIE_ENV_NAMES:
+        value = os.getenv(name, "")
+        if not value:
+            continue
+        secrets.append(value)
+        for part in value.split(";"):
+            _, separator, token = part.strip().partition("=")
+            token = token.strip()
+            if separator and len(token) >= 6:
+                secrets.append(token)
+    return secrets
 
 
 def _set_headers(message: EmailMessage, *, subject: str, config: MailConfig) -> None:
@@ -107,7 +131,7 @@ def build_failure_email(
     coverage: dict[str, int],
     config: MailConfig,
 ) -> EmailMessage:
-    safe_detail = redact(detail, [config.auth_code])
+    safe_detail = redact(detail, _secret_values(config))
     rows_text = "\n".join(f"- {name}: {count}" for name, count in coverage.items())
     if not rows_text:
         rows_text = "- （无覆盖数据）"

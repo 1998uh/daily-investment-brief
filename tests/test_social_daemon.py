@@ -64,6 +64,15 @@ def test_platform_cookie_is_usable_accepts_douyin_session_tokens():
     assert platform_cookie_is_usable("douyin", "ttwid=abc") is False
 
 
+def test_redact_secret_text_removes_douyin_and_weread_tokens():
+    message = "Cookie: sessionid=douyin-secret; wr_skey=weread-secret"
+
+    safe = redact_secret_text(message)
+
+    assert "douyin-secret" not in safe
+    assert "weread-secret" not in safe
+
+
 def test_redact_secret_text_removes_cookie_values():
     message = "Cookie: xq_a_token=secret; SUB=private"
 

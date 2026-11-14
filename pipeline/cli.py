@@ -313,6 +313,12 @@ def build_parser() -> argparse.ArgumentParser:
     send_email.add_argument(
         "--failure-detail", default="", help="Failure detail included in the notice."
     )
+    send_email.add_argument(
+        "--failure-log",
+        action="append",
+        default=[],
+        help="Log file whose tail is included in the failure notice; repeatable.",
+    )
 
     prepare = subparsers.add_parser(
         "prepare",
@@ -1190,13 +1196,27 @@ def _write_email_marker(marker: Path, report_date: date, message_id: str) -> Non
 def send_email_command(args: argparse.Namespace) -> int:
     report_date = date.fromisoformat(args.date)
     out_dir = Path(args.out_dir) if args.out_dir else ROOT / "reports" / args.date
-    marker = out_dir / ".email-sent.json"
-    if marker.exists() and not args.force:
-        print(f"Email already sent for {args.date}; use --force to resend.")
-        return 0
+    report_marker = out_dir / ".email-sent.json"
+    failure_marker = out_dir / ".email-failure-sent.json"
 
     if args.failure_stage:
+        if failure_marker.exists() and not args.force:
+            print(f"Failure notice already sent for {args.date}; use --force to resend.")
+            return 0
         coverage = _coverage_from_context(out_dir)
+        detail = args.failure_detail
+        log_paths = getattr(args, "failure_log", []) or []
+        if log_paths:
+            tails: list[str] = []
+            for path in log_paths:
+                try:
+                    tails.append(
+                        Path(path).read_text(encoding="utf-8", errors="replace")[-2000:]
+                    )
+                except OSError:
+                    continue
+            if tails:
+                detail = "\n".join(tails)
         if args.dry_run:
             print(
                 f"DRY-RUN failure email: [失败] 投资日报 {args.date} "
@@ -1207,14 +1227,18 @@ def send_email_command(args: argparse.Namespace) -> int:
             message_id = send_failure_email(
                 report_date=report_date,
                 stage=args.failure_stage,
-                detail=args.failure_detail,
+                detail=detail,
                 coverage=coverage,
             )
         except Exception as exc:  # noqa: BLE001 - surface transport failures as exit code
             print(f"Failure email send failed: {exc}", file=sys.stderr)
             return 1
-        _write_email_marker(marker, report_date, message_id)
+        _write_email_marker(failure_marker, report_date, message_id)
         print(f"Sent failure email: [失败] 投资日报 {args.date} (id={message_id})")
+        return 0
+
+    if report_marker.exists() and not args.force:
+        print(f"Email already sent for {args.date}; use --force to resend.")
         return 0
 
     md_path = out_dir / "daily-brief.md"
@@ -1242,7 +1266,7 @@ def send_email_command(args: argparse.Namespace) -> int:
     except Exception as exc:  # noqa: BLE001 - surface transport failures as exit code
         print(f"Report email send failed: {exc}", file=sys.stderr)
         return 1
-    _write_email_marker(marker, report_date, message_id)
+    _write_email_marker(report_marker, report_date, message_id)
     print(f"Sent: 投资日报 {args.date} (id={message_id})")
     return 0
 

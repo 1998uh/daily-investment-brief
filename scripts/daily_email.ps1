@@ -10,7 +10,8 @@ param(
     [string]$Date = (Get-Date -Format "yyyy-MM-dd"),
     [switch]$Force,
     [switch]$DryRun,
-    [switch]$SkipPrepare
+    [switch]$SkipPrepare,
+    [switch]$SkipSend
 )
 
 $ErrorActionPreference = "Continue"
@@ -46,24 +47,15 @@ function Invoke-Step([string]$Name, [scriptblock]$Body) {
     }
 }
 
-function Get-FailureDetail {
-    $parts = @()
-    if (Test-Path $claudeLog) { $parts += (Get-Content $claudeLog -Tail 40 -Encoding utf8) }
-    if (Test-Path $log) { $parts += (Get-Content $log -Tail 30 -Encoding utf8) }
-    $detail = ($parts -join "`n")
-    if ($detail.Length -gt 2000) {
-        $detail = $detail.Substring($detail.Length - 2000)
-    }
-    return $detail
-}
-
 function Send-Failure([string]$Stage) {
     if ($DryRun) {
         Write-Log "DRY-RUN failure email: stage=$Stage"
         return
     }
-    $detail = Get-FailureDetail
-    $failureArgs = @("-m", "pipeline.cli", "send-email", "--date", $Date, "--failure-stage", $Stage, "--failure-detail", $detail)
+    # Pass log paths, not the multi-line log text: PowerShell splits a long
+    # detail string into multiple native arguments and argparse rejects it.
+    $failureArgs = @("-m", "pipeline.cli", "send-email", "--date", $Date, "--failure-stage", $Stage, "--failure-log", $log)
+    if (Test-Path $claudeLog) { $failureArgs += @("--failure-log", $claudeLog) }
     & $python @failureArgs 2>&1 | ForEach-Object { Add-Content -Path $log -Value $_ -Encoding utf8 }
     Write-Log "Failure email attempt finished (exit $LASTEXITCODE)"
 }
@@ -173,12 +165,21 @@ try {
             $job = Start-Job -ScriptBlock {
                 param($projectRoot, $writerPrompt, $claudePath)
                 Set-Location $projectRoot
-                & $claudePath -p $writerPrompt --permission-mode acceptEdits --allowedTools "Read,Write,Edit,Glob,Grep" --output-format text 2>&1
+                $writerOutput = & $claudePath -p $writerPrompt --permission-mode acceptEdits --allowedTools "Read,Write,Edit,Glob,Grep" --output-format text 2>&1
+                $writerExit = $LASTEXITCODE
+                $writerOutput
+                "__CLAUDE_EXIT__=$writerExit"
             } -ArgumentList $Root, $prompt, $claudeCmd
             $finished = Wait-Job $job -Timeout 1200
+            $claudeExit = -1
+            $claudeText = ""
             if ($finished) {
-                Receive-Job $job | Out-File -FilePath $claudeLog -Encoding utf8
-                Write-Log "headless writer finished"
+                $writerOutput = Receive-Job $job
+                $writerOutput | Out-File -FilePath $claudeLog -Encoding utf8
+                $claudeText = ($writerOutput | Out-String)
+                $exitMatch = [regex]::Match($claudeText, "__CLAUDE_EXIT__=(-?\d+)")
+                if ($exitMatch.Success) { $claudeExit = [int]$exitMatch.Groups[1].Value }
+                Write-Log "headless writer finished (exit=$claudeExit)"
             } else {
                 Stop-Job $job -ErrorAction SilentlyContinue
                 Receive-Job $job -ErrorAction SilentlyContinue | Out-File -FilePath $claudeLog -Encoding utf8 -Append
@@ -189,6 +190,13 @@ try {
             if (-not $finished) {
                 Send-Failure "headless-timeout"
                 exit 1
+            }
+            if ($claudeExit -ne 0) {
+                Send-Failure "headless-nonzero"
+                exit 1
+            }
+            if ($claudeText -notmatch "DONE") {
+                Write-Log "headless writer did not print DONE; relying on exit code, mtime and content gate"
             }
             if (-not (Test-Path $mdPath)) {
                 Send-Failure "headless-missing-report"
@@ -215,6 +223,11 @@ try {
     if ($rendered -ne 0) {
         Send-Failure "content-gate"
         exit 1
+    }
+
+    if ($SkipSend) {
+        Write-Log "SKIP SEND: report generated, email not sent"
+        exit 0
     }
 
     if ($DryRun) {
