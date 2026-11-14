@@ -77,7 +77,18 @@ try {
     Write-Log "daily email start (date=$Date dry_run=$DryRun force=$Force)"
     $startedAt = Get-Date
 
-    if (-not $SkipPrepare) {
+    # Decide reuse before preparation: reusing a report must not refresh the
+    # article pack or the market chart under the existing text.
+    $reuse = $false
+    if (-not $Force -and (Test-Path $mdPath)) {
+        $mdTime = (Get-Item $mdPath).LastWriteTime
+        if ($mdTime -ge (Get-Date $Date).Date) {
+            $reuse = $true
+            Write-Log "reusing existing report written at $mdTime"
+        }
+    }
+
+    if (-not $SkipPrepare -and -not $reuse) {
         # social-health is diagnostic; a non-zero result means partial data,
         # which is allowed and must be marked in the report by the writer.
         $health = Invoke-Step "social-health" { & $python -m pipeline.cli social-health }
@@ -95,6 +106,13 @@ try {
         }
         if ($materialized -ne 0) {
             Write-Log "materialize reported incomplete sources; continuing under standing authorization"
+        }
+
+        $marketArgs = @("-m", "pipeline.cli", "market-snapshot", "--date", $Date)
+        if ($Force) { $marketArgs += "--force" }
+        $market = Invoke-Step "market-snapshot" { & $python @marketArgs }
+        if ($market -ne 0) {
+            Write-Log "market snapshot failed; continuing with a degraded market section"
         }
 
         $prepared = Invoke-Step "prepare" {
@@ -124,15 +142,6 @@ try {
         }
     }
     $countsText = ($counts.GetEnumerator() | ForEach-Object { "$($_.Key) $($_.Value) 篇" }) -join "、"
-
-    $reuse = $false
-    if (-not $Force -and (Test-Path $mdPath)) {
-        $mdTime = (Get-Item $mdPath).LastWriteTime
-        if ($mdTime -ge (Get-Date $Date).Date) {
-            $reuse = $true
-            Write-Log "reusing existing report written at $mdTime"
-        }
-    }
 
     if (-not $reuse) {
         if ($DryRun) {
