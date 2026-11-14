@@ -14,7 +14,6 @@ def test_render_html_writes_file_and_passes_check(tmp_path):
     md = "# 📊 每日投资简报 — 2026年11月14日（周六·盘前）\n\n" + (
         "## 今日三句话\n## 一、⚡ 一页速览\n## 二、📈 大盘量能趋势\n"
         "## 三、⚡ 今日注意事项与投资总结\n"
-        "## 📋 作者持仓与方向明细（备查）\n### 博主看好方向汇总\n"
         "## 数据覆盖情况\n" + "正文" * 1600
     )
     (out / "daily-brief.md").write_text(md, encoding="utf-8")

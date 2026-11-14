@@ -69,7 +69,6 @@
     const side = node("aside", "side-stack");
     side.append(renderCoverage());
     side.append(renderAuthorReliability());
-    side.append(renderSentiment());
     side.append(renderTrend());
     main.append(side);
     shell.append(main);
@@ -177,36 +176,6 @@
       row.append(node("span", "coverage-count", formatNumber(item.article_count)));
       panel.append(row);
     });
-    return panel;
-  }
-
-  function renderSentiment() {
-    const panel = node("section", "panel sentiment");
-    const sentiment = data.sentiment || {};
-    panel.append(panelHead("每日情绪温度计", "最近 7 个报告日 · 看好 / 回避净情绪"));
-    const items = sentiment.top_directions || [];
-    if (!items.length) {
-      panel.append(node("p", "empty", "暂无可解析的作者方向信号。"));
-      return panel;
-    }
-    items.forEach((item) => {
-      const row = node("div", "sentiment-row");
-      const current = item.series && item.series.length ? item.series[item.series.length - 1] : {};
-      const score = Number(current.net_score || 0);
-      const scoreClass = score > 0 ? "bullish" : (score < 0 ? "bearish" : "neutral");
-      row.append(node("div", "sentiment-label", item.name));
-      const track = node("div", "sentiment-track " + scoreClass);
-      const fill = node("div", "sentiment-fill");
-      fill.style.width = Math.round(Math.abs(score) * 50) + "%";
-      fill.style.left = score >= 0 ? "50%" : (50 - Math.round(Math.abs(score) * 50)) + "%";
-      track.append(node("span", "sentiment-midline"), fill);
-      row.append(track);
-      row.append(node("div", "sentiment-score", (score > 0 ? "+" : "") + Math.round(score * 100) + "%"));
-      row.title = "近 7 日：看好 " + formatNumber(item.bullish) + " / 回避 " + formatNumber(item.bearish);
-      panel.append(row);
-    });
-    const note = node("p", "sentiment-note", "净分数 = (看好 - 回避) / (看好 + 回避)；按作者-日-方向去重");
-    panel.append(note);
     return panel;
   }
 

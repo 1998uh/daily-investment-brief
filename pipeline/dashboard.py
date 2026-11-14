@@ -24,10 +24,9 @@ from .hypothesis_io import (
     write_json,
 )
 from .hypothesis_models import ContractError, TERMINAL_STATUSES
-from .sentiment import build_sentiment_snapshot
 
 
-DASHBOARD_SCHEMA_VERSION = "1.2"
+DASHBOARD_SCHEMA_VERSION = "1.3"
 REQUIRED_SOURCES = ("雪球", "微博", "微信公众号")
 STATUS_LABELS = {
     "pending": "待验证",
@@ -160,7 +159,6 @@ def build_dashboard_snapshot(
     subject_counts = Counter(item["subject"]["type"] for item in hypotheses)
     due = [item for item in hypotheses if item["due"]]
     author_reliability = build_author_reliability(ledger.values())
-    sentiment = build_sentiment_snapshot(report_dirs)
 
     return {
         "schema_version": DASHBOARD_SCHEMA_VERSION,
@@ -198,7 +196,6 @@ def build_dashboard_snapshot(
         "hypotheses": hypotheses,
         "events": events,
         "author_reliability": author_reliability,
-        "sentiment": sentiment,
     }
 
 

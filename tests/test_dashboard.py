@@ -92,7 +92,7 @@ def test_dashboard_snapshot_rebuilds_status_and_due_state(tmp_path):
     assert snapshot["hypotheses"][0]["history"][0]["evidence_ids"] == []
     assert snapshot["latest"]["readiness"]["status"] == "ready"
     assert snapshot["reports"][-1]["article_count"] == 12
-    assert snapshot["sentiment"]["window_days"] == 7
+    assert "sentiment" not in snapshot
 
 
 def test_dashboard_build_writes_snapshot_and_self_contained_html(tmp_path):
@@ -104,7 +104,7 @@ def test_dashboard_build_writes_snapshot_and_self_contained_html(tmp_path):
     assert result.snapshot_path == output_dir / "snapshot.json"
     assert result.html_path == output_dir / "index.html"
     payload = json.loads(result.snapshot_path.read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "1.2"
+    assert payload["schema_version"] == "1.3"
     html = result.html_path.read_text(encoding="utf-8")
     assert "window.__DASHBOARD_DATA__" in html
     assert "投资复盘看板" in html
