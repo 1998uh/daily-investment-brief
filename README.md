@@ -278,11 +278,44 @@ BROWSER_COOKIE_CACHE_TTL_SECONDS=1800
 | 报错 | 含义 | 排查方式 |
 |---|---|---|
 | `errCode: -2010` | 未登录/会话失效 | 检查 `WEREAD_COOKIE` 是否包含 `wr_skey`/`wr_vid`/`wr_rt`（缺失说明登录态丢失，重新 `auth-login`） |
-| `errCode: -2041` | 该公众号未同步到账号数据 | 1) 确认已在微信读书里关注该公众号；2) **仅关注不够**，需要在手机微信读书 App 里手动点开该公众号最近一篇文章浏览一次，触发同步后才能被 `/web/mp/articles` 接口读到 |
+| `errCode: -2041` | 首轮游标 `synckey=0` 被服务端拒绝，或该公众号未同步到账号数据 | 采集器已改用正数游标（`synckey=1`）作为首轮请求；若仍报错，再确认已关注该公众号，并在手机微信读书 App 里手动点开其最近一篇文章触发同步 |
 
 移动接口可能以 HTTP `499` 返回同一个 `errcode: -2041` JSON；采集器会读取响应体并按风控处理，不再把它误报成普通网络错误。
 
 `-2041` 和"是否关注"没有稳定的对应关系（接口返回的 `follow` 字段不可靠），点开文章浏览一次是目前已知唯一稳定复现有效的解法。
+
+### 每日自动采集与邮件日报（Windows 计划任务）
+
+雪球/微博由 Docker 常驻服务每 30 分钟持续采集；微信公众号、抖音和日报邮件的日程如下：
+
+| 任务名 | 时间 | 脚本 | 作用 |
+|---|---|---|---|
+| `DailyInvestmentBrief-Collect` | 每天 `07:30` | `scripts/daily_collect.ps1` | 检查代理、启动/复用 `social-collector`，采集微信/抖音到 `sources/_raw/<日期>/` |
+| `DailyInvestmentBrief-Email` | 每天 `08:00` | `scripts/daily_email.ps1` | 补采 07:30–08:00 尾段 → `materialize` → `prepare` → 模型原生写日报 → 渲染 HTML → 内容门禁 → 邮件投递 |
+
+08:00 任务会把 07:30–08:00 的尾段补齐，目标 08:10 前送达 `BRIEF_MAIL_TO`。发送成功后写 `reports/<日期>/.email-sent.json`，同一天重复触发默认跳过，手动加 `-Force` 才重发。任一环节失败都会尝试发送 `[失败] 投资日报 <日期>` 邮件。
+
+邮件配置放在 `.env`（已 gitignore）：
+
+```env
+BRIEF_SMTP_HOST=smtp.qq.com
+BRIEF_SMTP_PORT=465
+BRIEF_SMTP_USER=发件QQ邮箱
+BRIEF_SMTP_AUTH_CODE=QQ邮箱SMTP授权码
+BRIEF_MAIL_TO=收件邮箱
+```
+
+两个任务都启用「错过则尽快补跑」。日志分别在 `data/logs/daily-collect-YYYY-MM-DD.log`、`data/logs/daily-email-YYYY-MM-DD.log` 和 `data/logs/daily-email-claude-YYYY-MM-DD.log`。`scripts/daily_prepare.ps1` 保留为手动准备工具，不再注册计划任务。
+
+重新注册任务：
+
+```powershell
+$collect = New-ScheduledTaskAction -Execute "powershell.exe" -Argument '-NoProfile -ExecutionPolicy Bypass -File "D:\project\daily-investment-brief\scripts\daily_collect.ps1"'
+$email = New-ScheduledTaskAction -Execute "powershell.exe" -Argument '-NoProfile -ExecutionPolicy Bypass -File "D:\project\daily-investment-brief\scripts\daily_email.ps1"'
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
+Register-ScheduledTask -TaskName "DailyInvestmentBrief-Collect" -Action $collect -Trigger (New-ScheduledTaskTrigger -Daily -At 07:30) -Settings $settings -Force
+Register-ScheduledTask -TaskName "DailyInvestmentBrief-Email" -Action $email -Trigger (New-ScheduledTaskTrigger -Daily -At 08:00) -Settings $settings -Force
+```
 
 ---
 

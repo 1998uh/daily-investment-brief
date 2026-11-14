@@ -5,7 +5,7 @@ description: 生成或调整每日 A/H 股投资简报和私有持仓资金日�
 
 # Daily Investment Brief
 
-固定项目根目录：`D:\ai-project\daily-investment-brief`。所有命令和文件操作都以该目录为
+固定项目根目录：`D:\project\daily-investment-brief`。所有命令和文件操作都以该目录为
 `workdir`；不要在其他目录创建 `sources/`、`reports/`、`data/` 或 `private-reports/`。
 
 ## 路由
