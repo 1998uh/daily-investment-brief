@@ -112,15 +112,17 @@ def build_report_email(
         subject=f"投资日报 {report_date.isoformat()}",
         config=config,
     )
+    original_html = html_text
+    body_html = html_text
     chart_bytes = None
     if chart_path is not None:
         chart_file = Path(chart_path)
         if chart_file.exists():
             chart_bytes = chart_file.read_bytes()
-            html_text = _CHART_DATA_URI_RE.sub('src="cid:market-trend"', html_text)
-            html_text = _CHART_FILE_RE.sub('src="cid:market-trend"', html_text)
+            body_html = _CHART_DATA_URI_RE.sub('src="cid:market-trend"', body_html)
+            body_html = _CHART_FILE_RE.sub('src="cid:market-trend"', body_html)
     if chart_bytes is not None:
-        message.set_content(html_text, subtype="html")
+        message.set_content(body_html, subtype="html")
         message.add_related(
             chart_bytes,
             maintype="image",
@@ -130,15 +132,16 @@ def build_report_email(
         )
     else:
         message.set_content("请在支持 HTML 的客户端查看正文，或打开附件。")
-        message.add_alternative(html_text, subtype="html")
+        message.add_alternative(body_html, subtype="html")
     message.add_attachment(
         md_text.encode("utf-8"),
         maintype="text",
         subtype="markdown",
         filename="daily-brief.md",
     )
+    # The attachment must stay self-contained: only the email body uses CID.
     message.add_attachment(
-        html_text.encode("utf-8"),
+        original_html.encode("utf-8"),
         maintype="text",
         subtype="html",
         filename="daily-brief.html",

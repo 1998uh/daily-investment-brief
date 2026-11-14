@@ -181,8 +181,11 @@ def build_market_metrics(
         etf_value = None
         stored = etf_store.get(day.isoformat())
         if isinstance(stored, dict):
-            etf_value = _float(stored.get("net_flow"))
-            etf_dates.add(day.isoformat())
+            if stored.get("partial"):
+                warnings.append(f"ETF 历史数据不完整（{day.isoformat()}）")
+            else:
+                etf_value = _float(stored.get("net_flow"))
+                etf_dates.add(day.isoformat())
         elif etf_snapshot and etf_snapshot.date == day:
             etf_value = etf_snapshot.net_flow
             etf_dates.add(day.isoformat())
@@ -206,7 +209,9 @@ def build_market_metrics(
     etf_top: list[dict[str, Any]] = []
     as_of_iso = as_of.isoformat()
     stored = etf_store.get(as_of_iso)
-    if isinstance(stored, dict):
+    if isinstance(stored, dict) and stored.get("partial"):
+        warnings.append(f"ETF 历史数据不完整（{as_of_iso}）")
+    elif isinstance(stored, dict):
         etf_latest = _float(stored.get("net_flow"))
         etf_date = as_of_iso
         etf_top = stored.get("top") or []
@@ -372,6 +377,7 @@ def fetch_market_inputs(*, report_date: date, days: int = 20) -> dict[str, Any]:
         store[etf_snapshot.date.isoformat()] = {
             "net_flow": etf_snapshot.net_flow,
             "top": etf_snapshot.top,
+            "partial": bool(etf_warning),
         }
         try:
             save_etf_store(store)

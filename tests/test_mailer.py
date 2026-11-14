@@ -44,6 +44,26 @@ def test_chart_becomes_cid_related_part(tmp_path):
     assert any(part.get("Content-ID") == "<market-trend>" for part in msg.walk())
 
 
+def test_attachment_html_keeps_data_uri_when_body_uses_cid(tmp_path):
+    png = tmp_path / "market-trend.png"
+    png.write_bytes(b"\x89PNG\r\n\x1a\n")
+    data_uri = "data:image/png;base64,iVBORw0KGgo="
+    html = f'<img src="{data_uri}" />'
+
+    msg = build_report_email(
+        report_date=date(2026, 11, 14),
+        md_text="# t",
+        html_text=html,
+        config=CONFIG,
+        chart_path=png,
+    )
+
+    body = msg.get_body(preferencelist=("html",)).get_content()
+    attachment = next(p for p in msg.walk() if p.get_filename() == "daily-brief.html")
+    assert "cid:market-trend" in body
+    assert data_uri in attachment.get_content()
+
+
 def test_failure_email_redacts_auth_code():
     msg = build_failure_email(
         report_date=date(2026, 11, 14),

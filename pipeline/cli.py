@@ -1206,13 +1206,16 @@ def market_snapshot_command(args: argparse.Namespace) -> int:
                 if metrics.get("margin", {}).get("latest_date")
                 else None
             )
-            render_market_trend(
-                points,
-                chart_path,
-                as_of=date.fromisoformat(metrics["as_of"]),
-                margin_date=margin_date,
-            )
-            chart_name = chart_path.name
+            try:
+                render_market_trend(
+                    points,
+                    chart_path,
+                    as_of=date.fromisoformat(metrics["as_of"]),
+                    margin_date=margin_date,
+                )
+                chart_name = chart_path.name
+            except Exception as exc:  # noqa: BLE001 - keep the numeric summary
+                metrics["warnings"].append(f"图表生成失败: {type(exc).__name__}")
     metrics["chart"] = chart_name
 
     out_dir.mkdir(parents=True, exist_ok=True)

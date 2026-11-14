@@ -73,6 +73,37 @@ def test_build_clamps_to_the_day_before_report_date():
     assert all(point["date"] < "2026-11-14" for point in result["points"])
 
 
+def test_partial_etf_store_is_not_used_as_full():
+    turnover = {date(2026, 11, 13): 1.65e12}
+    store = {"2026-11-13": {"net_flow": 1.0, "partial": True}}
+
+    result = build_market_metrics(
+        report_date=date(2026, 11, 14),
+        turnover=turnover,
+        margin={},
+        etf_store=store,
+        etf_snapshot=None,
+    )
+
+    assert result["etf_flow"]["latest"] is None
+    assert any("不完整" in item for item in result["warnings"])
+
+
+def test_full_etf_store_is_used():
+    turnover = {date(2026, 11, 13): 1.65e12}
+    store = {"2026-11-13": {"net_flow": 1.0, "partial": False}}
+
+    result = build_market_metrics(
+        report_date=date(2026, 11, 14),
+        turnover=turnover,
+        margin={},
+        etf_store=store,
+        etf_snapshot=None,
+    )
+
+    assert result["etf_flow"]["latest"] == 1.0
+
+
 def test_etf_snapshot_after_as_of_is_ignored_and_warned():
     turnover = {date(2026, 11, 13): 1.65e12}
     snapshot = EtfSnapshot(date=date(2026, 11, 14), net_flow=8.8e9, top=[])
