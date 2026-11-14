@@ -1,7 +1,13 @@
 from datetime import date
 from email.message import EmailMessage
 
-from pipeline.mailer import MailConfig, build_failure_email, build_report_email, send_message
+from pipeline.mailer import (
+    MailConfig,
+    build_failure_email,
+    build_report_email,
+    load_mail_config,
+    send_message,
+)
 
 CONFIG = MailConfig("smtp.qq.com", 465, "a@qq.com", "SECRET-CODE", "b@qq.com")
 
@@ -44,6 +50,20 @@ def test_failure_email_redaction_survives_decoding():
     text_part = msg.get_body(preferencelist=("plain",))
     assert text_part is not None
     assert "SECRET-CODE" not in text_part.get_content()
+
+
+def test_load_mail_config_reads_dotenv_when_environ_is_omitted(monkeypatch):
+    calls = []
+    monkeypatch.setattr("pipeline.config.load_env", lambda **kwargs: calls.append(kwargs))
+    monkeypatch.setenv("BRIEF_SMTP_USER", "a@qq.com")
+    monkeypatch.setenv("BRIEF_SMTP_AUTH_CODE", "code")
+    monkeypatch.setenv("BRIEF_MAIL_TO", "b@qq.com")
+
+    config = load_mail_config()
+
+    assert calls, "load_mail_config must load .env before reading os.environ"
+    assert config.user == "a@qq.com"
+    assert config.recipient == "b@qq.com"
 
 
 def test_send_message_retries_then_returns_message_id():

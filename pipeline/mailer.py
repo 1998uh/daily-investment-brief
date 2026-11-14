@@ -22,7 +22,15 @@ class MailConfig:
 
 
 def load_mail_config(environ: Mapping[str, str] | None = None) -> MailConfig:
-    env = environ if environ is not None else os.environ
+    if environ is None:
+        # CLI commands such as send-email do not call get_settings(); load .env
+        # here so SMTP credentials are available regardless of the caller.
+        from .config import load_env
+
+        load_env(inject_cookies=False)
+        env: Mapping[str, str] = os.environ
+    else:
+        env = environ
     host = (env.get("BRIEF_SMTP_HOST") or "smtp.qq.com").strip()
     try:
         port = int((env.get("BRIEF_SMTP_PORT") or "465").strip())
