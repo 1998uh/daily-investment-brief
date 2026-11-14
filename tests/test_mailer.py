@@ -27,6 +27,23 @@ def test_report_email_has_html_body_and_two_attachments():
     assert names == ["daily-brief.md", "daily-brief.html"]
 
 
+def test_chart_becomes_cid_related_part(tmp_path):
+    png = tmp_path / "market-trend.png"
+    png.write_bytes(b"\x89PNG\r\n\x1a\n")
+    html = '<img src="data:image/png;base64,iVBORw0KGgo=" />'
+
+    msg = build_report_email(
+        report_date=date(2026, 11, 14),
+        md_text="# t",
+        html_text=html,
+        config=CONFIG,
+        chart_path=png,
+    )
+
+    assert "cid:market-trend" in msg.get_body(preferencelist=("html",)).get_content()
+    assert any(part.get("Content-ID") == "<market-trend>" for part in msg.walk())
+
+
 def test_failure_email_redacts_auth_code():
     msg = build_failure_email(
         report_date=date(2026, 11, 14),

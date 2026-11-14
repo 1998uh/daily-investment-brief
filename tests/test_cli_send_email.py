@@ -87,6 +87,17 @@ def test_report_email_is_not_blocked_by_failure_marker(tmp_path, monkeypatch):
     assert (tmp_path / ".email-sent.json").exists()
 
 
+def test_send_email_passes_chart_path_when_present(tmp_path, monkeypatch):
+    _write_report(tmp_path)
+    (tmp_path / "market-trend.png").write_bytes(b"png")
+    captured = {}
+    monkeypatch.setattr(cli, "send_report_email", lambda **k: captured.update(k) or "<mid>")
+
+    assert cli.send_email_command(_args(tmp_path)) == 0
+
+    assert captured["chart_path"] == tmp_path / "market-trend.png"
+
+
 def test_send_email_rejects_bad_date(tmp_path):
     assert cli.send_email_command(_args(tmp_path, date="not-a-date")) == 2
 

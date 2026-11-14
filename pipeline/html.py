@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import base64
 import html
+from pathlib import Path
 import re
 
 try:
@@ -13,6 +15,22 @@ MARKDOWN_EXTENSIONS = [
     "extra",
     "sane_lists",
 ]
+
+_LOCAL_PNG_RE = re.compile(r'src="([^":]+\.png)"')
+
+
+def inline_image_sources(html_text: str, base_dir: Path) -> str:
+    """Inline local PNG references as data URIs so the HTML is self-contained."""
+
+    def replace(match: re.Match[str]) -> str:
+        relative = match.group(1)
+        path = Path(base_dir) / relative
+        if not path.exists():
+            return match.group(0)
+        encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+        return f'src="data:image/png;base64,{encoded}"'
+
+    return _LOCAL_PNG_RE.sub(replace, html_text)
 
 MERMAID_BLOCK_RE = re.compile(
     r"<pre><code class=\"language-mermaid\">(.*?)</code></pre>",

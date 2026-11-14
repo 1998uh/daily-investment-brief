@@ -12,7 +12,7 @@ from .config import ROOT, get_settings
 from .cancel import PipelineCancelled, cancellation_context, raise_if_cancelled
 from .collectors.runner import collect_to_sources, collect_single_account
 from .generator import generate_brief, synthesize_from_batches, build_direct_prompt
-from .html import wrap_html
+from .html import inline_image_sources, wrap_html
 from .ingest import load_articles
 from .mailer import send_failure_email, send_report_email
 from .market_chart import render_market_trend
@@ -1238,7 +1238,7 @@ def render_html_command(args: argparse.Namespace) -> int:
         print(f"Missing daily brief: {md_path}", file=sys.stderr)
         return 2
     markdown = md_path.read_text(encoding="utf-8")
-    html_text = wrap_html(markdown, "每日投资简报")
+    html_text = inline_image_sources(wrap_html(markdown, "每日投资简报"), out_dir)
     html_path = out_dir / "daily-brief.html"
     html_path.write_text(html_text, encoding="utf-8")
     print(f"Rendered HTML: {html_path}")
@@ -1406,8 +1406,12 @@ def send_email_command(args: argparse.Namespace) -> int:
         print(f"Another report email send is in progress for {args.date}; skipping.")
         return 0
     try:
+        chart_path = out_dir / "market-trend.png"
         message_id = send_report_email(
-            report_date=report_date, md_path=md_path, html_path=html_path
+            report_date=report_date,
+            md_path=md_path,
+            html_path=html_path,
+            chart_path=chart_path if chart_path.exists() else None,
         )
         _write_email_marker(report_marker, report_date, message_id)
         print(f"Sent: 投资日报 {args.date} (id={message_id})")

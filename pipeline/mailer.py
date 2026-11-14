@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 import html as html_lib
 import os
+import re
 import smtplib
 import time
 from pathlib import Path
@@ -93,12 +94,17 @@ def _set_headers(message: EmailMessage, *, subject: str, config: MailConfig) -> 
     message["Message-ID"] = make_msgid(domain="qq.com")
 
 
+_CHART_DATA_URI_RE = re.compile(r'src="data:image/png;base64,[^"]*"')
+_CHART_FILE_RE = re.compile(r'src="market-trend\.png"')
+
+
 def build_report_email(
     *,
     report_date: date,
     md_text: str,
     html_text: str,
     config: MailConfig,
+    chart_path: Path | None = None,
 ) -> EmailMessage:
     message = EmailMessage()
     _set_headers(
@@ -106,8 +112,25 @@ def build_report_email(
         subject=f"投资日报 {report_date.isoformat()}",
         config=config,
     )
-    message.set_content("请在支持 HTML 的客户端查看正文，或打开附件。")
-    message.add_alternative(html_text, subtype="html")
+    chart_bytes = None
+    if chart_path is not None:
+        chart_file = Path(chart_path)
+        if chart_file.exists():
+            chart_bytes = chart_file.read_bytes()
+            html_text = _CHART_DATA_URI_RE.sub('src="cid:market-trend"', html_text)
+            html_text = _CHART_FILE_RE.sub('src="cid:market-trend"', html_text)
+    if chart_bytes is not None:
+        message.set_content(html_text, subtype="html")
+        message.add_related(
+            chart_bytes,
+            maintype="image",
+            subtype="png",
+            cid="<market-trend>",
+            filename="market-trend.png",
+        )
+    else:
+        message.set_content("请在支持 HTML 的客户端查看正文，或打开附件。")
+        message.add_alternative(html_text, subtype="html")
     message.add_attachment(
         md_text.encode("utf-8"),
         maintype="text",
@@ -200,6 +223,7 @@ def send_report_email(
     html_path: Path | str,
     config: MailConfig | None = None,
     smtp_factory: Callable[..., object] | None = None,
+    chart_path: Path | str | None = None,
 ) -> str:
     config = config or load_mail_config()
     md_text = Path(md_path).read_text(encoding="utf-8")
@@ -209,6 +233,7 @@ def send_report_email(
         md_text=md_text,
         html_text=html_text,
         config=config,
+        chart_path=Path(chart_path) if chart_path is not None else None,
     )
     return send_message(message, config=config, smtp_factory=smtp_factory)
 
