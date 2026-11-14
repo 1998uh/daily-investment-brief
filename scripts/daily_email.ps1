@@ -166,11 +166,15 @@ try {
 
 完成后只输出一行 DONE。
 "@
+            # Prefer the .cmd shim: Start-Job uses a fresh session whose
+            # execution policy may block the claude.ps1 wrapper.
+            $claudeCmd = (Get-Command claude.cmd -ErrorAction SilentlyContinue).Source
+            if (-not $claudeCmd) { $claudeCmd = "claude" }
             $job = Start-Job -ScriptBlock {
-                param($projectRoot, $writerPrompt)
+                param($projectRoot, $writerPrompt, $claudePath)
                 Set-Location $projectRoot
-                claude -p $writerPrompt --permission-mode acceptEdits --allowedTools "Read,Write,Edit,Glob,Grep" --output-format text 2>&1
-            } -ArgumentList $Root, $prompt
+                & $claudePath -p $writerPrompt --permission-mode acceptEdits --allowedTools "Read,Write,Edit,Glob,Grep" --output-format text 2>&1
+            } -ArgumentList $Root, $prompt, $claudeCmd
             $finished = Wait-Job $job -Timeout 1200
             if ($finished) {
                 Receive-Job $job | Out-File -FilePath $claudeLog -Encoding utf8
