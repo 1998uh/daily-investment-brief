@@ -5,10 +5,11 @@ from datetime import date
 
 REQUIRED_SECTIONS: tuple[str, ...] = (
     "今日三句话",
-    "博主持仓信息",
-    "博主看好方向汇总",
+    "一页速览",
+    "大盘量能趋势",
     "今日注意事项",
     "数据覆盖情况",
+    "博主看好方向汇总",
 )
 
 MIN_BODY_CHARS = 3000

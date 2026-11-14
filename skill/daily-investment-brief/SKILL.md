@@ -46,6 +46,7 @@ PART-B 独立运行，不受普通日报的三平台门禁影响，也不得从�
 python -m pipeline.cli social-health
 python -m pipeline.cli collect --date YYYY-MM-DD --platform wechat
 python -m pipeline.cli materialize --date YYYY-MM-DD
+python -m pipeline.cli market-snapshot --date YYYY-MM-DD
 ```
 
 `materialize` 从 SQLite 查询 `[前一日 08:00, 当日 08:00)` 并原子重建正式输入目录。
@@ -85,10 +86,10 @@ python -m pipeline.cli prepare --date YYYY-MM-DD
 
 交付前人工检查：
 
-- 标题元信息、“今日三句话”、持仓表、方向表和“今日注意事项”位于事件正文之前。
+- 标题元信息、“今日三句话”、“一页速览”、“大盘量能趋势”和“今日注意事项”位于事件正文之前；持仓/方向明细在文末「📋 作者持仓与方向明细（备查）」。
 - 正文按当天真实事件动态命名；有足量表格和带作者、平台标注的 blockquote 原话。
-- 持仓只来自明确披露；方向表覆盖所有有实质观点的作者；分歧具体到作者、结论和论据。
-- 数据覆盖表使用 `codex-context.json` 的统计；核心矛盾图只使用当天事件和数字。
+- 持仓只来自明确披露；方向明细覆盖所有有实质观点的作者，未表态作者合并为一行；分歧具体到作者、结论和论据。
+- 数据覆盖表使用 `codex-context.json` 的统计；核心矛盾表只使用当天事件和数字；量能数字必须来自 `market_metrics`。
 - 未要求跟踪时不创建假设；Markdown 与 HTML 内容一致。任一项不合格时先重写再交付。
 
 ### 2. 可选：假设跟踪与验证

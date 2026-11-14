@@ -354,6 +354,15 @@ Source health: D:\ai-project\daily-investment-brief\pipeline\health.sqlite
 
 当前推荐工作流把“生成日报”和“假设验证”拆成两个阶段：日报是每日主任务，假设验证只在需要跟踪观点时执行。Codex 负责语义理解、金融取数和日报写作，Python 负责历史账本、确定性验证和一致性校验。
 
+#### 日报结构
+
+正文前依次为：今日三句话 → 一页速览 → 大盘量能趋势 → 今日注意事项 → 事件正文；文末依次为：作者持仓与方向明细（备查）→ 数据覆盖 → 核心矛盾表 → 下期关注。
+
+- **一页速览**：持仓动作、方向共识、主要分歧、今日机会、一句话风险
+- **大盘量能趋势**：20 个交易日成交额 / 两融 / ETF 主力净流入图 + 最近 5 日表，由 `market-snapshot` 生成
+- **核心矛盾**：一句话 + 3–4 行维度表，不使用 mermaid（邮件客户端不执行脚本）
+- 取消独立的博主持仓/方向表和“今日精选标的”；逐人明细并入文末备查表
+
 #### A. 每日主流程：先生成日报
 
 ```powershell
@@ -364,12 +373,15 @@ daily-brief collect --date 2026-09-03 --platform wechat
 # 2. 按 08:00 日报窗口从 SQLite 重建正式输入目录
 daily-brief materialize --date 2026-08-27
 
-# 3. 生成日报文章包，供 Codex 写作
+# 3. 生成量能快照（BaoStock 成交额 + 东方财富两融/ETF）
+daily-brief market-snapshot --date 2026-08-27
+
+# 4. 生成日报文章包，供 Codex 写作
 daily-brief prepare --date 2026-08-27
 
 # 由 Codex 读取 article-pack.md，生成 daily-brief.md
 
-# 4. 只校验日报本身，不要求假设和证据文件
+# 5. 只校验日报本身，不要求假设和证据文件
 daily-brief validate --date 2026-08-27 --report-only
 ```
 
